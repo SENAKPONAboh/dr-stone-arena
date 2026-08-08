@@ -25,10 +25,6 @@ export default async function ProfilPage() {
     ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 animate-pulse font-extrabold"
     : "font-extrabold text-gray-800";
 
-  const inputStyle = user.isPremium
-    ? "w-full px-4 py-3 bg-white/5 border-2 border-white/10 rounded-2xl focus:outline-none focus:border-yellow-400 transition-all placeholder-white/30 text-white"
-    : "w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-emerald-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400";
-
   const badgeBoxStyle = user.isPremium
     ? "bg-yellow-500/10 border-2 border-yellow-400/30 rounded-2xl"
     : "bg-yellow-50 border-2 border-yellow-100 rounded-2xl";
@@ -36,7 +32,7 @@ export default async function ProfilPage() {
   return (
     <div className={`min-h-screen pb-10 ${user.isPremium ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800' : 'bg-gray-50'}`}>
       
-            <header className={`border-b-2 ${user.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
+      <header className={`border-b-2 ${user.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
           <a href="/etudiant" className={`flex items-center gap-2 ${user.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -87,10 +83,16 @@ export default async function ProfilPage() {
             <p className={`text-xl mt-1 ${gradeStyle}`}>{grade}</p>
           </div>
 
-          {/* Formulaire de modification */}
+          {/* Formulaire de modification (Nouveau composant) */}
           <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">Modifier mes informations</h3>
-                        <UpdateProfileForm currentPseudo={user.pseudo} currentImageUrl={user.imageUrl} isPremium={user.isPremium} />
+            <UpdateProfileForm currentPseudo={user.pseudo} currentImageUrl={user.imageUrl} isPremium={user.isPremium} currentAnneeEtude={user.anneeEtude} />
+          </div>
+
+          {/* Changement de mot de passe */}
+          <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
+            <h3 className="font-bold mb-4">🔒 Sécurité (Changer de mot de passe)</h3>
+            <ChangePasswordForm />
           </div>
 
           {/* Affichage des Badges */}
@@ -108,11 +110,6 @@ export default async function ProfilPage() {
                 ))}
               </div>
             )}
-          </div>
-          {/* Changement de mot de passe */}
-          <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
-            <h3 className="font-bold mb-4">🔒 Sécurité (Changer de mot de passe)</h3>
-            <ChangePasswordForm />
           </div>
 
           <LogoutButton />
