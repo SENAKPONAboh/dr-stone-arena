@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import ValidateButton from '@/components/admin/ValidateButton';
 import Link from 'next/link';
+import LogoutButton from '@/components/dashboard/LogoutButton';
 
 export default async function AdminDashboard() {
   const user = await getCurrentUser();
@@ -30,11 +31,7 @@ export default async function AdminDashboard() {
             <span className="text-2xl">⚙️</span>
             <h1 className="font-extrabold text-xl text-gray-800">Panel Administrateur</h1>
           </div>
-          <form action="/api/auth/logout" method="POST">
-            <button type="submit" className="text-sm bg-red-50 text-red-600 font-bold py-2 px-4 rounded-xl border-2 border-red-100 hover:bg-red-100">
-              Déconnexion
-            </button>
-          </form>
+                  <LogoutButton />
         </div>
       </header>
 

@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 
-export async function POST() {
-  const response = NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
+export async function POST(request: Request) {
+  // On récupère l'URL de base de la requête (que ce soit localhost ou Vercel)
+  const url = new URL('/login', request.url);
+  
+  const response = NextResponse.json({ success: true });
   response.cookies.delete("session");
-  return response;
+  
+  // On renvoie l'URL au frontend
+  return NextResponse.json({ redirectUrl: url.toString() });
 }
 
-// On autorise aussi la méthode GET pour que le lien <a href> fonctionne
-export async function GET() {
-  const response = NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'));
+export async function GET(request: Request) {
+  const url = new URL('/login', request.url);
+  const response = NextResponse.redirect(url);
   response.cookies.delete("session");
   return response;
 }
