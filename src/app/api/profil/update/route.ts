@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -17,15 +15,17 @@ export async function POST(request: Request) {
 
     // Si l'utilisateur a envoyé une nouvelle image
     if (imageFile && imageFile.size > 0) {
+      // Limiter la taille à 2 Mo pour ne pas surcharger la base de données
+      if (imageFile.size > 2 * 1024 * 1024) {
+        return NextResponse.json({ error: "L'image dépasse 2 Mo." }, { status: 400 });
+      }
+      
       const buffer = Buffer.from(await imageFile.arrayBuffer());
-      const filename = `${user.id}-${Date.now()}-${imageFile.name.replace(/\s/g, '')}`;
+      const base64String = buffer.toString('base64');
+      // On crée une chaîne de caractères lisible par le navigateur
+      const dataUri = `data:${imageFile.type};base64,${base64String}`;
       
-      // Sauvegarder dans le dossier public/avatars
-      const uploadDir = path.join(process.cwd(), 'public', 'avatars');
-      await mkdir(uploadDir, { recursive: true });
-      await writeFile(path.join(uploadDir, filename), buffer);
-      
-      imageUrl = `/avatars/${filename}`;
+      imageUrl = dataUri; // On stocke l'image sous forme de texte
     }
 
     // Mettre à jour l'utilisateur dans la base de données

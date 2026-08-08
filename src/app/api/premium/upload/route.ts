@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -21,20 +19,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Le fichier doit être une image" }, { status: 400 });
     }
 
-    // Créer un nom de fichier unique
+    // Limiter la taille à 4 Mo pour les reçus
+    if (file.size > 4 * 1024 * 1024) {
+      return NextResponse.json({ error: "L'image dépasse 4 Mo." }, { status: 400 });
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${user.id}-${Date.now()}-${file.name.replace(/\s/g, '')}`;
-    
-    // Sauvegarder l'image dans le dossier public/receipts
-    const uploadDir = path.join(process.cwd(), 'public', 'receipts');
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, filename), buffer);
+    const base64String = buffer.toString('base64');
+    const dataUri = `data:${file.type};base64,${base64String}`;
 
     // Enregistrer la demande dans la base de données
     const requestRecord = await prisma.premiumRequest.create({
       data: {
         userId: user.id,
-        receiptUrl: `/receipts/${filename}`,
+        receiptUrl: dataUri, // On stocke l'image sous forme de texte
         status: 'EN_ATTENTE'
       }
     });
