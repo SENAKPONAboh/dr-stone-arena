@@ -156,7 +156,6 @@ export default async function EtudiantDashboard() {
         </a>
 
         <DailyChallenge attemptsToday={attemptsToday} claimed={dailyClaimed} />
-        <DailyChallenge attemptsToday={attemptsToday} claimed={dailyClaimed} />
         <LongTermChallenges weeklyCases={weeklyCases} monthlyXp={monthlyXp} />
         
         <div className="mb-6">

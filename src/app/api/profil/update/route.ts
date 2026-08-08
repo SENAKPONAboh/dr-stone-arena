@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const pseudo = formData.get('pseudo') as string;
+     const anneeEtude = formData.get('anneeEtude') as string;
     const imageFile = formData.get('image') as File;
 
     let imageUrl = user.imageUrl; // On garde l'ancienne image par défaut
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
       data: {
         pseudo: pseudo || null,
         imageUrl: imageUrl,
+        anneeEtude: anneeEtude ? parseInt(anneeEtude) : user.anneeEtude, // <-- AJOUT
       },
     });
 
