@@ -86,6 +86,9 @@ export default async function AdminDashboard() {
             <Link href="/admin/premium" className="inline-block bg-gray-900 text-yellow-400 font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-gray-800 transition-all">
               👑 Valider les abonnements Premium
             </Link>
+                        <Link href="/admin/users" className="inline-block bg-white text-blue-600 font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-gray-100 transition-all">
+              👥 Gérer les étudiants
+            </Link>
             <Link href="/admin/content" className="inline-block bg-emerald-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-emerald-600 transition-all">
               📚 Gérer les matières et chapitres
             </Link>

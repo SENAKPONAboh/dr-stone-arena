@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import LogoutButton from '@/components/dashboard/LogoutButton';
 import Link from 'next/link';
 import UpdateProfileForm from '@/components/dashboard/UpdateProfileForm';
+import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 
 export default async function ProfilPage() {
   const user = await getCurrentUser();
@@ -107,6 +108,11 @@ export default async function ProfilPage() {
                 ))}
               </div>
             )}
+          </div>
+          {/* Changement de mot de passe */}
+          <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
+            <h3 className="font-bold mb-4">🔒 Sécurité (Changer de mot de passe)</h3>
+            <ChangePasswordForm />
           </div>
 
           <LogoutButton />
