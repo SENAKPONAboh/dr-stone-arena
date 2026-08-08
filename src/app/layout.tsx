@@ -8,7 +8,16 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Dr. Stone Arena",
   description: "Plateforme intelligente de progression médicale",
-  manifest: "/manifest.json", // <-- AJOUT
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Dr. Stone Arena',
+  },
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/icon-192.png',
+  }
 };
 
 export const viewport: Viewport = {

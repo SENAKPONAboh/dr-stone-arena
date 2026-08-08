@@ -2,15 +2,22 @@
   "name": "Dr. Stone Arena",
   "short_name": "Dr. Stone",
   "description": "Plateforme intelligente de progression médicale",
-  "start_url": "/login",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#10b981",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
