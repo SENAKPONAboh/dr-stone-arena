@@ -1,13 +1,121 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  nom        String
+  prenom     String
+  email      String   @unique
+  pseudo     String?
+  imageUrl   String?
+  password   String
+  role       String   @default("ETUDIANT")
+  pays       String?
+  universite String?
+  faculte    String?
+  anneeEtude Int?
+  statut     String   @default("EN_ATTENTE")
+  xp         Int      @default(0)
+  streak     Int      @default(0)
+  lives      Int      @default(5) // <-- AJOUT DES VIES
+  chestAvailable Boolean @default(false)
+  lastLifeLostAt DateTime?
+  lastDailyRewardClaimedAt DateTime?
+  isPremium Boolean @default(false)
+  lastActive DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  attempts   Attempt[]
+  badges     UserBadge[] // <-- LIAISON AUX BADGES
+  premiumRequests PremiumRequest[]
+  notifications Notification[]
+
+}
+
+model Subject {
+  id         String   @id @default(cuid())
+  name       String
+  anneeEtude Int
+  chapters   Chapter[]
+  createdAt  DateTime @default(now())
+}
+
+model Chapter {
+  id         String   @id @default(cuid())
+  name       String
+  subjectId  String
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  cases      ClinicalCase[]
+  createdAt  DateTime @default(now())
+}
+
+model ClinicalCase {
+  id            String   @id @default(cuid())
+  title         String
+  difficulty    String
+  xp            Int
+  statement     String
+  options       String[]
+  correctAnswer String
+  explanation   String
+  durationMax   Int
+  anneeEtude    Int      @default(1)
+  chapterId     String
+  chapter       Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  attempts      Attempt[]
+  createdAt     DateTime @default(now())
+}
+
+model Attempt {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinicalCaseId String
+  clinicalCase ClinicalCase @relation(fields: [clinicalCaseId], references: [id], onDelete: Cascade)
+  userAnswer   String
+  isCorrect    Boolean
+  timeSpent    Int
+  xpEarned     Int
+  createdAt    DateTime @default(now())
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  icon        String
+  users       UserBadge[]
+}
+
+model UserBadge {
+  userId  String
+  badgeId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge   Badge  @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt DateTime @default(now())
+
+  @@id([userId, badgeId])
+}
+model PremiumRequest {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receiptUrl String
+  status     String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE
+  createdAt  DateTime @default(now())
+}
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  icon      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

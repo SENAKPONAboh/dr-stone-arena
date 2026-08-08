@@ -1,0 +1,247 @@
+import { getCurrentUser } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import LogoutButton from '@/components/dashboard/LogoutButton';
+import ChestButton from '@/components/dashboard/ChestButton';
+import prisma from '@/lib/prisma';
+import { calculateRegeneratedLives } from '@/lib/lives';
+import Link from 'next/link';
+import DailyChallenge from '@/components/dashboard/DailyChallenge';
+import LongTermChallenges from '@/components/dashboard/LongTermChallenges';
+import NotificationBell from '@/components/dashboard/NotificationBell';
+import ThemeToggle from '@/components/dashboard/ThemeToggle';
+
+export default async function EtudiantDashboard() {
+  const user = await getCurrentUser();
+
+  if (!user || user.role !== 'ETUDIANT') {
+    redirect('/login');
+  }
+
+  if (user.statut !== 'VALIDE') {
+    redirect('/login?error=non_valide');
+  }
+
+  // --- Régénération des vies ---
+  const lifeData = calculateRegeneratedLives(user.lives, user.lastLifeLostAt, user.isPremium);
+  if (lifeData.lives !== user.lives) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { 
+        lives: lifeData.lives, 
+        lastLifeLostAt: lifeData.updatedAt 
+      }
+    });
+    user.lives = lifeData.lives;
+  }
+
+  const attemptsCount = await prisma.attempt.count({
+    where: { userId: user.id }
+  });
+
+  let grade = "🥉 Clinicien Bronze";
+  if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
+  if (user.xp >= 3000) grade = "🥇 Clinicien Or";
+  if (user.xp >= 6000) grade = "💎 Expert Clinicien";
+
+  const usersAhead = await prisma.user.count({
+    where: { 
+      universite: user.universite,
+      faculte: user.faculte,
+      xp: { gt: user.xp }
+    }
+  });
+  const userRank = usersAhead + 1;
+
+  // --- Calculs des Défis ---
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const attemptsToday = await prisma.attempt.count({
+    where: { userId: user.id, createdAt: { gte: todayStart } }
+  });
+  const dailyClaimed = user.lastDailyRewardClaimedAt ? new Date(user.lastDailyRewardClaimedAt).setHours(0,0,0,0) === todayStart.getTime() : false;
+
+  const now = new Date();
+  const dayOfWeek = now.getDay() || 7;
+  const mondayStart = new Date(now);
+  mondayStart.setHours(0, 0, 0, 0);
+  mondayStart.setDate(now.getDate() - (dayOfWeek - 1));
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const weeklyCases = await prisma.attempt.count({
+    where: { userId: user.id, createdAt: { gte: mondayStart } }
+  });
+  const monthlyAttempts = await prisma.attempt.findMany({
+    where: { userId: user.id, createdAt: { gte: monthStart } },
+    select: { xpEarned: true }
+  });
+  const monthlyXp = monthlyAttempts.reduce((sum, attempt) => sum + attempt.xpEarned, 0);
+
+  // --- Génération des notifications intelligentes ---
+  if (attemptsToday === 0) {
+    const todayNotifExists = await prisma.notification.findFirst({
+      where: { userId: user.id, createdAt: { gte: todayStart }, message: { contains: "défi quotidien" } }
+    });
+
+    if (!todayNotifExists) {
+      await prisma.notification.create({
+        data: { userId: user.id, message: "Ton défi quotidien est disponible. Joue maintenant pour gagner des XP !", icon: "🧠" }
+      });
+
+      if (user.streak > 0) {
+        await prisma.notification.create({
+          data: { userId: user.id, message: `Attention, tu risques de perdre ta série de ${user.streak} jours si tu ne joues pas aujourd'hui !`, icon: "🔥" }
+        });
+      }
+    }
+  }
+
+  const notifications = await prisma.notification.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+    take: 10
+  });
+  const unreadCount = notifications.filter((n: { isRead: boolean }) => !n.isRead).length;
+
+  const topUsers = await prisma.user.findMany({
+    where: { universite: user.universite, faculte: user.faculte, statut: 'VALIDE' },
+    orderBy: { xp: 'desc' },
+    take: 5,
+    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true }
+  });
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 pb-10 transition-colors duration-300">
+      
+      <header className="bg-white dark:bg-slate-800 border-b-2 border-gray-100 dark:border-slate-700 transition-colors duration-300">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🧠</span>
+            <h1 className="font-extrabold text-xl text-gray-800 dark:text-white hidden sm:block">Dr. Stone Arena</h1>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="bg-gray-100 dark:bg-slate-700 px-3 py-1 rounded-full text-sm font-bold text-gray-600 dark:text-gray-300 hidden sm:inline">🔥 {user.streak} jours</span>
+            <span className="bg-emerald-100 dark:bg-emerald-900/50 px-3 py-1 rounded-full text-sm font-bold text-emerald-600 dark:text-emerald-400">⭐ {user.xp} XP</span>
+            <span className="bg-red-100 dark:bg-red-900/50 px-3 py-1 rounded-full text-sm font-bold text-red-600 dark:text-red-400">❤️ {user.lives}</span>
+            
+            <ThemeToggle />
+            <NotificationBell initialNotifications={notifications as any} unreadCount={unreadCount} />
+
+            <Link href="/etudiant/profil" className="ml-2">
+              {user.imageUrl ? (
+                <img src={user.imageUrl} alt="Profile" className="w-10 h-10 rounded-full border-2 border-emerald-500 object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold border-2 border-blue-200">
+                  {user.prenom.charAt(0)}{user.nom.charAt(0)}
+                </div>
+              )}
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto px-4 mt-6">
+        <DailyChallenge attemptsToday={attemptsToday} claimed={dailyClaimed} />
+        <LongTermChallenges weeklyCases={weeklyCases} monthlyXp={monthlyXp} />
+        
+        <div className="mb-6">
+          <h2 className="text-2xl font-extrabold text-gray-800 dark:text-white">Bonjour {user.prenom} 👋</h2>
+          <p className="text-gray-500 dark:text-gray-400">Ton défi médical du jour t'attend. Prêt à progresser ?</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Carte Principale (Profil & Lancement) */}
+          <div className="md:col-span-2 bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 flex flex-col transition-colors duration-300">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Grade actuel</p>
+                <p className="font-extrabold text-lg text-gray-800 dark:text-white">{grade}</p>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-4 py-2 rounded-xl font-bold text-sm">
+                {user.anneeEtude}ème Année
+              </div>
+            </div>
+            
+            <div className="mt-4 mb-6">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">Progression globale</p>
+              <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4">
+                <div className="bg-gradient-to-r from-emerald-400 to-blue-500 h-4 rounded-full" style={{ width: `${Math.min(attemptsCount * 10, 100)}%` }}></div>
+              </div>
+              <p className="text-right text-xs text-gray-400 dark:text-gray-500 mt-1">{attemptsCount} cas résolus</p>
+            </div>
+
+            <div className="mt-auto">
+              {user.lives > 0 ? (
+                <a href="/etudiant/challenge" className="block w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md text-center uppercase tracking-wide transition-all mb-4">
+                  🚀 Commencer le défi
+                </a>
+              ) : (
+                <div className="w-full py-4 bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 text-lg font-extrabold rounded-2xl text-center uppercase tracking-wide cursor-not-allowed mb-4">
+                  ❌ Plus de vies
+                </div>
+              )}
+
+              {/* Vignettes d'accès rapide */}
+              <div className="grid grid-cols-3 gap-3">
+                <Link href="/etudiant/stats" className="bg-blue-50 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-slate-600 border border-blue-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">📊</span>
+                  <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide text-center">Statistiques</span>
+                </Link>
+                <Link href="/etudiant/history" className="bg-emerald-50 dark:bg-slate-700 hover:bg-emerald-100 dark:hover:bg-slate-600 border border-emerald-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">📚</span>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide text-center">Historique</span>
+                </Link>
+                <Link href="/etudiant/premium" className="bg-yellow-50 dark:bg-slate-700 hover:bg-yellow-100 dark:hover:bg-slate-600 border border-yellow-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">👑</span>
+                  <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300 uppercase tracking-wide text-center">Premium</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Carte Classement (Leaderboard) */}
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 flex flex-col transition-colors duration-300">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-extrabold text-gray-800 dark:text-white">Classement</h3>
+              <span className="text-xs font-bold bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded-full text-gray-500 dark:text-gray-400">{user.faculte}</span>
+            </div>
+            
+            <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl p-3 mb-4 flex items-center justify-between border border-emerald-100 dark:border-emerald-800">
+              <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">Ton rang</span>
+              <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-lg">#{userRank}</span>
+            </div>
+
+            <div className="space-y-2">
+              {topUsers.map((u, index) => (
+                <div key={u.id} className={`flex items-center gap-3 p-2 rounded-xl ${u.id === user.id ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800' : ''}`}>
+                  <span className="font-bold text-gray-400 dark:text-gray-500 w-5 text-sm">{index + 1}</span>
+                  {u.imageUrl ? (
+                    <img src={u.imageUrl} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-gray-400 flex items-center justify-center text-xs font-bold">
+                      {u.prenom.charAt(0)}{u.nom.charAt(0)}
+                    </div>
+                  )}
+                  <Link href={`/etudiant/profil/${u.id}`} className="flex-1 truncate flex items-center gap-1 hover:text-blue-600 transition-colors">
+                    <p className="text-sm font-bold text-gray-700 dark:text-gray-200 truncate">{u.pseudo || `${u.prenom} ${u.nom}`}</p>
+                    {u.isPremium && <span title="Premium" className="text-xs">👑</span>}
+                  </Link>
+                  <span className="text-sm font-extrabold text-gray-600 dark:text-gray-300">⭐ {u.xp}</span>
+                </div>
+              ))}
+            </div>
+            
+            {user.chestAvailable && (
+              <div className="mt-4">
+                <ChestButton />
+              </div>
+            )}
+
+            <LogoutButton />
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
