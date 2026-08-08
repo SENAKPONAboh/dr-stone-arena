@@ -43,10 +43,11 @@ export default async function EtudiantDashboard() {
   if (user.xp >= 3000) grade = "🥇 Clinicien Or";
   if (user.xp >= 6000) grade = "💎 Expert Clinicien";
 
+  // --- Calcul du Classement Global ---
   const usersAhead = await prisma.user.count({
     where: { 
-      universite: user.universite,
-      faculte: user.faculte,
+      role: 'ETUDIANT',
+      statut: 'VALIDE',
       xp: { gt: user.xp }
     }
   });
@@ -103,7 +104,10 @@ export default async function EtudiantDashboard() {
   const unreadCount = notifications.filter((n: { isRead: boolean }) => !n.isRead).length;
 
   const topUsers = await prisma.user.findMany({
-    where: { universite: user.universite, faculte: user.faculte, statut: 'VALIDE' },
+    where: { 
+      role: 'ETUDIANT',
+      statut: 'VALIDE'
+    },
     orderBy: { xp: 'desc' },
     take: 5,
     select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true }
@@ -203,7 +207,10 @@ export default async function EtudiantDashboard() {
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 flex flex-col transition-colors duration-300">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-extrabold text-gray-800 dark:text-white">Classement</h3>
-              <span className="text-xs font-bold bg-gray-100 dark:bg-slate-700 px-2 py-1 rounded-full text-gray-500 dark:text-gray-400">{user.faculte}</span>
+              {/* Bouton Voir tout */}
+              <Link href="/etudiant/leaderboard" className="text-xs font-bold bg-blue-100 dark:bg-blue-900/50 px-3 py-1 rounded-full text-blue-600 dark:text-blue-300 hover:bg-blue-200 transition-all">
+                Voir tout →
+              </Link>
             </div>
             
             <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl p-3 mb-4 flex items-center justify-between border border-emerald-100 dark:border-emerald-800">
