@@ -28,6 +28,9 @@ export async function POST(request: Request) {
     if (user.statut === "EN_ATTENTE") {
       return NextResponse.json({ error: "Votre compte est en attente de validation par l'administration." }, { status: 403 });
     }
+        if (user.statut === "BANNI") {
+      return NextResponse.json({ error: "Votre compte a été banni par l'administration." }, { status: 403 });
+    }
 
     // Créer la session
     const { session, expiresAt } = await createSession(user.id, user.role);

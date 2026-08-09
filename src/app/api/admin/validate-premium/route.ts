@@ -18,11 +18,17 @@ export async function POST(request: Request) {
       data: { status: action }
     });
 
-    // Si validé, passer l'utilisateur en Premium
+       // Si validé, passer l'utilisateur en Premium pendant 30 jours
     if (action === 'VALIDE') {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 30); // +30 jours
+      
       await prisma.user.update({
         where: { id: userId },
-        data: { isPremium: true }
+        data: { 
+          isPremium: true,
+          premiumExpiresAt: expiryDate
+        }
       });
     }
 

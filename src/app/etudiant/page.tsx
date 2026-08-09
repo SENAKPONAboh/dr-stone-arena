@@ -20,6 +20,14 @@ export default async function EtudiantDashboard() {
   if (user.statut !== 'VALIDE') {
     redirect('/login?error=non_valide');
   }
+    // Vérifier si le Premium a expiré
+  if (user.isPremium && user.premiumExpiresAt && new Date(user.premiumExpiresAt) < new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isPremium: false, premiumExpiresAt: null }
+    });
+    user.isPremium = false; // On met à jour la variable pour l'affichage
+  }
 
   // --- Régénération des vies ---
   const lifeData = calculateRegeneratedLives(user.lives, user.lastLifeLostAt, user.isPremium);

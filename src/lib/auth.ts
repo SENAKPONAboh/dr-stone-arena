@@ -63,6 +63,7 @@ export async function getCurrentUser() {
       badges: { include: { badge: true } },
       notifications: true,
       lastDailyRewardClaimedAt: true,
+      premiumExpiresAt: true,
     }
   });
 

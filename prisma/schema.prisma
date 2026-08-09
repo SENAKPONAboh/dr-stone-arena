@@ -28,6 +28,7 @@ model User {
   lastLifeLostAt DateTime?
   lastDailyRewardClaimedAt DateTime?
   isPremium Boolean @default(false)
+  premiumExpiresAt DateTime?
   lastActive DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

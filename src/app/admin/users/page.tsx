@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import ResetPasswordButton from '@/components/admin/ResetPasswordButton';
+import BanButton from '@/components/admin/BanButton';
 
 export default async function AdminUsersPage() {
   const user = await getCurrentUser();
@@ -35,7 +36,10 @@ export default async function AdminUsersPage() {
                   <p className="font-bold text-gray-800">{u.prenom} {u.nom} {u.isPremium && '👑'}</p>
                   <p className="text-sm text-gray-500">{u.email} • {u.universite} ({u.anneeEtude}ème année)</p>
                 </div>
+                <div className="flex flex-col md:flex-row gap-2 items-end">
                 <ResetPasswordButton userId={u.id} />
+                 <BanButton userId={u.id} isBanned={u.statut === 'BANNI'} />
+               </div>
               </div>
             ))}
           </div>

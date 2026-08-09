@@ -19,7 +19,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Cas introuvable" }, { status: 404 });
     }
 
-    const isCorrect = userAnswer === clinicalCase.correctAnswer;
+       // On nettoie le texte : on enlève les espaces au début/à la fin et on met tout en minuscules
+    const normalizeString = (str: string) => str.trim().toLowerCase();
+    const isCorrect = normalizeString(userAnswer) === normalizeString(clinicalCase.correctAnswer);
 
     // --- Calcul de l'XP ---
     let xpEarned = 0;
