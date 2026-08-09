@@ -52,18 +52,6 @@ export default function UpdateProfileForm({ currentPseudo, currentImageUrl, isPr
         <label className="block text-sm font-bold mb-2">Pseudo public</label>
         <input type="text" name="pseudo" defaultValue={currentPseudo || ''} placeholder="Dr. Stone" className={inputStyle} />
       </div>
-       {/* AJOUT DU CHAMP ANNÉE */}
-      <div>
-        <label className="block text-sm font-bold mb-2">Année d'étude</label>
-        <select name="anneeEtude" defaultValue={currentAnneeEtude || 1} className={inputStyle}>
-          <option value="1">1ère année</option>
-          <option value="2">2ème année</option>
-          <option value="3">3ème année</option>
-          <option value="4">4ème année</option>
-          <option value="5">5ème année</option>
-          <option value="6">6ème année</option>
-        </select>
-      </div>
       <div>
         <label className="block text-sm font-bold mb-2">Photo de profil</label>
         <div className="flex items-center gap-4 mb-2">
