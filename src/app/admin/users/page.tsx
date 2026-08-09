@@ -11,7 +11,17 @@ export default async function AdminUsersPage() {
 
   const students = await prisma.user.findMany({
     where: { role: 'ETUDIANT' },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    select: { 
+      id: true, 
+      prenom: true, 
+      nom: true, 
+      email: true, 
+      universite: true, 
+      anneeEtude: true, 
+      isPremium: true, 
+      statut: true 
+    }
   });
 
   return (
@@ -33,13 +43,16 @@ export default async function AdminUsersPage() {
             {students.map(u => (
               <div key={u.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-2xl gap-4">
                 <div>
-                  <p className="font-bold text-gray-800">{u.prenom} {u.nom} {u.isPremium && '👑'}</p>
+                  <p className="font-bold text-gray-800">
+                    {u.prenom} {u.nom} {u.isPremium && '👑'}
+                    {u.statut === 'BANNI' && <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">BANNI</span>}
+                  </p>
                   <p className="text-sm text-gray-500">{u.email} • {u.universite} ({u.anneeEtude}ème année)</p>
                 </div>
                 <div className="flex flex-col md:flex-row gap-2 items-end">
-                <ResetPasswordButton userId={u.id} />
-                 <BanButton userId={u.id} isBanned={u.statut === 'BANNI'} />
-               </div>
+                  <ResetPasswordButton userId={u.id} />
+                  <BanButton userId={u.id} isBanned={u.statut === 'BANNI'} />
+                </div>
               </div>
             ))}
           </div>
