@@ -1,5 +1,5 @@
 {
-  "background_color": "#107fec",
+  "background_color": "#ffffff",
   "description": "Plateforme intelligente de progression médicale",
   "dir": "ltr",
   "display": "standalone",
@@ -8,7 +8,7 @@
   "scope": "/",
   "short_name": "Dr. Stone Arena",
   "start_url": "/",
-  "theme_color": "#31bab3",
+  "theme_color": "#10b981",
   "icons": [
     {
       "src": "https://dr-stone-arena-k72t.vercel.app/icon-192.png",
@@ -22,5 +22,6 @@
       "is192x192": false
     }
   ],
+  "lang": "fr",
   "id": "com.drstonearena.app"
 }
