@@ -17,15 +17,11 @@ export async function POST(request: Request) {
   try {
     const { title, body } = await request.json();
 
-    // Récupérer tous les étudiants qui ont activé les notifications
+       // Récupérer tous les étudiants
     const users = await prisma.user.findMany({
-      where: { 
-        role: 'ETUDIANT', 
-        NOT: { pushSubscription: null } 
-      },
+      where: { role: 'ETUDIANT' },
       select: { pushSubscription: true }
     });
-
     const payload = JSON.stringify({ 
       title: title || "Dr. Stone Arena", 
       body: body || "Un nouveau cas clinique vient d'être publié !",
@@ -35,6 +31,8 @@ export async function POST(request: Request) {
     // Envoyer la notification à chaque téléphone
     let sentCount = 0;
     for (const u of users) {
+          if (!u.pushSubscription) continue; // 
+          
       try {
         await webpush.sendNotification(u.pushSubscription as any, payload);
         sentCount++;

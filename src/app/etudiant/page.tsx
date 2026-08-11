@@ -9,6 +9,7 @@ import DailyChallenge from '@/components/dashboard/DailyChallenge';
 import LongTermChallenges from '@/components/dashboard/LongTermChallenges';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import ThemeToggle from '@/components/dashboard/ThemeToggle';
+import PushNotificationManager from '@/components/dashboard/PushNotificationManager';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUser();
@@ -266,6 +267,8 @@ export default async function EtudiantDashboard() {
               </div>
             )}
 
+            <PushNotificationManager />
+          
             <LogoutButton />
           </div>
 
