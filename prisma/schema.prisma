@@ -36,6 +36,7 @@ model User {
   badges     UserBadge[] // <-- LIAISON AUX BADGES
   premiumRequests PremiumRequest[]
   notifications Notification[]
+  pushSubscription Json?
 
 }
 

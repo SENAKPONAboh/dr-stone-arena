@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import ValidateButton from '@/components/admin/ValidateButton';
 import Link from 'next/link';
 import LogoutButton from '@/components/dashboard/LogoutButton';
+import SendPushButton from '@/components/admin/SendPushButton';
 
 export default async function AdminDashboard() {
   const user = await getCurrentUser();
@@ -92,6 +93,10 @@ export default async function AdminDashboard() {
             <Link href="/admin/content" className="inline-block bg-emerald-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-emerald-600 transition-all">
               📚 Gérer les matières et chapitres
             </Link>
+             <Link href="/admin/users" className="inline-block bg-white text-blue-600 font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-gray-100 transition-all">
+              👥 Gérer les étudiants
+            </Link>
+            <SendPushButton />
           </div>
         </div>
 
