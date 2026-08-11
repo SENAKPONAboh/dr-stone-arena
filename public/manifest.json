@@ -1,25 +1,22 @@
 {
-  "name": "Dr. Stone Arena",
-  "short_name": "Dr. Stone",
-  "description": "Plateforme intelligente de progression médicale",
+  "name": "Dr stone Arena",
+  "short_name": "DSA",
+  "description": "\"Plateforme gamifiée d'entraînement médical pour réviser tes cas cliniques et progresser chaque jour.\"",
   "start_url": "/",
-  "scope": "/",
-  "display": "fullscreen",
-  "orientation": "portrait",
-  "background_color": "#0f172a",
-  "theme_color": "#10b981",
+  "display": "standalone",
+  "background_color": "#1b3bed",
+  "theme_color": "#42528e",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
+      "src": "https://py8fhxnkzwtsqdo9.public.blob.vercel-storage.com/front/favicon/vercel/android-chrome-192x192.png",
       "type": "image/png",
-      "purpose": "any"
+      "sizes": "192x192"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
+      "src": "https://py8fhxnkzwtsqdo9.public.blob.vercel-storage.com/front/favicon/vercel/android-chrome-512x512.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "id": "com.drstonearena.app"
 }
