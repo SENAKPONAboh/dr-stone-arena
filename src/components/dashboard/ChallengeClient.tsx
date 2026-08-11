@@ -155,12 +155,20 @@ export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
                   <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{clinicalCase.explanation}</p>
                 </div>
               )}
-              <button 
-                onClick={() => router.push('/etudiant')}
-                className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide transition-all"
-              >
-                Continuer
-              </button>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => window.location.href = '/etudiant/challenge'}
+                  className="w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide transition-all"
+                >
+                  Continuer le défi
+                </button>
+                <button 
+                  onClick={() => window.location.href = '/etudiant'}
+                  className="w-full py-2 text-gray-500 dark:text-gray-400 text-sm font-bold hover:text-blue-600 transition-all"
+                >
+                  Retour au tableau de bord
+                </button>
+              </div>
             </div>
           )}
         </div>

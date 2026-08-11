@@ -10,6 +10,7 @@ import LongTermChallenges from '@/components/dashboard/LongTermChallenges';
 import NotificationBell from '@/components/dashboard/NotificationBell';
 import ThemeToggle from '@/components/dashboard/ThemeToggle';
 import PushNotificationManager from '@/components/dashboard/PushNotificationManager';
+import HowItWorksModal from '@/components/dashboard/HowItWorksModal';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUser();
@@ -209,8 +210,8 @@ export default async function EtudiantDashboard() {
                 </div>
               )}
 
-              {/* Vignettes d'accès rapide */}
-              <div className="grid grid-cols-3 gap-3">
+                            {/* Vignettes d'accès rapide */}
+              <div className="grid grid-cols-4 gap-3">
                 <Link href="/etudiant/stats" className="bg-blue-50 dark:bg-slate-700/50 hover:bg-blue-100 dark:hover:bg-slate-700 border border-blue-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
                   <span className="text-2xl group-hover:scale-110 transition-transform">📊</span>
                   <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide text-center">Stats</span>
@@ -223,6 +224,7 @@ export default async function EtudiantDashboard() {
                   <span className="text-2xl group-hover:scale-110 transition-transform">👑</span>
                   <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300 uppercase tracking-wide text-center">Premium</span>
                 </Link>
+                <HowItWorksModal />
               </div>
             </div>
           </div>
