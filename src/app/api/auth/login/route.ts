@@ -24,10 +24,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Email ou mot de passe incorrect." }, { status: 401 });
     }
 
-    // Vérifier si le compte est validé par l'admin
-    if (user.statut === "EN_ATTENTE") {
-      return NextResponse.json({ error: "Votre compte est en attente de validation par l'administration." }, { status: 403 });
-    }
+    
+    
         if (user.statut === "BANNI") {
       return NextResponse.json({ error: "Votre compte a été banni par l'administration." }, { status: 403 });
     }

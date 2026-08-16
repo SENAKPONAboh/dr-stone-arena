@@ -211,19 +211,32 @@ export default async function EtudiantDashboard() {
               )}
 
                             {/* Vignettes d'accès rapide */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Link href="/etudiant/stats" className="bg-blue-50 dark:bg-slate-700/50 hover:bg-blue-100 dark:hover:bg-slate-700 border border-blue-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
                   <span className="text-2xl group-hover:scale-110 transition-transform">📊</span>
                   <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide text-center">Stats</span>
                 </Link>
+                
+                <Link href="/etudiant/profil" className="bg-indigo-50 dark:bg-slate-700/50 hover:bg-indigo-100 dark:hover:bg-slate-700 border border-indigo-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">👤</span>
+                  <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide text-center">Mon Profil</span>
+                </Link>
+
                 <Link href="/etudiant/history" className="bg-emerald-50 dark:bg-slate-700/50 hover:bg-emerald-100 dark:hover:bg-slate-700 border border-emerald-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
                   <span className="text-2xl group-hover:scale-110 transition-transform">📚</span>
                   <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wide text-center">Cours</span>
                 </Link>
+
+                <Link href="/etudiant/leaderboard" className="bg-purple-50 dark:bg-slate-700/50 hover:bg-purple-100 dark:hover:bg-slate-700 border border-purple-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">🏆</span>
+                  <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide text-center">Classement</span>
+                </Link>
+
                 <Link href="/etudiant/premium" className="bg-yellow-50 dark:bg-slate-700/50 hover:bg-yellow-100 dark:hover:bg-slate-700 border border-yellow-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
                   <span className="text-2xl group-hover:scale-110 transition-transform">👑</span>
                   <span className="text-xs font-bold text-yellow-700 dark:text-yellow-300 uppercase tracking-wide text-center">Premium</span>
                 </Link>
+
                 <HowItWorksModal />
               </div>
             </div>

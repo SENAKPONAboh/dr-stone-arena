@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         universite,
         faculte,
         anneeEtude: anneeEtude ? parseInt(anneeEtude) : null,
-        statut: "EN_ATTENTE", // Par défaut en attente
+                statut: "VALIDE", // <-- L'étudiant est validé automatiquement
       },
     });
 
