@@ -693,11 +693,10 @@ export async function GET() {
             },
           });
 
-          if (!existingChapter) {
+         if (!existingChapter) {
             await prisma.chapter.create({
               data: {
                 name: chapterTitle,
-                order: i + 1,
                 subjectId: subject.id,
               },
             });
