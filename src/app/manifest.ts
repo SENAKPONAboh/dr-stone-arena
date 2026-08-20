@@ -1,0 +1,25 @@
+import { MetadataRoute } from 'next';
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: 'Dr. Stone Arena',
+    short_name: 'Dr. Stone',
+    description: 'Plateforme intelligente de progression médicale',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#0f172a',
+    theme_color: '#10b981',
+    icons: [
+      {
+        src: '/icon-192.png',
+        sizes: '192x192',
+        type: 'image/png',
+      },
+      {
+        src: '/icon-512.png',
+        sizes: '512x512',
+        type: 'image/png',
+      },
+    ],
+  };
+}
