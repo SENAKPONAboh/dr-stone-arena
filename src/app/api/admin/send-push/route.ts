@@ -3,16 +3,18 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import webpush from 'web-push';
 
-// Configurer web-push avec tes clés
-webpush.setVapidDetails(
-  'mailto:contact@drstonearena.com', // Mets ton email ici
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+
 
 export async function POST(request: Request) {
   const admin = await getCurrentUser();
   if (!admin || admin.role !== 'ADMIN') return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+
+  // Configurer web-push avec les clés (au moment de l'envoi, pas au chargement du module)
+  webpush.setVapidDetails(
+    'mailto:contact@drstonearena.com',
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
+  );
 
   try {
     const { title, body } = await request.json();
