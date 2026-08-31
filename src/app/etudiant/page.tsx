@@ -11,6 +11,7 @@ import NotificationBell from '@/components/dashboard/NotificationBell';
 import ThemeToggle from '@/components/dashboard/ThemeToggle';
 import PushNotificationManager from '@/components/dashboard/PushNotificationManager';
 import HowItWorksModal from '@/components/dashboard/HowItWorksModal';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUser();
@@ -185,7 +186,7 @@ export default async function EtudiantDashboard() {
                 <p className="font-extrabold text-lg text-gray-800 dark:text-white mt-1">{grade}</p>
               </div>
               <div className="bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 px-4 py-2 rounded-xl font-bold text-sm">
-                {user.anneeEtude}ème Année
+                {getNiveauLabel(user.anneeEtude)}
               </div>
             </div>
             

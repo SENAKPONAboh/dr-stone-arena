@@ -4,6 +4,7 @@ import LogoutButton from '@/components/dashboard/LogoutButton';
 import Link from 'next/link';
 import UpdateProfileForm from '@/components/dashboard/UpdateProfileForm';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function ProfilPage() {
   const user = await getCurrentUser();
@@ -72,7 +73,7 @@ export default async function ProfilPage() {
 
           {/* Badges rapides */}
           <div className="flex justify-center gap-2 mt-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>{user.anneeEtude}ème Année</span>
+            <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>{getNiveauLabel(user.anneeEtude)}</span>
             <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>⭐ {user.xp} XP</span>
             <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-orange-500/20 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>🔥 {user.streak} Jours</span>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { NIVEAU_OPTIONS } from '@/lib/niveau';
 
 type Subject = { id: string; name: string };
 type Chapter = { id: string; name: string; subjectId: string };
@@ -63,7 +64,8 @@ export default function CaseForm({ subjects, chapters }: { subjects: Subject[], 
           <label className="block text-gray-700 text-sm font-bold mb-2">Matière</label>
           <select name="subjectId" required onChange={(e) => setSelectedSubjectId(e.target.value)} className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500">
             <option value="">Sélectionner...</option>
-            {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                          
+                           {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </div>
         <div>
@@ -76,12 +78,9 @@ export default function CaseForm({ subjects, chapters }: { subjects: Subject[], 
         <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">Année visée</label>
           <select name="anneeEtude" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500">
-            <option value="1">1ère année</option>
-            <option value="2">2ème année</option>
-            <option value="3">3ème année</option>
-            <option value="4">4ème année</option>
-            <option value="5">5ème année</option>
-            <option value="6">6ème année</option>
+                       {NIVEAU_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
         </div>
         <div>

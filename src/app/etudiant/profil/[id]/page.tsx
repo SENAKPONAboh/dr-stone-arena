@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -84,7 +85,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
           {/* Badges rapides (PAS D'EMAIL) */}
           <div className="flex justify-center gap-2 mt-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>{profileUser.anneeEtude}ème Année</span>
+            <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>{getNiveauLabel(profileUser.anneeEtude)}</span>
             <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>⭐ {profileUser.xp} XP</span>
             <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-orange-500/20 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>🔥 {profileUser.streak} Jours</span>
           </div>

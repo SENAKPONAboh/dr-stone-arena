@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { NIVEAU_OPTIONS } from '@/lib/niveau';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function RegisterPage() {
             <span className="text-4xl">🩺</span>
           </div>
           <h1 className="text-2xl font-extrabold text-gray-800">Créer ton compte</h1>
-          <p className="text-gray-500 mt-1 text-sm">Rejoins l'arène des étudiants en médecine.</p>
+          <p className="text-gray-500 mt-1 text-sm">Rejoins l'arène des étudiants en médecine et des médecins.</p>
         </div>
         
         {error && (
@@ -97,12 +98,9 @@ export default function RegisterPage() {
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-2">Année</label>
               <select id="anneeEtude" name="anneeEtude" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 font-medium">
-                <option value="1">1ère année</option>
-                <option value="2">2ème année</option>
-                <option value="3">3ème année</option>
-                <option value="4">4ème année</option>
-                <option value="5">5ème année</option>
-                <option value="6">6ème année</option>
+                              {NIVEAU_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
               </select>
             </div>
           </div>

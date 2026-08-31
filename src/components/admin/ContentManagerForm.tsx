@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { NIVEAU_OPTIONS, getNiveauLabel } from '@/lib/niveau';
 
 type Subject = { id: string; name: string; anneeEtude: number };
 
@@ -79,12 +80,9 @@ export default function ContentManagerForm({ subjects }: { subjects: Subject[] }
           <div>
             <label className="block text-gray-700 text-sm font-bold mb-2">Année d'étude</label>
             <select name="anneeEtude" required className={inputStyle}>
-              <option value="1">1ère année</option>
-              <option value="2">2ème année</option>
-              <option value="3">3ème année</option>
-              <option value="4">4ème année</option>
-              <option value="5">5ème année</option>
-              <option value="6">6ème année</option>
+              {NIVEAU_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
           <button type="submit" disabled={loadingSubject} className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl uppercase tracking-wide text-sm disabled:opacity-50">
@@ -106,7 +104,7 @@ export default function ContentManagerForm({ subjects }: { subjects: Subject[] }
             <select name="subjectId" required className={inputStyle}>
               <option value="">Sélectionner une matière...</option>
               {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.name} ({s.anneeEtude}ème)</option>
+                <option key={s.id} value={s.id}>{s.name} ({getNiveauLabel(s.anneeEtude)})</option>
               ))}
             </select>
           </div>

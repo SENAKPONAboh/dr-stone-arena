@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import ContentManagerForm from '@/components/admin/ContentManagerForm';
 import Link from 'next/link';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function AdminContentPage() {
   const user = await getCurrentUser();
@@ -46,7 +47,7 @@ export default async function AdminContentPage() {
         <div className="space-y-6">
           {Object.entries(subjectsByYear).map(([year, subs]) => (
             <div key={year} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-bold text-blue-600 mb-4">{year}ème Année</h3>
+              <h3 className="font-bold text-blue-600 mb-4">{getNiveauLabel(Number(year))}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {subs.map(s => (
                   <div key={s.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100">

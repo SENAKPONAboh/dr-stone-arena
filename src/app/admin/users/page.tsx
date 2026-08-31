@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import ResetPasswordButton from '@/components/admin/ResetPasswordButton';
 import BanButton from '@/components/admin/BanButton';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function AdminUsersPage() {
   const user = await getCurrentUser();
@@ -47,7 +48,7 @@ export default async function AdminUsersPage() {
                     {u.prenom} {u.nom} {u.isPremium && '👑'}
                     {u.statut === 'BANNI' && <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full">BANNI</span>}
                   </p>
-                  <p className="text-sm text-gray-500">{u.email} • {u.universite} ({u.anneeEtude}ème année)</p>
+                  <p className="text-sm text-gray-500">{u.email} • {u.universite} ({getNiveauLabel(u.anneeEtude)})</p>
                 </div>
                 <div className="flex flex-col md:flex-row gap-2 items-end">
                   <ResetPasswordButton userId={u.id} />

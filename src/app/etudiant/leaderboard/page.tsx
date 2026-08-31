@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function FullLeaderboardPage() {
   const user = await getCurrentUser();
@@ -62,7 +63,7 @@ export default async function FullLeaderboardPage() {
                         {u.pseudo || `${u.prenom} ${u.nom}`}
                         {u.isPremium && <span title="Premium">👑</span>}
                       </p>
-                      <p className="text-xs text-gray-400">{u.anneeEtude}ème année</p>
+                      <p className="text-xs text-gray-400">{getNiveauLabel(u.anneeEtude)}</p>
                     </div>
                   </Link>
 

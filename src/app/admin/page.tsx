@@ -5,6 +5,7 @@ import ValidateButton from '@/components/admin/ValidateButton';
 import Link from 'next/link';
 import LogoutButton from '@/components/dashboard/LogoutButton';
 import SendPushButton from '@/components/admin/SendPushButton';
+import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function AdminDashboard() {
   const user = await getCurrentUser();
@@ -66,7 +67,7 @@ export default async function AdminDashboard() {
                 <div key={u.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-2xl gap-4">
                   <div>
                     <p className="font-bold text-gray-800">{u.prenom} {u.nom}</p>
-                    <p className="text-sm text-gray-500">{u.email} • {u.universite} - {u.faculte} ({u.anneeEtude}ème année)</p>
+                    <p className="text-sm text-gray-500">{u.email} • {u.universite} - {u.faculte} ({getNiveauLabel(u.anneeEtude)})</p>
                   </div>
                   <ValidateButton userId={u.id} />
                 </div>
