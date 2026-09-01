@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { MAX_LIVES } from '@/lib/lives';
 
 export async function POST(request: Request) {
   try {
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
         universite,
         faculte,
         anneeEtude: anneeEtude ? parseInt(anneeEtude) : null,
+        lives: MAX_LIVES, // 10 vies dès l'inscription (le @default(5) du schéma reste documentaire)
                 statut: "VALIDE", // <-- L'étudiant est validé automatiquement
       },
     });

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { MAX_LIVES } from '@/lib/lives';
 
 export async function POST() {
   const user = await getCurrentUser();
@@ -21,9 +22,11 @@ export async function POST() {
       data: { chestAvailable: false, xp: { increment: reward.amount } }
     });
   } else {
+    // Plafonnement serveur : le coffre ne peut jamais faire dépasser MAX_LIVES
+    const newLives = Math.min(MAX_LIVES, user.lives + reward.amount);
     await prisma.user.update({
       where: { id: user.id },
-      data: { chestAvailable: false, lives: { increment: reward.amount } }
+      data: { chestAvailable: false, lives: newLives }
     });
   }
 

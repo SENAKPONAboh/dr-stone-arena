@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { MAX_LIVES } from '@/lib/lives';
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
     if (!isCorrect && user.lives > 0) {
       // S'il perd une vie, on enregistre l'heure (si ce n'est pas déjà fait récemment)
       // On met à jour l'heure seulement s'il était à plein de vies ou s'il n'avait pas de timer
-      if (user.lives === 5 || !user.lastLifeLostAt) {
+      if (user.lives >= MAX_LIVES || !user.lastLifeLostAt) {
         newLastLifeLostAt = new Date();
       }
     }

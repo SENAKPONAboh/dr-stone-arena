@@ -50,7 +50,7 @@ export default function HowItWorksModal() {
                 <span className="text-3xl flex-shrink-0">❤️</span>
                 <div>
                   <h3 className="font-bold text-gray-800 dark:text-white">Les Vies</h3>
-                  <p className="text-sm">Tu as 5 vies. Une mauvaise réponse t'en fait perdre une. Si tu n'as plus de vies, tu dois attendre qu'elles se régénèrent (ou passer Premium pour attendre moins longtemps !).</p>
+                  <p className="text-sm">Tu as 10 vies. Une mauvaise réponse t'en fait perdre une. Si tu n'as plus de vies, tu dois attendre qu'elles se régénèrent (ou passer Premium pour attendre moins longtemps !).</p>
                 </div>
               </div>
 
