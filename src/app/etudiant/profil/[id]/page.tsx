@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { getNiveauLabel } from '@/lib/niveau';
+import { getPlanLabel } from '@/lib/premium';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,6 +19,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       xp: true,
       streak: true,
       isPremium: true,
+      premiumTier: true,
       badges: { include: { badge: true } }
     }
   });
@@ -55,7 +57,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             <h1 className="font-extrabold text-xl">Profil Public</h1>
           </Link>
           {profileUser.isPremium && (
-            <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 Premium</span>
+            <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(profileUser.premiumTier)}</span>
           )}
         </div>
       </header>

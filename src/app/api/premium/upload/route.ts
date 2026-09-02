@@ -9,7 +9,14 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('receipt') as File;
-    
+    const tierRaw = formData.get('tier');
+    const tier = tierRaw ? parseInt(tierRaw as string) : null;
+
+    // Le plan doit être 1, 2 ou 3 (Premium I / II / III)
+    if (tier !== 1 && tier !== 2 && tier !== 3) {
+      return NextResponse.json({ error: "Plan Premium invalide" }, { status: 400 });
+    }
+
     if (!file) {
       return NextResponse.json({ error: "Aucun fichier envoyé" }, { status: 400 });
     }
@@ -33,6 +40,7 @@ export async function POST(request: Request) {
       data: {
         userId: user.id,
         receiptUrl: dataUri, // On stocke l'image sous forme de texte
+        tier: tier,
         status: 'EN_ATTENTE'
       }
     });

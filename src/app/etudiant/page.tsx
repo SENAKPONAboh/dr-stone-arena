@@ -28,13 +28,14 @@ export default async function EtudiantDashboard() {
   if (user.isPremium && user.premiumExpiresAt && new Date(user.premiumExpiresAt) < new Date()) {
     await prisma.user.update({
       where: { id: user.id },
-      data: { isPremium: false, premiumExpiresAt: null }
+      data: { isPremium: false, premiumTier: null, premiumExpiresAt: null }
     });
     user.isPremium = false;
+    user.premiumTier = null;
   }
 
   // --- Régénération des vies ---
-  const lifeData = calculateRegeneratedLives(user.lives, user.lastLifeLostAt, user.isPremium);
+  const lifeData = calculateRegeneratedLives(user.lives, user.lastLifeLostAt, user.premiumTier);
   if (lifeData.lives !== user.lives) {
     await prisma.user.update({
       where: { id: user.id },

@@ -29,6 +29,7 @@ model User {
   lastLifeLostAt DateTime?
   lastDailyRewardClaimedAt DateTime?
   isPremium Boolean @default(false)
+  premiumTier Int? // 1 = Premium I, 2 = Premium II, 3 = Premium III, null = non premium
   premiumExpiresAt DateTime?
   lastActive DateTime?
   createdAt  DateTime @default(now())
@@ -110,6 +111,7 @@ model PremiumRequest {
   userId     String
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   receiptUrl String
+  tier       Int? // plan demandé : 1, 2 ou 3
   status     String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE
   createdAt  DateTime @default(now())
 }

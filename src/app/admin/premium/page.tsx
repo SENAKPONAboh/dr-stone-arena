@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import ValidatePremiumButton from '@/components/admin/ValidatePremiumButton';
+import { getPlan, getPlanLabel } from '@/lib/premium';
 
 export default async function AdminPremiumPage() {
   const user = await getCurrentUser();
@@ -50,6 +51,7 @@ export default async function AdminPremiumPage() {
                 <div className="flex-1 flex flex-col">
                   <h3 className="text-lg font-bold text-gray-800">Demande de {req.user.prenom} {req.user.nom}</h3>
                   <p className="text-sm text-gray-500 mb-2">Email : {req.user.email}</p>
+                  <p className="text-sm text-gray-500 mb-2">Plan demandé : <span className="font-bold text-blue-600">{req.tier ? `${getPlanLabel(req.tier)} — ${getPlan(req.tier)?.priceLabel}` : 'Non précisé'}</span></p>
                   <p className="text-sm text-gray-500 mb-4">Date : {new Date(req.createdAt).toLocaleString('fr-FR')}</p>
                   
                   <div className="mt-auto flex gap-3">

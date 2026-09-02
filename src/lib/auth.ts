@@ -59,6 +59,7 @@ export async function getCurrentUser() {
       lives: true,
       chestAvailable: true,
       isPremium: true,
+      premiumTier: true,
       lastLifeLostAt: true,
       badges: { include: { badge: true } },
       notifications: true,

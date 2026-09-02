@@ -3,23 +3,23 @@
 export const MAX_LIVES = 10;
 
 // Intervalles de régénération (en millisecondes)
-// PREMIUM_I / II / III : préparés pour la phase Premium (branchement futur sur les tiers)
-// LEGACY_PREMIUM : comportement actuel des Premium (40 min), remplacé en phase Premium
 export const REGEN_INTERVALS = {
   FREE: 24 * 60 * 60 * 1000,        // 24 h — utilisateurs gratuits
-  LEGACY_PREMIUM: 40 * 60 * 1000,   // 40 min — Premium actuel (transition)
-  PREMIUM_I: 12 * 60 * 60 * 1000,   // 12 h — futur Premium I
-  PREMIUM_II: 6 * 60 * 60 * 1000,   // 6 h  — futur Premium II
-  PREMIUM_III: 60 * 60 * 1000,      // 1 h  — futur Premium III
+  PREMIUM_I: 12 * 60 * 60 * 1000,   // 12 h — Premium I
+  PREMIUM_II: 6 * 60 * 60 * 1000,   // 6 h  — Premium II
+  PREMIUM_III: 60 * 60 * 1000,      // 1 h  — Premium III
 } as const;
 
-// Point d'entrée unique : renvoie l'intervalle applicable à un utilisateur.
-// Aujourd'hui : booléen isPremium. En phase Premium : remplacer par le tier (une seule ligne à changer).
-export function getRegenIntervalMs(isPremium: boolean): number {
-  return isPremium ? REGEN_INTERVALS.LEGACY_PREMIUM : REGEN_INTERVALS.FREE;
+// Point d'entrée unique : renvoie l'intervalle applicable selon le niveau Premium.
+// null (ou valeur inconnue) = utilisateur gratuit → 24 h.
+export function getRegenIntervalMs(premiumTier: number | null): number {
+  if (premiumTier === 3) return REGEN_INTERVALS.PREMIUM_III;
+  if (premiumTier === 2) return REGEN_INTERVALS.PREMIUM_II;
+  if (premiumTier === 1) return REGEN_INTERVALS.PREMIUM_I;
+  return REGEN_INTERVALS.FREE;
 }
 
-export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: Date | null, isPremium: boolean) {
+export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: Date | null, premiumTier: number | null) {
   // Si l'étudiant a déjà le max de vies, on ne change rien
   if (currentLives >= MAX_LIVES) {
     return { lives: MAX_LIVES, updatedAt: null };
@@ -30,8 +30,8 @@ export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: 
     return { lives: currentLives, updatedAt: null };
   }
 
-  // On choisit le bon minuteur selon l'abonnement
-  const regenTime = getRegenIntervalMs(isPremium);
+  // On choisit le bon minuteur selon le niveau Premium
+  const regenTime = getRegenIntervalMs(premiumTier);
 
   const now = new Date();
   const diffMs = now.getTime() - new Date(lastLifeLostAt).getTime();
