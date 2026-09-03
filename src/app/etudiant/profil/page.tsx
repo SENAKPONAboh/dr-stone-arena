@@ -5,6 +5,8 @@ import Link from 'next/link';
 import UpdateProfileForm from '@/components/dashboard/UpdateProfileForm';
 import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 import { getNiveauLabel } from '@/lib/niveau';
+import { getPlanLabel } from '@/lib/premium';
+import { getDuelGrade } from '@/lib/duel';
 
 export default async function ProfilPage() {
   const user = await getCurrentUser();
@@ -16,6 +18,10 @@ export default async function ProfilPage() {
   if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
   if (user.xp >= 3000) grade = "🥇 Clinicien Or";
   if (user.xp >= 6000) grade = "💎 Expert Clinicien";
+    const { current: duelGrade, next: nextDuelGrade } = getDuelGrade(user.duelsWon);
+  const duelProgress = nextDuelGrade
+    ? Math.min(100, Math.round(((user.duelsWon - duelGrade.minWins) / (nextDuelGrade.minWins - duelGrade.minWins)) * 100))
+    : 100;
 
   // Styles conditionnels selon l'abonnement
   const cardStyle = user.isPremium 
@@ -42,7 +48,7 @@ export default async function ProfilPage() {
             <h1 className="font-extrabold text-xl">Mon Profil</h1>
           </a>
           {user.isPremium && (
-            <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 Premium</span>
+            <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(user.premiumTier)}</span>
           )}
         </div>
       </header>
@@ -94,6 +100,27 @@ export default async function ProfilPage() {
           <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">🔒 Sécurité (Changer de mot de passe)</h3>
             <ChangePasswordForm />
+          </div>
+
+          {/* Statistiques de Duel */}
+          <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
+            <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>
+            <div className="flex justify-center flex-wrap gap-2 mb-4">
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>🏆 {user.duelsWon} Victoires</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-red-500/20 text-red-300' : 'bg-red-50 text-red-600'}`}>❌ {user.duelsLost} Défaites</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${user.isPremium ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>🏟️ {user.pointsArena} pts</span>
+            </div>
+            <p className={`text-sm font-bold mb-2 ${user.isPremium ? 'text-white' : 'text-gray-800'}`}>{duelGrade.icon} Grade : {duelGrade.name}</p>
+            {nextDuelGrade ? (
+              <>
+                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                  <div className="h-2.5 rounded-full bg-gradient-to-r from-red-400 to-orange-500 transition-all" style={{ width: `${duelProgress}%` }}></div>
+                </div>
+                <p className="text-xs text-gray-400">{user.duelsWon}/{nextDuelGrade.minWins} victoires → {nextDuelGrade.icon} {nextDuelGrade.name}</p>
+              </>
+            ) : (
+              <p className="text-xs text-gray-400">👑 Grade maximum atteint — Légende Arena !</p>
+            )}
           </div>
 
           {/* Affichage des Badges */}

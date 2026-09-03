@@ -3,6 +3,9 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
+import { getDuelGrade } from '@/lib/duel';
+import ChallengeDuelButton from '@/components/duel/ChallengeDuelButton';
+import { getCurrentUser } from '@/lib/auth';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,11 +23,19 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       streak: true,
       isPremium: true,
       premiumTier: true,
+      duelsWon: true,
+      duelsLost: true,
+      pointsArena: true,
       badges: { include: { badge: true } }
     }
   });
 
   if (!profileUser) redirect('/etudiant');
+
+  const user = await getCurrentUser();
+  if (!user) redirect('/login');
+
+  const { current: duelGrade } = getDuelGrade(profileUser.duelsWon);
 
   // Calcul du grade
   let grade = "🥉 Clinicien Bronze";
@@ -96,6 +107,23 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           <div className={`mt-6 p-4 rounded-2xl ${profileUser.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
             <p className={`text-xs font-bold uppercase tracking-wider ${profileUser.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
             <p className={`text-xl mt-1 ${gradeStyle}`}>{grade}</p>
+          </div>
+
+          {/* Statistiques de Duel + Défier */}
+          <div className={`mt-8 text-left border-t pt-6 ${profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
+            <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>
+            <div className="flex justify-center flex-wrap gap-2 mb-4">
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>🏆 {profileUser.duelsWon} Victoires</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-red-500/20 text-red-300' : 'bg-red-50 text-red-600'}`}>❌ {profileUser.duelsLost} Défaites</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>{duelGrade.icon} {duelGrade.name}</span>
+            </div>
+            <ChallengeDuelButton
+              targetId={profileUser.id}
+              targetName={profileUser.pseudo || `${profileUser.prenom} ${profileUser.nom}`}
+              sameLevel={user.anneeEtude === profileUser.anneeEtude}
+              myTier={user.premiumTier ?? null}
+              targetPremium={profileUser.isPremium}
+            />
           </div>
 
           {/* Affichage des Badges */}

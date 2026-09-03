@@ -34,11 +34,17 @@ model User {
   lastActive DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  attempts   Attempt[]
-  badges     UserBadge[] // <-- LIAISON AUX BADGES
+    attempts   Attempt[]
+  badges     UserBadge[]
   premiumRequests PremiumRequest[]
   notifications Notification[]
   pushSubscription Json?
+  duelsWon    Int @default(0)
+  duelsLost   Int @default(0)
+  pointsArena Int @default(0)
+  duelsRequested    Duel[] @relation("DuelRequester")
+  duelsOpposed      Duel[] @relation("DuelOpponent")
+  arenaRewardClaims ArenaRewardClaim[]
 
 }
 
@@ -123,4 +129,40 @@ model Notification {
   icon      String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+model Duel {
+  id                 String    @id @default(cuid())
+  requesterId        String
+  requester          User      @relation("DuelRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  opponentId         String
+  opponent           User      @relation("DuelOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+  anneeEtude         Int
+  caseIds            String[]
+  status             String    @default("EN_ATTENTE") // EN_ATTENTE, ACCEPTE, TERMINE, REFUSE, EXPIRE
+  winnerId           String?
+  requesterAnswers   Json?
+  opponentAnswers    Json?
+  requesterScore     Int?
+  opponentScore      Int?
+  requesterTime      Int?
+  opponentTime       Int?
+  requesterCompleted Boolean   @default(false)
+  opponentCompleted  Boolean   @default(false)
+  expiresAt          DateTime
+  playDeadline       DateTime?
+  acceptedAt         DateTime?
+  finalizedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model ArenaRewardClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  threshold Int
+  xpGranted Int
+  claimedAt DateTime @default(now())
+
+  @@unique([userId, threshold])
 }

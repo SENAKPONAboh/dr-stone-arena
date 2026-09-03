@@ -12,6 +12,9 @@ import ThemeToggle from '@/components/dashboard/ThemeToggle';
 import PushNotificationManager from '@/components/dashboard/PushNotificationManager';
 import HowItWorksModal from '@/components/dashboard/HowItWorksModal';
 import { getNiveauLabel } from '@/lib/niveau';
+import UserSearchBar from '@/components/dashboard/UserSearchBar';
+import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
+import { expireStaleDuels } from '@/lib/duel-server';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUser();
@@ -46,6 +49,17 @@ export default async function EtudiantDashboard() {
     });
     user.lives = lifeData.lives;
   }
+
+  // Expiration paresseuse des duels (invitations > 24h, duels non joués > 24h)
+  await expireStaleDuels(user.id);
+
+  // Invitations de duel reçues (pour la bannière géante)
+  const duelInvites = await prisma.duel.findMany({
+    where: { opponentId: user.id, status: 'EN_ATTENTE' },
+    include: { requester: { select: { id: true, prenom: true, nom: true, pseudo: true, imageUrl: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 5
+  });
 
   const attemptsCount = await prisma.attempt.count({
     where: { userId: user.id }
@@ -169,6 +183,21 @@ export default async function EtudiantDashboard() {
           <span className="font-bold text-sm uppercase tracking-wide">Communauté WhatsApp</span>
         </a>
 
+        {duelInvites.length > 0 && (
+          <div className="mb-6">
+            <DuelInvitationBanner invites={duelInvites.map(d => ({
+              id: d.id,
+              requesterName: d.requester.pseudo || `${d.requester.prenom} ${d.requester.nom}`,
+              requesterImage: d.requester.imageUrl,
+              expiresAt: d.expiresAt.toISOString()
+            }))} />
+          </div>
+        )}
+
+        <div className="mb-6">
+          <UserSearchBar />
+        </div>
+
         <DailyChallenge attemptsToday={attemptsToday} claimed={dailyClaimed} />
         <LongTermChallenges weeklyCases={weeklyCases} monthlyXp={monthlyXp} />
         
@@ -232,6 +261,11 @@ export default async function EtudiantDashboard() {
                 <Link href="/etudiant/leaderboard" className="bg-purple-50 dark:bg-slate-700/50 hover:bg-purple-100 dark:hover:bg-slate-700 border border-purple-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
                   <span className="text-2xl group-hover:scale-110 transition-transform">🏆</span>
                   <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide text-center">Classement</span>
+                </Link>
+
+                <Link href="/etudiant/duel" className="bg-red-50 dark:bg-slate-700/50 hover:bg-red-100 dark:hover:bg-slate-700 border border-red-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
+                  <span className="text-2xl group-hover:scale-110 transition-transform">⚔️</span>
+                  <span className="text-xs font-bold text-red-700 dark:text-red-300 uppercase tracking-wide text-center">Duels</span>
                 </Link>
 
                 <Link href="/etudiant/premium" className="bg-yellow-50 dark:bg-slate-700/50 hover:bg-yellow-100 dark:hover:bg-slate-700 border border-yellow-100 dark:border-slate-600 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 transition-all group hover:shadow-md">
