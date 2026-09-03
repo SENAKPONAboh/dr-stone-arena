@@ -4,16 +4,29 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { getNiveauLabel } from '@/lib/niveau';
 
-export default async function FullLeaderboardPage() {
+export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const user = await getCurrentUser();
   if (!user || user.role !== 'ETUDIANT') redirect('/login');
 
-  // Récupérer TOUS les étudiants validés, triés par XP (du plus haut au plus bas)
+  // Onglet : "global" par défaut, "niveau" pour le classement de son niveau
+  const { scope } = await searchParams;
+  const isGlobal = scope !== 'niveau';
+
+  // --- Classement GLOBAL : tous les étudiants validés, triés par XP ---
+  // --- Classement NIVEAU : seulement ceux du même niveau ---
+  const where = {
+    role: 'ETUDIANT',
+    statut: 'VALIDE',
+    ...(isGlobal ? {} : { anneeEtude: user.anneeEtude })
+  };
+
   const allUsers = await prisma.user.findMany({
-    where: { role: 'ETUDIANT', statut: 'VALIDE' },
+    where,
     orderBy: { xp: 'desc' },
     select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, anneeEtude: true }
   });
+
+  const myLevelLabel = user.anneeEtude ? getNiveauLabel(user.anneeEtude) : null;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -32,8 +45,33 @@ export default async function FullLeaderboardPage() {
       <main className="max-w-3xl mx-auto px-4 mt-6">
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
           
+          {/* Onglets Global / Mon niveau */}
+          <div className="flex gap-3 mb-6">
+            <Link
+              href="/etudiant/leaderboard"
+              className={`flex-1 py-2.5 text-center font-bold rounded-2xl text-sm uppercase tracking-wide transition-all ${isGlobal ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            >
+              🌍 Global
+            </Link>
+            <Link
+              href="/etudiant/leaderboard?scope=niveau"
+              className={`flex-1 py-2.5 text-center font-bold rounded-2xl text-sm uppercase tracking-wide transition-all ${!isGlobal ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+            >
+              🎓 {myLevelLabel ? `Mon niveau (${myLevelLabel})` : 'Mon niveau'}
+            </Link>
+          </div>
+
+          {/* Mode niveau sans niveau défini */}
+          {!isGlobal && !user.anneeEtude && (
+            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center mb-4">
+              <div className="text-4xl mb-2">🎓</div>
+              <p className="font-bold text-yellow-700">Niveau non défini</p>
+              <p className="text-sm text-yellow-600 mt-1">Ton compte n'a pas de niveau associé, le classement par niveau n'est pas disponible.</p>
+            </div>
+          )}
+
           {allUsers.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Aucun étudiant inscrit pour le moment.</p>
+            <p className="text-center text-gray-500 py-8">Aucun étudiant {isGlobal ? 'inscrit' : 'dans ton niveau'} pour le moment.</p>
           ) : (
             <div className="space-y-2">
               {allUsers.map((u, index) => (

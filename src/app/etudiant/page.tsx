@@ -80,6 +80,20 @@ export default async function EtudiantDashboard() {
   });
   const userRank = usersAhead + 1;
 
+  // --- Calcul du Classement dans son NIVEAU ---
+  let userRankLevel: number | null = null;
+  if (user.anneeEtude) {
+    const aheadInLevel = await prisma.user.count({
+      where: {
+        role: 'ETUDIANT',
+        statut: 'VALIDE',
+        anneeEtude: user.anneeEtude,
+        xp: { gt: user.xp }
+      }
+    });
+    userRankLevel = aheadInLevel + 1;
+  }
+
   // --- Calculs des Défis ---
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -287,10 +301,16 @@ export default async function EtudiantDashboard() {
               </Link>
             </div>
             
-            <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl p-3 mb-4 flex items-center justify-between border border-emerald-100 dark:border-emerald-800">
+            <div className="bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl p-3 mb-2 flex items-center justify-between border border-emerald-100 dark:border-emerald-800">
               <span className="font-bold text-emerald-700 dark:text-emerald-400 text-sm">Ton rang</span>
               <span className="font-extrabold text-emerald-700 dark:text-emerald-400 text-lg">#{userRank}</span>
             </div>
+            {userRankLevel && (
+              <Link href="/etudiant/leaderboard?scope=niveau" className="bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-3 mb-4 flex items-center justify-between border border-blue-100 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                <span className="font-bold text-blue-700 dark:text-blue-300 text-sm">Dans ton niveau</span>
+                <span className="font-extrabold text-blue-700 dark:text-blue-300 text-lg">#{userRankLevel}</span>
+              </Link>
+            )}
 
             <div className="space-y-2 flex-grow">
               {topUsers.map((u, index) => (
