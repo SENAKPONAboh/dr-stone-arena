@@ -22,6 +22,7 @@ model User {
   faculte    String?
   anneeEtude Int?
   statut     String   @default("EN_ATTENTE")
+  onboardingCompleted Boolean @default(false)
   xp         Int      @default(0)
   streak     Int      @default(0)
   lives      Int      @default(5) // <-- AJOUT DES VIES

@@ -95,6 +95,15 @@ export default async function ProfilPage() {
             <h3 className="font-bold mb-4">Modifier mes informations</h3>
             <UpdateProfileForm currentPseudo={user.pseudo} currentImageUrl={user.imageUrl} isPremium={user.isPremium} currentAnneeEtude={user.anneeEtude} />
           </div>
+                    {/* Accès rapides */}
+          <div className="grid grid-cols-2 gap-3">
+            <Link href="/etudiant/stats" className={`py-3 font-bold rounded-2xl text-center text-sm transition-all ${user.isPremium ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
+              📊 Mes statistiques
+            </Link>
+            <Link href="/etudiant/history" className={`py-3 font-bold rounded-2xl text-center text-sm transition-all ${user.isPremium ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}>
+              📚 Mon historique
+            </Link>
+          </div>
 
           {/* Changement de mot de passe */}
           <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>

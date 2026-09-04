@@ -51,6 +51,7 @@ export async function getCurrentUser() {
       xp: true,
       streak: true,
       statut: true,
+      onboardingCompleted: true,
       universite: true,
       faculte: true,
       pseudo: true,
