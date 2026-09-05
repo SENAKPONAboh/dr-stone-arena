@@ -10,10 +10,20 @@ export default async function PremiumPage() {
 
   if (!user) redirect('/login');
 
-  // Vérifier si l'étudiant a déjà une demande en attente
+  // Moyens de paiement ACTIFS uniquement, dans l'ordre défini par l'admin
+  const activeMethods = await prisma.paymentMethod.findMany({
+    where: { isActive: true },
+    orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }],
+    select: {
+      id: true, name: true, icon: true, isManual: true,
+      beneficiaryName: true, paymentIdentifier: true, instructions: true
+    }
+  });
+
+  // Demande en attente éventuelle (avec son plan et son moyen)
   const pendingRequest = await prisma.premiumRequest.findFirst({
     where: { userId: user.id, status: 'EN_ATTENTE' },
-    select: { tier: true }
+    include: { paymentMethod: { select: { name: true, icon: true } } }
   });
 
   return (
@@ -40,7 +50,13 @@ export default async function PremiumPage() {
         <PremiumPlans
           isPremium={user.isPremium}
           premiumTier={user.premiumTier ?? null}
-          pendingTier={pendingRequest ? (pendingRequest.tier ?? null) : null}
+          pendingRequest={pendingRequest ? {
+            tier: pendingRequest.tier ?? null,
+            amount: pendingRequest.amount ?? null,
+            methodName: pendingRequest.paymentMethod?.name ?? null,
+            methodIcon: pendingRequest.paymentMethod?.icon ?? null,
+          } : null}
+          activeMethods={activeMethods}
         />
 
         <div className="mt-12 max-w-3xl mx-auto">
