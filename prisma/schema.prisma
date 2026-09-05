@@ -114,13 +114,16 @@ model UserBadge {
   @@id([userId, badgeId])
 }
 model PremiumRequest {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  receiptUrl String
-  tier       Int? // plan demandé : 1, 2 ou 3
-  status     String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE
-  createdAt  DateTime @default(now())
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receiptUrl      String
+  tier            Int? // plan demandé : 1, 2 ou 3
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  amount          Int? // montant payé (snapshot du prix du tier au moment de la demande)
+  status          String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE
+  createdAt       DateTime @default(now())
 }
 model Notification {
   id        String   @id @default(cuid())
@@ -166,4 +169,19 @@ model ArenaRewardClaim {
   claimedAt DateTime @default(now())
 
   @@unique([userId, threshold])
+}
+model PaymentMethod {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  isActive          Boolean  @default(false)
+  isManual          Boolean  @default(true)
+  beneficiaryName   String?
+  paymentIdentifier String?
+  instructions      String?
+  icon              String?
+  displayOrder      Int      @default(99)
+  provider          String?
+  premiumRequests   PremiumRequest[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
