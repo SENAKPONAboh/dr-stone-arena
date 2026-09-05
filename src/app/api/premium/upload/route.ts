@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { PREMIUM_PLANS } from '@/lib/premium';
+import { uploadReceipt } from '@/lib/supabase-storage';
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Plan Premium invalide" }, { status: 400 });
     }
 
-    // ===== Montant calculé UNIQUEMENT côté serveur (source unique) =====
+    // ===== Montant calculé UNIQUEMENT côté serveur =====
     const plan = PREMIUM_PLANS.find(p => p.tier === tier);
     if (!plan) {
       return NextResponse.json({ error: "Plan Premium introuvable" }, { status: 400 });
@@ -41,7 +42,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ce moyen de paiement n'est plus disponible" }, { status: 400 });
     }
     if (!paymentMethod.isManual) {
-      // Les moyens automatisés (carte) passeront par leur propre flux plus tard
       return NextResponse.json({ error: "Ce moyen de paiement ne nécessite pas de reçu manuel" }, { status: 400 });
     }
 
@@ -64,19 +64,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "L'image dépasse 4 Mo." }, { status: 400 });
     }
 
-    // (Stockage — base64 pour l'instant ; Supabase Storage à l'Étape 4)
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const base64String = buffer.toString('base64');
-    const dataUri = `data:${file.type};base64,${base64String}`;
+    // ===== Upload dans Supabase Storage (bucket privé "receipts") =====
+    let receiptPath: string;
+    try {
+      receiptPath = await uploadReceipt(file, user.id);
+    } catch (e: any) {
+      return NextResponse.json({ error: e.message || "Erreur lors du téléversement du reçu." }, { status: 500 });
+    }
 
-    // ===== Enregistrement de la demande complète =====
+    // ===== Enregistrement de la demande =====
+    // Upload d'ABORD, création de la demande ENSUITE : pas de demande orpheline si l'upload échoue.
+    // (Si la création échoue, un fichier isolé peut rester dans le bucket — sans risque ni accès public.)
     const requestRecord = await prisma.premiumRequest.create({
       data: {
         userId: user.id,
-        receiptUrl: dataUri,
+        receiptUrl: receiptPath, // chemin Storage, plus de base64
         tier: tier,
         paymentMethodId: paymentMethodId,
-        amount: plan.price, // snapshot serveur du montant
+        amount: plan.price,
         status: 'EN_ATTENTE'
       }
     });
