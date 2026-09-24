@@ -54,7 +54,7 @@ export default function PwaRegistrar() {
 
   // Le bouton flottant qui apparaîtra si Chrome permet l'installation
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 animate-bounce">
+    <div className="fixed bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 z-50 animate-bounce">
       <button 
         onClick={handleInstallClick}
         className="bg-emerald-500 text-white font-extrabold py-3 px-6 rounded-full shadow-2xl flex items-center gap-2 hover:bg-emerald-600 transition-all"

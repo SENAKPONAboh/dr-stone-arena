@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dr-stone-arena-v1';
+const CACHE_NAME = 'dr-stone-arena-v2';
 const urlsToCache = [
   '/',
   '/login',
@@ -15,7 +15,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activation et nettoyage des anciens caches
+// Activation : nettoyage des anciens caches puis prise de contrôle immédiate
 self.addEventListener('activate', (event) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -27,23 +27,27 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Stratégie de cache : Network First (Network falling back to Cache)
+// Stratégie Network First : le réseau a TOUJOURS la priorité (version à jour),
+// le cache ne sert qu'en hors-ligne. Les requêtes non-GET (POST, PUT, DELETE)
+// ne sont jamais interceptées — les soumissions API passent directement.
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
+
   event.respondWith(
     fetch(event.request).catch(() => {
       return caches.match(event.request);
     })
   );
 });
+
 // Gestion des notifications Push
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  
+
   const options = {
     body: data.body || 'Un nouveau défi t\'attend !',
     icon: '/icon-192.png',
