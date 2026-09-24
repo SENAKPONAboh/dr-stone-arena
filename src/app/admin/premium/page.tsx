@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ValidatePremiumButton from '@/components/admin/ValidatePremiumButton';
 import { getPlan, getPlanLabel } from '@/lib/premium';
 import { getReceiptSignedUrl } from '@/lib/supabase-storage';
+import ReceiptImage from '@/components/admin/ReceiptImage';
 
 export default async function AdminPremiumPage() {
   const user = await getCurrentUser();
@@ -61,9 +62,7 @@ export default async function AdminPremiumPage() {
               <div key={req.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/3">
                   {req.displayUrl ? (
-                    <a href={req.displayUrl} target="_blank" rel="noopener noreferrer">
-                      <img src={req.displayUrl} alt="Reçu de paiement" className="w-full h-auto rounded-2xl border-2 border-gray-100 object-cover hover:opacity-90 transition-opacity" />
-                    </a>
+                    <ReceiptImage src={req.displayUrl} />
                   ) : (
                     <div className="w-full py-8 bg-red-50 border-2 border-red-100 rounded-2xl text-center">
                       <p className="text-red-500 font-bold text-sm">⚠️ Reçu illisible</p>

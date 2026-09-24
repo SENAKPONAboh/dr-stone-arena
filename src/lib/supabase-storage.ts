@@ -73,8 +73,12 @@ export async function getReceiptSignedUrl(path: string): Promise<string | null> 
     }
 
     const data = await res.json();
-    // data = { signedURL: "/storage/v1/object/sign/receipts/..." }
-    return `${url}${data.signedURL}`;
+    // data = { signedURL: "/object/sign/receipts/...?token=..." } (chemin RELATIF)
+    // L'URL complète doit être : {SUPABASE_URL}/storage/v1{signedURL}
+    const signed = String(data.signedURL || '');
+    if (!signed) return null;
+    if (signed.startsWith('http')) return signed; // déjà complète (selon versions d'API)
+    return `${url}/storage/v1${signed.startsWith('/') ? signed : '/' + signed}`;
   } catch (e) {
     console.error('Erreur getReceiptSignedUrl:', e);
     return null;
