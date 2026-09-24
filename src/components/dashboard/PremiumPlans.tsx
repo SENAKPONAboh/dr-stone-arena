@@ -27,6 +27,7 @@ export default function PremiumPlans({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+    const [converting, setConverting] = useState(false);
 
   const canSubscribe = !isPremium && pendingRequest === null;
   const selectedPlan = getPlan(selectedTier);
@@ -47,6 +48,34 @@ export default function PremiumPlans({
 
     if (!file || file.size === 0) {
       setError('Veuillez sélectionner une image de reçu.');
+      setLoading(false);
+      return;
+    }
+
+    // ===== Conversion HEIC (photos iPhone) en JPEG — lisible partout =====
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' ||
+      file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif');
+
+    let finalFile: Blob = file;
+    if (isHeic) {
+      setConverting(true);
+      try {
+        const heic2any = (await import('heic2any')).default;
+        const converted = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+        finalFile = Array.isArray(converted) ? converted[0] : converted;
+        formData.set('receipt', finalFile, 'recu.jpg');
+      } catch (err) {
+        setError("Impossible de convertir cette photo HEIC. Essaie plutôt une capture d'écran.");
+        setLoading(false);
+        setConverting(false);
+        return;
+      }
+      setConverting(false);
+    }
+
+    // Vérifier la taille APRÈS conversion (le JPEG converti est plus lourd que le HEIC)
+    if (finalFile.size > 4 * 1024 * 1024) {
+      setError("L'image dépasse 4 Mo. Réduis-la ou prends une capture d'écran.");
       setLoading(false);
       return;
     }
@@ -241,7 +270,7 @@ export default function PremiumPlans({
                 disabled={loading}
                 className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-extrabold rounded-2xl uppercase tracking-wide text-sm transition-all disabled:opacity-50"
               >
-                {loading ? 'Envoi en cours...' : 'Envoyer ma demande'}
+                {converting ? 'Conversion de la photo...' : loading ? 'Envoi en cours...' : 'Envoyer ma demande'}
               </button>
               {error && <p className="text-red-500 text-xs text-center">{error}</p>}
             </form>
