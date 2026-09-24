@@ -9,10 +9,12 @@ const BUCKET = 'receipts';
 const SIGNED_URL_DURATION = 3600; // 1 heure
 
 function getCredentials() {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
     throw new Error('Configuration de stockage manquante (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
   }
-  return { url: SUPABASE_URL, key: SERVICE_ROLE_KEY };
+  return { url, key };
 }
 
 /**
