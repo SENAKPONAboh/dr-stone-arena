@@ -122,7 +122,9 @@ model PremiumRequest {
   paymentMethodId String?
   paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
   amount          Int? // montant payé (snapshot du prix du tier au moment de la demande)
-  status          String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE
+  status          String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE, REMBOURSE
+  validatedAt     DateTime? // date d'encaissement confirmé (remplie par la validation admin)
+  refundedAt      DateTime? // date de remboursement éventuel
   createdAt       DateTime @default(now())
 }
 model Notification {
@@ -184,4 +186,21 @@ model PaymentMethod {
   premiumRequests   PremiumRequest[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+model Expense {
+  id          String   @id @default(cuid())
+  amount      Int      // en FCFA
+  category    String   // DEVELOPPEMENT, INFRASTRUCTURE, MARKETING, PUBLICITE, OUTILS_IA, RECOMPENSES, COMMISSIONS, MAINTENANCE, DOMAINE, AUTRE
+  description String?
+  vendor      String?  // fournisseur
+  spentAt     DateTime // date réelle de la dépense
+  createdAt   DateTime @default(now())
+}
+
+model FinancialGoal {
+  id        String   @id @default(cuid())
+  type      String   // CA_MENSUEL | PREMIUM_ACTIFS | MRR | RESULTAT_ESTIME
+  target    Int
+  period    String   // "2026-01" (mensuel) | "2026" (annuel)
+  createdAt DateTime @default(now())
 }

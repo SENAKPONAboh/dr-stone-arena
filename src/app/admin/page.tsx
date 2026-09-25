@@ -94,8 +94,8 @@ export default async function AdminDashboard() {
             <Link href="/admin/content" className="inline-block bg-emerald-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-emerald-600 transition-all">
               📚 Gérer les matières et chapitres
             </Link>
-                        <Link href="/admin/payment-methods" className="inline-block bg-indigo-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-indigo-600 transition-all">
-              💳 Gérer les moyens de paiement
+                        <Link href="/admin/finance" className="inline-block bg-amber-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-amber-600 transition-all">
+              💰 Centre Financier
             </Link>
             <SendPushButton />
           </div>
