@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   
   // Sécurité : seul un admin peut créer un cas
   if (!user || user.role !== 'ADMIN') {

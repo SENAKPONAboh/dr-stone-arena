@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 import { CASES_PER_DUEL, INVITE_EXPIRY_HOURS, getDailyDuelQuota } from '@/lib/duel';
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   try {

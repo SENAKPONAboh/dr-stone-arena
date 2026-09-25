@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
@@ -12,20 +12,13 @@ import { expireStaleDuels } from '@/lib/duel-server';
 import { getDailyDuelQuota, getDuelGrade } from '@/lib/duel';
 
 export default async function ArenePage() {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user || user.role !== 'ETUDIANT') redirect('/login');
 
   await expireStaleDuels(user.id);
 
-  // --- Données défis ---
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const attemptsToday = await prisma.attempt.count({
-    where: { userId: user.id, createdAt: { gte: todayStart } }
-  });
-  const dailyClaimed = user.lastDailyRewardClaimedAt
-    ? new Date(user.lastDailyRewardClaimedAt).setHours(0, 0, 0, 0) === todayStart.getTime()
-    : false;
 
   const now = new Date();
   const dayOfWeek = now.getDay() || 7;
@@ -33,32 +26,33 @@ export default async function ArenePage() {
   mondayStart.setHours(0, 0, 0, 0);
   mondayStart.setDate(now.getDate() - (dayOfWeek - 1));
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const weeklyCases = await prisma.attempt.count({
-    where: { userId: user.id, createdAt: { gte: mondayStart } }
-  });
-  const monthlyAttempts = await prisma.attempt.findMany({
-    where: { userId: user.id, createdAt: { gte: monthStart } },
-    select: { xpEarned: true }
-  });
-  const monthlyXp = monthlyAttempts.reduce((sum, a) => sum + a.xpEarned, 0);
 
-  // --- Données duels ---
-  const invites = await prisma.duel.findMany({
-    where: { opponentId: user.id, status: 'EN_ATTENTE' },
-    include: { requester: { select: { id: true, prenom: true, nom: true, pseudo: true, imageUrl: true } } },
-    orderBy: { createdAt: 'desc' }
-  });
-  const activeDuels = await prisma.duel.count({
-    where: { status: 'ACCEPTE', OR: [{ requesterId: user.id }, { opponentId: user.id }] }
-  });
+  // === LECTURES parallélisées ===
+  const [attemptsToday, weeklyCases, monthlyAttempts, invites, activeDuels, quotaUsed] = await Promise.all([
+    prisma.attempt.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
+    prisma.attempt.count({ where: { userId: user.id, createdAt: { gte: mondayStart } } }),
+    prisma.attempt.findMany({ where: { userId: user.id, createdAt: { gte: monthStart } }, select: { xpEarned: true } }),
+    prisma.duel.findMany({
+      where: { opponentId: user.id, status: 'EN_ATTENTE' },
+      include: { requester: { select: { id: true, prenom: true, nom: true, pseudo: true, imageUrl: true } } },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.duel.count({ where: { status: 'ACCEPTE', OR: [{ requesterId: user.id }, { opponentId: user.id }] } }),
+    prisma.duel.count({
+      where: {
+        OR: [{ requesterId: user.id }, { opponentId: user.id }],
+        status: { in: ['ACCEPTE', 'TERMINE'] },
+        acceptedAt: { gte: todayStart }
+      }
+    }),
+  ]);
+
+  const monthlyXp = monthlyAttempts.reduce((sum, a) => sum + a.xpEarned, 0);
+  const dailyClaimed = user.lastDailyRewardClaimedAt
+    ? new Date(user.lastDailyRewardClaimedAt).setHours(0, 0, 0, 0) === todayStart.getTime()
+    : false;
+
   const quotaMax = getDailyDuelQuota(user.premiumTier);
-  const quotaUsed = await prisma.duel.count({
-    where: {
-      OR: [{ requesterId: user.id }, { opponentId: user.id }],
-      status: { in: ['ACCEPTE', 'TERMINE'] },
-      acceptedAt: { gte: todayStart }
-    }
-  });
   const { current: duelGrade } = getDuelGrade(user.duelsWon);
   const nameOf = (u: { prenom: string; nom: string; pseudo: string | null }) => u.pseudo || `${u.prenom} ${u.nom}`;
 

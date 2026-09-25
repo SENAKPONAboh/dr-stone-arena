@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 
 // Champs autorisés à la création / modification
 const ALLOWED_FIELDS = ['name', 'isActive', 'isManual', 'beneficiaryName', 'paymentIdentifier', 'instructions', 'icon', 'displayOrder', 'provider'];
 
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user || user.role !== 'ADMIN') {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
@@ -19,7 +19,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user || user.role !== 'ADMIN') {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user || user.role !== 'ADMIN') {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
   }

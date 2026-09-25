@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 import webpush from 'web-push';
 
 
 
 export async function POST(request: Request) {
-  const admin = await getCurrentUser();
+  const admin = await getCurrentUserCore();
   if (!admin || admin.role !== 'ADMIN') return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
 
   // Configurer web-push avec les clés (au moment de l'envoi, pas au chargement du module)

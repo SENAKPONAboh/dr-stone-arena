@@ -7,6 +7,7 @@ export default function ResetPasswordButton({ userId }: { userId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const handleReset = async () => {
     if (!confirm("Voulez-vous vraiment réinitialiser le mot de passe de cet étudiant à 'DrStone2024' ?")) return;
@@ -40,7 +41,7 @@ export default function ResetPasswordButton({ userId }: { userId: string }) {
         disabled={loading}
         className="text-xs bg-orange-50 text-orange-600 font-bold py-1 px-3 rounded-lg border border-orange-100 hover:bg-orange-100 transition-all disabled:opacity-50"
       >
-        {loading ? '...' : '🔑 Reset MDP'}
+        {loading ? '⏳ Réinitialisation...' : '🔑 Reset MDP'}
       </button>
       {message && <span className="text-xs text-emerald-500 font-bold">{message}</span>}
     </div>

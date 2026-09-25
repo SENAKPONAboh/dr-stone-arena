@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 import { POINTS_PER_WIN } from '@/lib/duel';
 import { checkDuelBadges } from '@/lib/duel-server';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   try {

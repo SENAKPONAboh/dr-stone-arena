@@ -74,3 +74,43 @@ export async function getCurrentUser() {
 
   return user;
 }
+// Version allégée pour les routes API et layouts : mêmes vérifications de session,
+// mais SANS les relations (badges, notifications) ni les champs lourds (imageUrl, pushSubscription).
+export async function getCurrentUserCore() {
+  const sessionCookie = (await cookies()).get('session')?.value;
+  if (!sessionCookie) return null;
+
+  const payload = await verifySession(sessionCookie);
+  if (!payload || !payload.userId) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId as string },
+    select: {
+      id: true,
+      nom: true,
+      prenom: true,
+      email: true,
+      pseudo: true,
+      role: true,
+      statut: true,
+      anneeEtude: true,
+      xp: true,
+      streak: true,
+      lives: true,
+      chestAvailable: true,
+      lastLifeLostAt: true,
+      lastDailyRewardClaimedAt: true,
+      lastActive: true,
+      isPremium: true,
+      premiumTier: true,
+      premiumExpiresAt: true,
+      duelsWon: true,
+      duelsLost: true,
+      pointsArena: true,
+      onboardingCompleted: true,
+      createdAt: true,
+    }
+  });
+
+  return user;
+}

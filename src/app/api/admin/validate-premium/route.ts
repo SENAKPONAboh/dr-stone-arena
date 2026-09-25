@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
 
   if (!user || user.role !== 'ADMIN') {
     return NextResponse.json({ error: "Non autorisé" }, { status: 403 });

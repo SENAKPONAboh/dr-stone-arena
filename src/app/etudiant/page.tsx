@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import { calculateRegeneratedLives } from '@/lib/lives';
@@ -9,7 +9,7 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
 
 export default async function EtudiantDashboard() {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserCore();
   if (!user || user.role !== 'ETUDIANT') redirect('/login');
   if (user.statut !== 'VALIDE') redirect('/login?error=non_valide');
 
@@ -40,45 +40,47 @@ export default async function EtudiantDashboard() {
   // Expiration des duels
   await expireStaleDuels(user.id);
 
-  const attemptsCount = await prisma.attempt.count({ where: { userId: user.id } });
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
 
+  // === LECTURES parallélisées (gain de latence) ===
+  const [attemptsCount, usersAhead, aheadInLevel, attemptsToday, duelInvites, activeDuels, topUsers] = await Promise.all([
+    prisma.attempt.count({ where: { userId: user.id } }),
+    prisma.user.count({ where: { role: 'ETUDIANT', statut: 'VALIDE', xp: { gt: user.xp } } }),
+    user.anneeEtude
+      ? prisma.user.count({ where: { role: 'ETUDIANT', statut: 'VALIDE', anneeEtude: user.anneeEtude, xp: { gt: user.xp } } })
+      : Promise.resolve(null),
+    prisma.attempt.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
+    prisma.duel.findMany({
+      where: { opponentId: user.id, status: 'EN_ATTENTE' },
+      include: { requester: { select: { id: true, prenom: true, nom: true, pseudo: true, imageUrl: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: 5
+    }),
+    prisma.duel.count({ where: { status: 'ACCEPTE', OR: [{ requesterId: user.id }, { opponentId: user.id }] } }),
+    user.anneeEtude
+      ? prisma.user.findMany({
+          where: { role: 'ETUDIANT', statut: 'VALIDE', anneeEtude: user.anneeEtude },
+          orderBy: { xp: 'desc' },
+          take: 3,
+          select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true }
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const userRank = usersAhead + 1;
+  const userRankLevel = aheadInLevel !== null ? aheadInLevel + 1 : null;
+
+  // Grades et helpers (restaurés)
   let grade = "🥉 Clinicien Bronze";
   if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
   if (user.xp >= 3000) grade = "🥇 Clinicien Or";
   if (user.xp >= 6000) grade = "💎 Expert Clinicien";
 
-  // Rangs global + niveau
-  const usersAhead = await prisma.user.count({
-    where: { role: 'ETUDIANT', statut: 'VALIDE', xp: { gt: user.xp } }
-  });
-  const userRank = usersAhead + 1;
-  let userRankLevel: number | null = null;
-  if (user.anneeEtude) {
-    const aheadInLevel = await prisma.user.count({
-      where: { role: 'ETUDIANT', statut: 'VALIDE', anneeEtude: user.anneeEtude, xp: { gt: user.xp } }
-    });
-    userRankLevel = aheadInLevel + 1;
-  }
+  const { current: duelGrade } = getDuelGrade(user.duelsWon);
+  const nameOf = (u: { prenom: string; nom: string; pseudo: string | null }) => u.pseudo || `${u.prenom} ${u.nom}`;
 
-  // Défi du jour (aperçu)
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const attemptsToday = await prisma.attempt.count({
-    where: { userId: user.id, createdAt: { gte: todayStart } }
-  });
-
-  // Duels (aperçu)
-  const duelInvites = await prisma.duel.findMany({
-    where: { opponentId: user.id, status: 'EN_ATTENTE' },
-    include: { requester: { select: { id: true, prenom: true, nom: true, pseudo: true, imageUrl: true } } },
-    orderBy: { createdAt: 'desc' },
-    take: 5
-  });
-  const activeDuels = await prisma.duel.count({
-    where: { status: 'ACCEPTE', OR: [{ requesterId: user.id }, { opponentId: user.id }] }
-  });
-
-  // Notifications intelligentes (conservées)
+  // Notifications intelligentes (conservées — write conditionnel après les lectures)
   if (attemptsToday === 0) {
     const todayNotifExists = await prisma.notification.findFirst({
       where: { userId: user.id, createdAt: { gte: todayStart }, message: { contains: "défi quotidien" } }
@@ -95,25 +97,11 @@ export default async function EtudiantDashboard() {
     }
   }
 
-  // Top 3 du niveau
-  const topUsers = user.anneeEtude
-    ? await prisma.user.findMany({
-        where: { role: 'ETUDIANT', statut: 'VALIDE', anneeEtude: user.anneeEtude },
-        orderBy: { xp: 'desc' },
-        take: 3,
-        select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true }
-      })
-    : [];
-
-  const { current: duelGrade } = getDuelGrade(user.duelsWon);
-  const nameOf = (u: { prenom: string; nom: string; pseudo: string | null }) => u.pseudo || `${u.prenom} ${u.nom}`;
-
   // === PRÉSENTATION (refonte hub) ===
   const cardClass = premium
     ? 'bg-slate-800/60 backdrop-blur-xl border border-yellow-400/20 text-white'
     : 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-800 dark:text-white';
   const labelClass = premium ? 'text-white/50' : 'text-gray-400 dark:text-gray-500';
-  const valueClass = premium ? 'text-white' : 'text-gray-800 dark:text-white';
 
   return (
     <div className="space-y-6">
