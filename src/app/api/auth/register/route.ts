@@ -6,7 +6,7 @@ import { MAX_LIVES } from '@/lib/lives';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nom, prenom, email, password, role, pays, universite, faculte, anneeEtude } = body;
+    const { nom, prenom, email, password, role, pays, universite, faculte, anneeEtude, ambassadorCode } = body;
 
     // Vérifier si l'email existe déjà
     const userExists = await prisma.user.findUnique({
@@ -15,6 +15,20 @@ export async function POST(request: Request) {
 
     if (userExists) {
       return NextResponse.json({ error: "Cet email est déjà utilisé." }, { status: 400 });
+    }
+
+    // ===== Validation du code ambassadeur (AVANT la création du compte) =====
+    let referredById: string | null = null;
+    if (ambassadorCode && ambassadorCode.trim() !== '') {
+      const ambassador = await prisma.ambassador.findFirst({
+        where: { referralCode: { equals: ambassadorCode.trim(), mode: 'insensitive' } },
+      });
+
+      if (!ambassador || ambassador.status !== 'ACTIF') {
+        return NextResponse.json({ error: "Code ambassadeur invalide." }, { status: 400 });
+      }
+
+      referredById = ambassador.id;
     }
 
     // Hasher le mot de passe
@@ -33,6 +47,7 @@ export async function POST(request: Request) {
         faculte,
         anneeEtude: anneeEtude ? parseInt(anneeEtude) : null,
         lives: MAX_LIVES, // 10 vies dès l'inscription (le @default(5) du schéma reste documentaire)
+        referredById, // attribution ambassadeur — VERROUILLÉE (jamais modifiable côté client)
                 statut: "VALIDE", // <-- L'étudiant est validé automatiquement
       },
     });

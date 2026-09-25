@@ -76,6 +76,11 @@ export default async function ProfilPage() {
             {user.pseudo || `${user.prenom} ${user.nom}`}
           </h2>
           <p className={user.isPremium ? "text-white/60" : "text-gray-500"}>{user.email}</p>
+          {user.pays && (
+            <p className={`text-sm mt-1 ${user.isPremium ? 'text-white/50' : 'text-gray-400'}`}>
+              🌍 {user.pays}{user.universite ? ` · 🏫 ${user.universite}` : ''}
+            </p>
+          )}
 
           {/* Badges rapides */}
           <div className="flex justify-center gap-2 mt-4">

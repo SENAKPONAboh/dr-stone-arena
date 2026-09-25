@@ -53,6 +53,7 @@ export async function getCurrentUser() {
       statut: true,
       onboardingCompleted: true,
       universite: true,
+      pays: true,
       faculte: true,
       pseudo: true,
       imageUrl: true,

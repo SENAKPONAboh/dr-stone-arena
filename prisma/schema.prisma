@@ -39,6 +39,7 @@ model User {
   badges     UserBadge[]
   premiumRequests PremiumRequest[]
   notifications Notification[]
+  ambassadorCommissions AmbassadorCommission[] @relation("CommissionPayer")
   pushSubscription Json?
   duelsWon    Int @default(0)
   duelsLost   Int @default(0)
@@ -46,6 +47,9 @@ model User {
   duelsRequested    Duel[] @relation("DuelRequester")
   duelsOpposed      Duel[] @relation("DuelOpponent")
   arenaRewardClaims ArenaRewardClaim[]
+  referredById   String?
+  referredBy     Ambassador? @relation("ReferredBy", fields: [referredById], references: [id], onDelete: SetNull)
+  ambassadorProfile Ambassador? @relation("AmbassadorUser")
 
 }
 
@@ -121,6 +125,7 @@ model PremiumRequest {
   tier            Int? // plan demandé : 1, 2 ou 3
   paymentMethodId String?
   paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  commissions     AmbassadorCommission[]
   amount          Int? // montant payé (snapshot du prix du tier au moment de la demande)
   status          String   @default("EN_ATTENTE") // EN_ATTENTE, VALIDE, REJETE, REMBOURSE
   validatedAt     DateTime? // date d'encaissement confirmé (remplie par la validation admin)
@@ -203,4 +208,44 @@ model FinancialGoal {
   target    Int
   period    String   // "2026-01" (mensuel) | "2026" (annuel)
   createdAt DateTime @default(now())
+}
+model Ambassador {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation("AmbassadorUser", fields: [userId], references: [id], onDelete: Cascade)
+  referralCode   String   @unique
+  status         String   @default("EN_ATTENTE") // EN_ATTENTE | ACTIF | SUSPENDU
+  commissionRate Int      @default(10) // % appliqué aux paiements de ses référés
+  country        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  commissions    AmbassadorCommission[]
+  payouts        AmbassadorPayout[]
+  referredUsers  User[]   @relation("ReferredBy")
+}
+
+model AmbassadorCommission {
+  id                String   @id @default(cuid())
+  ambassadorId      String
+  ambassador        Ambassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  premiumRequestId  String   @unique // ANTI-DOUBLON : une commission par transaction, impossible d'en créer deux
+  premiumRequest    PremiumRequest @relation(fields: [premiumRequestId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User     @relation("CommissionPayer", fields: [userId], references: [id], onDelete: Cascade)
+  amount            Int      // montant de la commission (calculé à la création, figé)
+  status            String   @default("EN_ATTENTE") // EN_ATTENTE | PAYEE | ANNULEE
+  paidAt            DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model AmbassadorPayout {
+  id           String   @id @default(cuid())
+  ambassadorId String
+  ambassador   Ambassador @relation(fields: [ambassadorId], references: [id], onDelete: Cascade)
+  amount       Int      // montant total versé
+  note         String?  // référence de versement
+  paidAt       DateTime
+  createdAt    DateTime @default(now())
 }

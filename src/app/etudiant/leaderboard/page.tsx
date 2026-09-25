@@ -8,29 +8,31 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
   const user = await getCurrentUser();
   if (!user || user.role !== 'ETUDIANT') redirect('/login');
 
-  // Onglet : "global" par défaut, "niveau" pour le classement de son niveau
   const { scope } = await searchParams;
-  const isGlobal = scope !== 'niveau';
+  const isGlobal = !scope || scope === 'global';
+  const isLevel = scope === 'niveau';
+  const isCountry = scope === 'pays';
 
-  // --- Classement GLOBAL : tous les étudiants validés, triés par XP ---
-  // --- Classement NIVEAU : seulement ceux du même niveau ---
   const where = {
     role: 'ETUDIANT',
     statut: 'VALIDE',
-    ...(isGlobal ? {} : { anneeEtude: user.anneeEtude })
+    ...(isLevel ? { anneeEtude: user.anneeEtude } : {}),
+    ...(isCountry ? { pays: user.pays } : {}),
   };
 
   const allUsers = await prisma.user.findMany({
     where,
     orderBy: { xp: 'desc' },
-    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, anneeEtude: true }
+    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, anneeEtude: true, universite: true }
   });
 
-  const myLevelLabel = user.anneeEtude ? getNiveauLabel(user.anneeEtude) : null;
+  const tabStyle = (active: boolean) => `py-2.5 px-2 text-center font-bold rounded-2xl text-xs sm:text-sm uppercase tracking-wide transition-all ${active
+    ? 'bg-blue-500 text-white shadow-md'
+    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
-      
+
       <header className="bg-white border-b-2 border-gray-100">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
           <Link href="/etudiant" className="text-gray-600 hover:text-gray-800">
@@ -38,31 +40,29 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </Link>
-          <h1 className="font-extrabold text-xl text-gray-800">Classement Général 🏆</h1>
+          <h1 className="font-extrabold text-xl text-gray-800">Classement 🏆</h1>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 mt-6">
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-          
-          {/* Onglets Global / Mon niveau */}
-          <div className="flex gap-3 mb-6">
-            <Link
-              href="/etudiant/leaderboard"
-              className={`flex-1 py-2.5 text-center font-bold rounded-2xl text-sm uppercase tracking-wide transition-all ${isGlobal ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-            >
-              🌍 Global
-            </Link>
-            <Link
-              href="/etudiant/leaderboard?scope=niveau"
-              className={`flex-1 py-2.5 text-center font-bold rounded-2xl text-sm uppercase tracking-wide transition-all ${!isGlobal ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-            >
-              🎓 {myLevelLabel ? `Mon niveau (${myLevelLabel})` : 'Mon niveau'}
-            </Link>
+
+          {/* ===== Onglets : Global | Niveau | Pays ===== */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            <Link href="/etudiant/leaderboard" className={tabStyle(isGlobal)}>🌍 Global</Link>
+            <Link href="/etudiant/leaderboard?scope=niveau" className={tabStyle(isLevel)}>🎓 Mon niveau</Link>
+            <Link href="/etudiant/leaderboard?scope=pays" className={tabStyle(isCountry)}>🚩 Mon pays</Link>
           </div>
 
-          {/* Mode niveau sans niveau défini */}
-          {!isGlobal && !user.anneeEtude && (
+          {/* Filtre actif */}
+          <p className="text-xs text-gray-400 mb-4 text-center">
+            {isGlobal && 'Tous les étudiants, tous pays, tous niveaux'}
+            {isLevel && (user.anneeEtude ? `Étudiants de ton niveau : ${getNiveauLabel(user.anneeEtude)}` : '')}
+            {isCountry && (user.pays ? `Étudiants de : ${user.pays}` : '')}
+          </p>
+
+          {/* Cas : niveau non défini */}
+          {isLevel && !user.anneeEtude && (
             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center mb-4">
               <div className="text-4xl mb-2">🎓</div>
               <p className="font-bold text-yellow-700">Niveau non défini</p>
@@ -70,24 +70,33 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
             </div>
           )}
 
+          {/* Cas : pays non renseigné */}
+          {isCountry && !user.pays && (
+            <div className="bg-yellow-50 border-2 border-yellow-200 rounded-2xl p-6 text-center mb-4">
+              <div className="text-4xl mb-2">🚩</div>
+              <p className="font-bold text-yellow-700">Pays non renseigné</p>
+              <p className="text-sm text-yellow-600 mt-1">Ton compte n'a pas de pays associé, le classement par pays n'est pas disponible.</p>
+            </div>
+          )}
+
           {allUsers.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Aucun étudiant {isGlobal ? 'inscrit' : 'dans ton niveau'} pour le moment.</p>
+            <p className="text-center text-gray-500 py-8">
+              Aucun étudiant {isGlobal ? 'inscrit' : isLevel ? 'dans ton niveau' : user.pays ? `en ${user.pays}` : 'à afficher'} pour le moment.
+            </p>
           ) : (
             <div className="space-y-2">
               {allUsers.map((u, index) => (
                 <div key={u.id} className={`flex items-center gap-4 p-3 rounded-2xl transition-all ${u.id === user.id ? 'bg-blue-50 border-2 border-blue-200 scale-[1.02]' : 'bg-gray-50 border border-gray-100'}`}>
-                  
-                  {/* Rang */}
+
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-extrabold text-lg flex-shrink-0 ${
-                    index === 0 ? 'bg-yellow-100 text-yellow-600' : 
-                    index === 1 ? 'bg-gray-200 text-gray-600' : 
-                    index === 2 ? 'bg-orange-100 text-orange-600' : 
+                    index === 0 ? 'bg-yellow-100 text-yellow-600' :
+                    index === 1 ? 'bg-gray-200 text-gray-600' :
+                    index === 2 ? 'bg-orange-100 text-orange-600' :
                     'bg-white text-gray-400 border border-gray-200'
                   }`}>
                     {index + 1}
                   </div>
 
-                  {/* Photo + Pseudo (Cliquable) */}
                   <Link href={`/etudiant/profil/${u.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                     {u.imageUrl ? (
                       <img src={u.imageUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
@@ -101,11 +110,12 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                         {u.pseudo || `${u.prenom} ${u.nom}`}
                         {u.isPremium && <span title="Premium">👑</span>}
                       </p>
-                      <p className="text-xs text-gray-400">{getNiveauLabel(u.anneeEtude)}</p>
+                      <p className="text-xs text-gray-400 truncate">
+                        {getNiveauLabel(u.anneeEtude)}{u.universite ? ` · 🏫 ${u.universite}` : ''}
+                      </p>
                     </div>
                   </Link>
 
-                  {/* XP */}
                   <div className="text-right flex-shrink-0">
                     <p className="font-extrabold text-gray-800">⭐ {u.xp}</p>
                     <p className="text-xs text-gray-400">XP</p>
