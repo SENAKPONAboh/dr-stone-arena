@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hasAmbassador, setHasAmbassador] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -104,6 +105,48 @@ export default function RegisterPage() {
               </select>
             </div>
           </div>
+
+          {/* Question ambassadeur */}
+          <div className="pt-2">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Es-tu venu grâce à un ambassadeur Doctor Stone Arena ?
+            </label>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setHasAmbassador(false)}
+                className={`flex-1 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${!hasAmbassador
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
+              >
+                ○ Non
+              </button>
+              <button
+                type="button"
+                onClick={() => setHasAmbassador(true)}
+                className={`flex-1 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${hasAmbassador
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
+              >
+                ○ Oui
+              </button>
+            </div>
+          </div>
+
+          {hasAmbassador && (
+            <div>
+              <label className="block text-gray-700 text-sm font-bold mb-2">Code de ton ambassadeur</label>
+              <input
+                id="ambassadorCode"
+                name="ambassadorCode"
+                type="text"
+                required
+                placeholder="Ex: DSA-MARIE01"
+                className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400 font-medium uppercase tracking-wide"
+              />
+              <p className="text-xs text-gray-400 mt-1">Le code t'a été communiqué par ton ambassadeur.</p>
+            </div>
+          )}
 
           <button type="submit" disabled={loading} className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md shadow-blue-300 transition-all uppercase tracking-wide mt-4 disabled:opacity-50">
             {loading ? 'Création...' : "Rejoindre l'arène"}
