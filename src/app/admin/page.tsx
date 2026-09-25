@@ -97,6 +97,9 @@ export default async function AdminDashboard() {
                         <Link href="/admin/finance" className="inline-block bg-amber-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-amber-600 transition-all">
               💰 Centre Financier
             </Link>
+            <Link href="/admin/ambassadors" className="inline-block bg-teal-500 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-teal-600 transition-all">
+              🤝 Gérer les ambassadeurs
+            </Link>
             <SendPushButton />
           </div>
         </div>
