@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { getNiveauLabel } from '@/lib/niveau';
+import { getCountryFlag } from '@/lib/country-flags';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const user = await getCurrentUser();
@@ -23,7 +24,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
   const allUsers = await prisma.user.findMany({
     where,
     orderBy: { xp: 'desc' },
-    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, anneeEtude: true, universite: true }
+    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, anneeEtude: true, pays: true, universite: true }
   });
 
   const tabStyle = (active: boolean) => `py-2.5 px-2 text-center font-bold rounded-2xl text-xs sm:text-sm uppercase tracking-wide transition-all ${active
@@ -51,14 +52,14 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
           <div className="grid grid-cols-3 gap-3 mb-6">
             <Link href="/etudiant/leaderboard" className={tabStyle(isGlobal)}>🌍 Global</Link>
             <Link href="/etudiant/leaderboard?scope=niveau" className={tabStyle(isLevel)}>🎓 Mon niveau</Link>
-            <Link href="/etudiant/leaderboard?scope=pays" className={tabStyle(isCountry)}>🚩 Mon pays</Link>
+            <Link href="/etudiant/leaderboard?scope=pays" className={tabStyle(isCountry)}>{getCountryFlag(user.pays)} Mon pays</Link>
           </div>
 
           {/* Filtre actif */}
           <p className="text-xs text-gray-400 mb-4 text-center">
             {isGlobal && 'Tous les étudiants, tous pays, tous niveaux'}
             {isLevel && (user.anneeEtude ? `Étudiants de ton niveau : ${getNiveauLabel(user.anneeEtude)}` : '')}
-            {isCountry && (user.pays ? `Étudiants de : ${user.pays}` : '')}
+            {isCountry && (user.pays ? `Étudiants de : ${getCountryFlag(user.pays)} ${user.pays}` : '')}
           </p>
 
           {/* Cas : niveau non défini */}
@@ -111,7 +112,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                         {u.isPremium && <span title="Premium">👑</span>}
                       </p>
                       <p className="text-xs text-gray-400 truncate">
-                        {getNiveauLabel(u.anneeEtude)}{u.universite ? ` · 🏫 ${u.universite}` : ''}
+                        {getNiveauLabel(u.anneeEtude)}{u.pays ? ` · ${getCountryFlag(u.pays)} ${u.pays}` : ''}{u.universite ? ` · 🏫 ${u.universite}` : ''}
                       </p>
                     </div>
                   </Link>
