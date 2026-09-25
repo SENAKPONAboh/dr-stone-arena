@@ -21,10 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Demande introuvable" }, { status: 404 });
     }
 
-    // Mettre à jour la demande
+    // Mettre à jour la demande (date d'encaissement enregistrée à la validation)
     await prisma.premiumRequest.update({
       where: { id: requestId },
-      data: { status: action }
+      data: { status: action, ...(action === 'VALIDE' ? { validatedAt: new Date() } : {}) }
     });
 
     // Si validé, activer le Premium (plan demandé) pendant 30 jours
