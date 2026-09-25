@@ -4,11 +4,14 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { PREMIUM_PLANS, getPlanLabel } from '@/lib/premium';
 import ExpenseManager from '@/components/admin/finance/ExpenseManager';
+import GoalManager from '@/components/admin/finance/GoalManager';
+import ProjectionSimulator from '@/components/admin/finance/ProjectionSimulator';
 import { EXPENSE_CATEGORIES } from '@/lib/expense-categories';
+import { GOAL_TYPES } from '@/lib/goal-types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions';
+type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions' | 'objectifs' | 'projections';
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'globale', label: 'Vue globale', icon: '💰' },
@@ -19,6 +22,8 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'depenses', label: 'Dépenses', icon: '💸' },
   { key: 'tresorerie', label: 'Trésorerie', icon: '💧' },
   { key: 'transactions', label: 'Transactions', icon: '🧾' },
+  { key: 'objectifs', label: 'Objectifs', icon: '🎯' },
+  { key: 'projections', label: 'Projections', icon: '🔮' },
 ];
 
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string; status?: string; method?: string; tier?: string; period?: string; page?: string }> }) {
@@ -50,7 +55,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const monthsCount = [6, 12, 24].includes(parseInt(monthsParam || '')) ? parseInt(monthsParam!) : 12;
 
   // ===== Requêtes parallèles =====
-  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList] = await Promise.all([
+  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList, financialGoals] = await Promise.all([
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
     prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true, premiumExpiresAt: { lt: now } } }),
     prisma.premiumRequest.count({ where: { status: 'VALIDE', amount: null } }),
@@ -64,6 +69,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     prisma.expense.aggregate({ _sum: { amount: true } }),
     prisma.paymentMethod.findMany({ orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }] }),
     prisma.expense.findMany({ orderBy: { spentAt: 'desc' }, select: { id: true, amount: true, category: true, description: true, vendor: true, spentAt: true } }),
+    prisma.financialGoal.findMany({ orderBy: { createdAt: 'desc' } }),
   ]);
 
   // ===== Données dérivées =====
@@ -254,6 +260,30 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
       default: return { cls: 'bg-gray-100 text-gray-400', label: s };
     }
   };
+
+  // ============================================================
+  // F5 : OBJECTIFS & PROJECTIONS
+  // ============================================================
+  const monthPeriodKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const yearPeriodKey = String(now.getFullYear());
+
+  const goalsWithProgress = financialGoals.map(g => {
+    const isMonthly = /^\d{4}-\d{2}$/.test(g.period);
+    const isCurrentPeriod = isMonthly ? g.period === monthPeriodKey : g.period === yearPeriodKey;
+    let current: number | null = null;
+    if (isCurrentPeriod) {
+      switch (g.type) {
+        case 'CA': current = isMonthly ? caMonth : caYear; break;
+        case 'PREMIUM_ACTIFS': current = activePremium; break;
+        case 'MRR': current = mrr; break;
+        case 'RESULTAT_ESTIME': current = isMonthly ? (caMonth - expensesMonth) : (caYear - expensesYear); break;
+      }
+    }
+    const progressPct = current !== null && g.target > 0 ? Math.min(100, Math.round((current / g.target) * 100)) : null;
+    return { id: g.id, type: g.type, target: g.target, period: g.period, current, progressPct };
+  });
+
+  const avgPanier = activePremium > 0 ? Math.round(mrr / activePremium) : 1500;
 
   // ============================================================
   // RENDU
@@ -787,6 +817,30 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 </div>
               )}
             </div>
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : OBJECTIFS (F5)                               */}
+        {/* ================================================== */}
+        {view === 'objectifs' && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">🎯 Objectifs financiers</h2>
+            <GoalManager goals={goalsWithProgress} />
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : PROJECTIONS (F5)                             */}
+        {/* ================================================== */}
+        {view === 'projections' && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">🔮 Simulateur de projections</h2>
+            <ProjectionSimulator
+              initialAbonnes={activePremium}
+              initialPanier={avgPanier}
+              initialDepenses={expensesMonth}
+            />
           </section>
         )}
       </main>
