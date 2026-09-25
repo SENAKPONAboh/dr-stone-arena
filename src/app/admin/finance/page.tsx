@@ -3,10 +3,12 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { PREMIUM_PLANS } from '@/lib/premium';
+import ExpenseManager from '@/components/admin/finance/ExpenseManager';
+import { EXPENSE_CATEGORIES } from '@/lib/expense-categories';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements';
+type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie';
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'globale', label: 'Vue globale', icon: '💰' },
@@ -14,6 +16,8 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'niveaux', label: 'Par niveau', icon: '👑' },
   { key: 'methodes', label: 'Par méthode', icon: '💳' },
   { key: 'renouvellements', label: 'Renouvellements', icon: '🔄' },
+  { key: 'depenses', label: 'Dépenses', icon: '💸' },
+  { key: 'tresorerie', label: 'Trésorerie', icon: '💧' },
 ];
 
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string }> }) {
@@ -45,7 +49,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const monthsCount = [6, 12, 24].includes(parseInt(monthsParam || '')) ? parseInt(monthsParam!) : 12;
 
   // ===== Requêtes parallèles =====
-  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods] = await Promise.all([
+  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList] = await Promise.all([
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
     prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true, premiumExpiresAt: { lt: now } } }),
     prisma.premiumRequest.count({ where: { status: 'VALIDE', amount: null } }),
@@ -58,6 +62,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     prisma.premiumRequest.findMany({ where: { status: 'VALIDE', amount: { not: null } }, distinct: ['userId'], select: { userId: true } }),
     prisma.expense.aggregate({ _sum: { amount: true } }),
     prisma.paymentMethod.findMany({ orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }] }),
+    prisma.expense.findMany({ orderBy: { spentAt: 'desc' }, select: { id: true, amount: true, category: true, description: true, vendor: true, spentAt: true } }),
   ]);
 
   // ===== Données dérivées =====
@@ -147,6 +152,33 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const churnRate = (repeatPayers + oneTimePayers) > 0
     ? Math.round((oneTimePayers / (repeatPayers + oneTimePayers)) * 100)
     : 0;
+
+  // ============================================================
+  // F3 : DÉPENSES & TRÉSORERIE
+  // ============================================================
+  const expensesMonth = expensesList.filter(e => e.spentAt >= startOfMonth).reduce((s, e) => s + e.amount, 0);
+  const expensesQuarter = expensesList.filter(e => e.spentAt >= startOfQuarter).reduce((s, e) => s + e.amount, 0);
+  const expensesYear = expensesList.filter(e => e.spentAt >= startOfYear).reduce((s, e) => s + e.amount, 0);
+
+  const expensesByCategory = EXPENSE_CATEGORIES
+    .map(c => ({ ...c, total: expensesList.filter(e => e.category === c.value).reduce((s, e) => s + e.amount, 0) }))
+    .filter(c => c.total > 0)
+    .sort((a, b) => b.total - a.total);
+  const maxCategoryExpense = Math.max(...expensesByCategory.map(c => c.total), 1);
+
+  const cashMonths = months.map(m => {
+    const exp = expensesList.filter(e => e.spentAt.getFullYear() === m.year && e.spentAt.getMonth() === m.month).reduce((s, e) => s + e.amount, 0);
+    return { ...m, expenses: exp, solde: m.total - exp };
+  });
+
+  const caQuarter = caFrom(startOfQuarter);
+  const caYear = caFrom(startOfYear);
+  const treso = [
+    { label: 'Ce mois', entrees: caMonth, sorties: expensesMonth },
+    { label: 'Ce trimestre', entrees: caQuarter, sorties: expensesQuarter },
+    { label: 'Cette année', entrees: caYear, sorties: expensesYear },
+    { label: 'Depuis le lancement', entrees: caTotal, sorties: expensesTotal },
+  ].map(p => ({ ...p, solde: p.entrees - p.sorties }));
 
   // ============================================================
   // RENDU
@@ -473,6 +505,92 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 <p>⚠️ Indicateurs <b>indicatifs</b> : l&apos;historique d&apos;abonnement est jeune et certains utilisateurs encore actifs n&apos;ont pas encore eu l&apos;occasion de renouveler.</p>
                 <p>Abonnés actifs : <b>{activePremium}</b> · Renouvellements cumulés : <b>{renewalsTotal}</b> · Expirés non purgés : <b>{expiredCount}</b></p>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : DÉPENSES (F3)                                */}
+        {/* ================================================== */}
+        {view === 'depenses' && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">💸 Dépenses</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {kpiCard('Dépenses ce mois', fmt(expensesMonth), 'text-red-500')}
+              {kpiCard('Dépenses cette année', fmt(expensesYear), 'text-red-500')}
+              {kpiCard('Dépenses cumulées', fmt(expensesTotal), 'text-red-600')}
+            </div>
+
+            {expensesByCategory.length > 0 && (
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 mb-6">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Répartition par catégorie</p>
+                <div className="space-y-3">
+                  {expensesByCategory.map(c => (
+                    <div key={c.value}>
+                      <div className="flex justify-between text-sm font-bold text-gray-600 mb-1">
+                        <span>{c.label}</span>
+                        <span>{fmt(c.total)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div className="h-3 rounded-full bg-gradient-to-r from-red-400 to-red-500" style={{ width: `${Math.round((c.total / maxCategoryExpense) * 100)}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <ExpenseManager expenses={expensesList} />
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : TRÉSORERIE (F3)                              */}
+        {/* ================================================== */}
+        {view === 'tresorerie' && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">💧 Flux de trésorerie</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              {treso.map(p => (
+                <div key={p.label} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{p.label}</p>
+                  <p className="text-sm flex justify-between"><span className="text-gray-400">Entrées</span><span className="font-bold text-emerald-600">+{fmt(p.entrees)}</span></p>
+                  <p className="text-sm flex justify-between"><span className="text-gray-400">Sorties</span><span className="font-bold text-red-500">-{fmt(p.sorties)}</span></p>
+                  <p className="text-sm flex justify-between border-t border-gray-100 mt-2 pt-2">
+                    <span className="text-gray-500 font-bold">Solde</span>
+                    <span className={`font-extrabold ${p.solde >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{p.solde >= 0 ? '+' : ''}{fmt(p.solde)}</span>
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Détail mensuel ({monthsCount} derniers mois)</p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-400 text-xs uppercase border-b border-gray-100">
+                      <th className="py-2 pr-4">Mois</th>
+                      <th className="py-2 pr-4 text-right">Entrées</th>
+                      <th className="py-2 pr-4 text-right">Sorties</th>
+                      <th className="py-2 text-right">Solde</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cashMonths.map((m, i) => (
+                      <tr key={i} className="border-b border-gray-50">
+                        <td className="py-2.5 pr-4 font-bold text-gray-600">{m.label} {m.year}</td>
+                        <td className="py-2.5 pr-4 text-right font-bold text-emerald-600">{m.total > 0 ? `+${m.total.toLocaleString('fr-FR')}` : '—'}</td>
+                        <td className="py-2.5 pr-4 text-right font-bold text-red-500">{m.expenses > 0 ? `-${m.expenses.toLocaleString('fr-FR')}` : '—'}</td>
+                        <td className={`py-2.5 text-right font-extrabold ${m.solde >= 0 ? 'text-gray-600' : 'text-red-600'}`}>{(m.total > 0 || m.expenses > 0) ? m.solde.toLocaleString('fr-FR') : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-gray-400 mt-4">⚠️ Sorties = dépenses enregistrées uniquement (commissions ambassadeurs non implémentées). Entrées = paiements Premium validés.</p>
             </div>
           </section>
         )}

@@ -1,0 +1,15 @@
+export const EXPENSE_CATEGORIES: { value: string; label: string }[] = [
+  { value: 'DEVELOPPEMENT', label: '💻 Développement' },
+  { value: 'INFRASTRUCTURE', label: '🖥️ Serveurs / Infrastructure' },
+  { value: 'STOCKAGE', label: '🗄️ Stockage' },
+  { value: 'DOMAINE', label: '🌐 Domaine' },
+  { value: 'MARKETING', label: '📣 Marketing' },
+  { value: 'PUBLICITE', label: '📢 Publicité' },
+  { value: 'VIDEO', label: '🎬 Production vidéo' },
+  { value: 'OUTILS_IA', label: '🤖 Outils IA' },
+  { value: 'FRAIS_PAIEMENT', label: '💳 Frais de paiement' },
+  { value: 'RECOMPENSES', label: '🏆 Récompenses' },
+  { value: 'COMMISSIONS', label: '🤝 Commissions ambassadeurs' },
+  { value: 'MAINTENANCE', label: '🔧 Maintenance' },
+  { value: 'AUTRE', label: '📦 Autre' },
+];
