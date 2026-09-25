@@ -12,15 +12,17 @@ export default async function EtudiantLayout({ children }: { children: React.Rea
   // Première connexion : onboarding obligatoire (une seule fois)
   if (!user.onboardingCompleted) redirect('/onboarding');
 
-  const [avatar, notifications] = await Promise.all([
+  const [avatar, notifications, ambassadorProfile] = await Promise.all([
     prisma.user.findUnique({ where: { id: user.id }, select: { imageUrl: true } }),
     prisma.notification.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 10
-    })
+    }),
+    prisma.ambassador.findUnique({ where: { userId: user.id }, select: { status: true } })
   ]);
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const isAmbassador = ambassadorProfile?.status === 'ACTIF';
 
   return (
     <AppShell
@@ -31,6 +33,7 @@ export default async function EtudiantLayout({ children }: { children: React.Rea
       }}
       notifications={notifications}
       unreadCount={unreadCount}
+      isAmbassador={isAmbassador}
     >
       {children}
     </AppShell>

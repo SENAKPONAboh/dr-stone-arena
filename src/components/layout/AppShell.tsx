@@ -14,7 +14,7 @@ type AppShellUser = {
   isPremium: boolean; premiumTier: number | null;
 };
 
-const NAV_ITEMS = [
+const NAV_ITEMS_BASE = [
   { href: '/etudiant', label: 'Accueil', icon: '🏠' },
   { href: '/etudiant/arene', label: 'Arène', icon: '⚔️' },
   { href: '/etudiant/leaderboard', label: 'Classement', icon: '🏆' },
@@ -23,15 +23,22 @@ const NAV_ITEMS = [
 ];
 
 export default function AppShell({
-  user, notifications, unreadCount, children
+  user, notifications, unreadCount, isAmbassador, children
 }: {
   user: AppShellUser;
   notifications: { id: string; message: string; icon: string; isRead: boolean; createdAt: Date }[];
   unreadCount: number;
+  isAmbassador?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const premium = user.isPremium;
+
+  // Navigation dynamique : l'onglet Ambassadeur n'apparaît que pour les ambassadeurs actifs
+  const NAV_ITEMS = [
+    ...NAV_ITEMS_BASE,
+    ...(isAmbassador ? [{ href: '/ambassadeur', label: 'Ambassadeur', icon: '🤝' }] : []),
+  ];
 
   const initials = `${user.prenom.charAt(0)}${user.nom.charAt(0)}`;
   const isActive = (href: string) =>
@@ -123,7 +130,7 @@ export default function AppShell({
         <div className="flex justify-around items-center py-2">
           {NAV_ITEMS.map(item => (
             <Link key={item.href} href={item.href}
-              className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-xl transition-all ${isActive(item.href)
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all ${isActive(item.href)
                 ? premium ? 'text-yellow-300' : 'text-blue-600 dark:text-blue-300'
                 : premium ? 'text-white/50' : 'text-gray-400 dark:text-gray-500'}`}>
               <span className="text-xl">{item.icon}</span>

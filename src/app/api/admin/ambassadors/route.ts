@@ -91,6 +91,18 @@ export async function PUT(request: Request) {
     }
 
     const ambassador = await prisma.ambassador.update({ where: { id }, data });
+
+    // Notification de bienvenue quand l'ambassadeur devient ACTIF
+    if (data.status === 'ACTIF' && existing.status !== 'ACTIF') {
+      await prisma.notification.create({
+        data: {
+          userId: ambassador.userId,
+          message: `🎉 Tu es maintenant Ambassadeur ! Ton code : ${ambassador.referralCode}. Accède à ton espace depuis le menu 🤝 pour suivre tes commissions.`,
+          icon: '🤝'
+        }
+      });
+    }
+
     return NextResponse.json({ ambassador });
   } catch (error) {
     console.error(error);
