@@ -2,13 +2,13 @@ import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
-import { PREMIUM_PLANS } from '@/lib/premium';
+import { PREMIUM_PLANS, getPlanLabel } from '@/lib/premium';
 import ExpenseManager from '@/components/admin/finance/ExpenseManager';
 import { EXPENSE_CATEGORIES } from '@/lib/expense-categories';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie';
+type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions';
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'globale', label: 'Vue globale', icon: '💰' },
@@ -18,9 +18,10 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'renouvellements', label: 'Renouvellements', icon: '🔄' },
   { key: 'depenses', label: 'Dépenses', icon: '💸' },
   { key: 'tresorerie', label: 'Trésorerie', icon: '💧' },
+  { key: 'transactions', label: 'Transactions', icon: '🧾' },
 ];
 
-export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string }> }) {
+export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string; status?: string; method?: string; tier?: string; period?: string; page?: string }> }) {
   const user = await getCurrentUserCore();
   if (!user || user.role !== 'ADMIN') redirect('/login');
 
@@ -44,7 +45,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const caFrom = (start: Date) => transactions.filter(t => effDate(t) >= start).reduce((s, t) => s + (t.amount ?? 0), 0);
 
   // ===== Vue active =====
-  const { view: viewParam, months: monthsParam } = await searchParams;
+  const { view: viewParam, months: monthsParam, status: statusParam, method: methodParam, tier: tierParam, period: periodParam, page: pageParam } = await searchParams;
   const view = VIEWS.some(v => v.key === viewParam) ? (viewParam as View) : 'globale';
   const monthsCount = [6, 12, 24].includes(parseInt(monthsParam || '')) ? parseInt(monthsParam!) : 12;
 
@@ -179,6 +180,80 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     { label: 'Cette année', entrees: caYear, sorties: expensesYear },
     { label: 'Depuis le lancement', entrees: caTotal, sorties: expensesTotal },
   ].map(p => ({ ...p, solde: p.entrees - p.sorties }));
+
+  // ============================================================
+  // F4 : TRANSACTIONS (paginées, filtrées — requêtes seulement si actives)
+  // ============================================================
+  const PAGE_SIZE = 20;
+  const fStatus = ['EN_ATTENTE', 'VALIDE', 'REJETE', 'REMBOURSE'].includes(statusParam || '') ? statusParam! : '';
+  const fTier = ['1', '2', '3'].includes(tierParam || '') ? parseInt(tierParam!) : 0;
+  const fMethod = methodParam || '';
+  const fPeriod = ['7j', '30j', '90j', '1an'].includes(periodParam || '') ? periodParam! : '';
+  const fPage = Math.max(1, parseInt(pageParam || '1') || 1);
+
+  const txWhere: any = {};
+  if (fStatus) txWhere.status = fStatus;
+  if (fTier) txWhere.tier = fTier;
+  if (fMethod) txWhere.paymentMethodId = fMethod;
+  if (fPeriod) {
+    const days = fPeriod === '7j' ? 7 : fPeriod === '30j' ? 30 : fPeriod === '90j' ? 90 : 365;
+    const periodStart = new Date(now.getTime() - days * DAY_MS);
+    txWhere.OR = [
+      { validatedAt: { gte: periodStart } },
+      { validatedAt: null, createdAt: { gte: periodStart } },
+    ];
+  }
+
+  let txData: { requests: any[]; total: number; sum: number } | null = null;
+  if (view === 'transactions') {
+    const [requests, total, sumAgg] = await Promise.all([
+      prisma.premiumRequest.findMany({
+        where: txWhere,
+        orderBy: { createdAt: 'desc' },
+        skip: (fPage - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+          id: true, tier: true, amount: true, status: true,
+          validatedAt: true, createdAt: true,
+          user: { select: { prenom: true, nom: true, email: true } },
+          paymentMethod: { select: { name: true, icon: true } },
+        },
+      }),
+      prisma.premiumRequest.count({ where: txWhere }),
+      prisma.premiumRequest.aggregate({ where: txWhere, _sum: { amount: true } }),
+    ]);
+    txData = { requests, total, sum: sumAgg._sum.amount ?? 0 };
+  }
+  const totalPages = txData ? Math.max(1, Math.ceil(txData.total / PAGE_SIZE)) : 1;
+
+  // Construction d'URL préservant les filtres (reset de page sur changement de filtre)
+  const txUrl = (overrides: Record<string, string | null>) => {
+    const params = new URLSearchParams();
+    params.set('view', 'transactions');
+    const base: Record<string, string> = {
+      ...(fStatus ? { status: fStatus } : {}),
+      ...(fTier ? { tier: String(fTier) } : {}),
+      ...(fMethod ? { method: fMethod } : {}),
+      ...(fPeriod ? { period: fPeriod } : {}),
+      ...(fPage > 1 ? { page: String(fPage) } : {}),
+    };
+    for (const [k, v] of Object.entries({ ...base, ...overrides })) {
+      if (v === null || v === '') params.delete(k);
+      else params.set(k, v);
+    }
+    return `/admin/finance?${params.toString()}`;
+  };
+
+  const pill = (active: boolean) => `py-1.5 px-3 rounded-xl text-xs font-bold transition-all ${active ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`;
+  const statusInfo = (s: string) => {
+    switch (s) {
+      case 'VALIDE': return { cls: 'bg-emerald-100 text-emerald-600', label: '✅ Validée' };
+      case 'EN_ATTENTE': return { cls: 'bg-yellow-100 text-yellow-700', label: '⏳ En attente' };
+      case 'REJETE': return { cls: 'bg-red-100 text-red-600', label: '❌ Rejetée' };
+      case 'REMBOURSE': return { cls: 'bg-gray-200 text-gray-500', label: '↩️ Remboursée' };
+      default: return { cls: 'bg-gray-100 text-gray-400', label: s };
+    }
+  };
 
   // ============================================================
   // RENDU
@@ -591,6 +666,126 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 </table>
               </div>
               <p className="text-xs text-gray-400 mt-4">⚠️ Sorties = dépenses enregistrées uniquement (commissions ambassadeurs non implémentées). Entrées = paiements Premium validés.</p>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : TRANSACTIONS (F4)                            */}
+        {/* ================================================== */}
+        {view === 'transactions' && txData && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">🧾 Transactions</h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {kpiCard('Transactions (filtre actif)', `${txData.total}`, 'text-blue-600')}
+              {kpiCard('Montant total (filtre actif)', fmt(txData.sum), 'text-emerald-600')}
+              {kpiCard('Page', `${fPage} / ${totalPages}`, 'text-gray-500', `${PAGE_SIZE} par page`)}
+            </div>
+
+            {/* Filtres */}
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 mb-6 space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase w-20">Statut</span>
+                {[
+                  { v: '', label: 'Toutes' },
+                  { v: 'EN_ATTENTE', label: '⏳ En attente' },
+                  { v: 'VALIDE', label: '✅ Validées' },
+                  { v: 'REJETE', label: '❌ Rejetées' },
+                ].map(f => (
+                  <Link key={f.v || 'all'} href={txUrl({ status: f.v || null, page: null })} className={pill(fStatus === f.v)}>
+                    {f.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase w-20">Niveau</span>
+                {[0, 1, 2, 3].map(t => (
+                  <Link key={t} href={txUrl({ tier: t ? String(t) : null, page: null })} className={pill(fTier === t)}>
+                    {t === 0 ? 'Tous' : getPlanLabel(t)}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase w-20">Méthode</span>
+                <Link href={txUrl({ method: null, page: null })} className={pill(!fMethod)}>Toutes</Link>
+                {paymentMethods.map(m => (
+                  <Link key={m.id} href={txUrl({ method: m.id, page: null })} className={pill(fMethod === m.id)}>
+                    {m.icon || '💰'} {m.name}
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase w-20">Période</span>
+                {['', '7j', '30j', '90j', '1an'].map(p => (
+                  <Link key={p || 'tout'} href={txUrl({ period: p || null, page: null })} className={pill(fPeriod === p)}>
+                    {p === '' ? 'Tout' : p === '1an' ? '1 an' : p}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+              {txData.requests.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">Aucune transaction pour ce filtre.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-400 text-xs uppercase border-b border-gray-100">
+                        <th className="py-2 pr-4">Date</th>
+                        <th className="py-2 pr-4">Utilisateur</th>
+                        <th className="py-2 pr-4">Niveau</th>
+                        <th className="py-2 pr-4 text-right">Montant</th>
+                        <th className="py-2 pr-4">Méthode</th>
+                        <th className="py-2 pr-4">Statut</th>
+                        <th className="py-2 text-right">Encaissée le</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {txData.requests.map(r => {
+                        const si = statusInfo(r.status);
+                        return (
+                          <tr key={r.id} className="border-b border-gray-50">
+                            <td className="py-2.5 pr-4 text-gray-500 whitespace-nowrap">
+                              {new Date(r.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </td>
+                            <td className="py-2.5 pr-4">
+                              <p className="font-bold text-gray-700">{r.user.prenom} {r.user.nom}</p>
+                              <p className="text-xs text-gray-400">{r.user.email}</p>
+                            </td>
+                            <td className="py-2.5 pr-4 text-gray-600 whitespace-nowrap">{r.tier ? getPlanLabel(r.tier) : '—'}</td>
+                            <td className="py-2.5 pr-4 text-right font-bold text-emerald-600 whitespace-nowrap">{r.amount ? `${r.amount.toLocaleString('fr-FR')} F` : '—'}</td>
+                            <td className="py-2.5 pr-4 text-gray-600 whitespace-nowrap">{r.paymentMethod ? `${r.paymentMethod.icon ?? ''} ${r.paymentMethod.name}` : '—'}</td>
+                            <td className="py-2.5 pr-4">
+                              <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${si.cls}`}>{si.label}</span>
+                            </td>
+                            <td className="py-2.5 text-right text-gray-500 whitespace-nowrap">
+                              {r.validatedAt ? new Date(r.validatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                  <Link href={txUrl({ page: fPage > 1 ? String(fPage - 1) : null })}
+                    className={`py-2 px-4 rounded-xl text-sm font-bold ${fPage > 1 ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-gray-100 text-gray-300 pointer-events-none'}`}>
+                    ← Précédent
+                  </Link>
+                  <span className="text-sm text-gray-400 font-bold">Page {fPage} / {totalPages}</span>
+                  <Link href={txUrl({ page: fPage < totalPages ? String(fPage + 1) : null })}
+                    className={`py-2 px-4 rounded-xl text-sm font-bold ${fPage < totalPages ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-gray-100 text-gray-300 pointer-events-none'}`}>
+                    Suivant →
+                  </Link>
+                </div>
+              )}
             </div>
           </section>
         )}
