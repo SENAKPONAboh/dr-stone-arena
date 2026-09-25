@@ -12,7 +12,7 @@ import { ALERT_THRESHOLDS, FinanceAlert } from '@/lib/finance-alerts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions' | 'objectifs' | 'projections' | 'alertes';
+type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions' | 'objectifs' | 'projections' | 'alertes' | 'commissions_amb';
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'globale', label: 'Vue globale', icon: '💰' },
@@ -26,6 +26,7 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'objectifs', label: 'Objectifs', icon: '🎯' },
   { key: 'projections', label: 'Projections', icon: '🔮' },
   { key: 'alertes', label: 'Alertes', icon: '🔔' },
+  { key: 'commissions_amb', label: 'Commissions', icon: '🤝' },
 ];
 
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string; status?: string; method?: string; tier?: string; period?: string; page?: string }> }) {
@@ -57,7 +58,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const monthsCount = [6, 12, 24].includes(parseInt(monthsParam || '')) ? parseInt(monthsParam!) : 12;
 
   // ===== Requêtes parallèles =====
-  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList, financialGoals, pendingRequestsCount, refundedCount] = await Promise.all([
+  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList, financialGoals, pendingRequestsCount, refundedCount, commissionsFinance, ambassadorsFinance] = await Promise.all([
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
     prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true, premiumExpiresAt: { lt: now } } }),
     prisma.premiumRequest.count({ where: { status: 'VALIDE', amount: null } }),
@@ -74,6 +75,12 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     prisma.financialGoal.findMany({ orderBy: { createdAt: 'desc' } }),
     prisma.premiumRequest.count({ where: { status: 'EN_ATTENTE' } }),
     prisma.premiumRequest.count({ where: { status: 'REMBOURSE' } }),
+    prisma.ambassadorCommission.findMany({
+      select: { ambassadorId: true, amount: true, status: true, paidAt: true, premiumRequest: { select: { amount: true } } }
+    }),
+    prisma.ambassador.findMany({
+      select: { id: true, referralCode: true, status: true, user: { select: { prenom: true, nom: true, pseudo: true } } }
+    }),
   ]);
 
   // ===== Données dérivées =====
@@ -100,7 +107,35 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const renewalsTotal = userValidCounts.reduce((s, g) => s + Math.max(0, g._count._all - 1), 0);
 
   const expensesTotal = expensesAgg._sum.amount ?? 0;
-  const netResult = caTotal - expensesTotal;
+
+  // ===== F9 : Commissions ambassadeurs (chiffres réels) =====
+  const commissionsTotal = commissionsFinance.reduce((s, c) => s + c.amount, 0);
+  const commissionsPending = commissionsFinance.filter(c => c.status === 'EN_ATTENTE').reduce((s, c) => s + c.amount, 0);
+  const commissionsPaid = commissionsFinance.filter(c => c.status === 'PAYEE').reduce((s, c) => s + c.amount, 0);
+  const commissionsCancelled = commissionsFinance.filter(c => c.status === 'ANNULEE').reduce((s, c) => s + c.amount, 0);
+  const commissionsDue = commissionsTotal - commissionsCancelled;
+  const ambassadorCa = commissionsFinance.reduce((s, c) => s + (c.premiumRequest?.amount ?? 0), 0);
+  const directCa = caTotal - ambassadorCa;
+  const ambassadorShare = caTotal > 0 ? Math.round((ambassadorCa / caTotal) * 100) : 0;
+
+  // Classement ambassadeurs (par CA généré)
+  const comByAmbFinance = new Map<string, { ca: number; due: number; paid: number }>();
+  for (const c of commissionsFinance) {
+    const acc = comByAmbFinance.get(c.ambassadorId) ?? { ca: 0, due: 0, paid: 0 };
+    acc.ca += c.premiumRequest?.amount ?? 0;
+    if (c.status !== 'ANNULEE') acc.due += c.amount;
+    if (c.status === 'PAYEE') acc.paid += c.amount;
+    comByAmbFinance.set(c.ambassadorId, acc);
+  }
+  const topAmbassadors = ambassadorsFinance
+    .map(a => ({
+      ...a,
+      name: a.user.pseudo || `${a.user.prenom} ${a.user.nom}`,
+      stats: comByAmbFinance.get(a.id) ?? { ca: 0, due: 0, paid: 0 },
+    }))
+    .sort((x, y) => y.stats.ca - x.stats.ca);
+
+  const netResult = caTotal - expensesTotal - commissionsDue;
   const payersCount = payers.length;
   const arpu = totalStudents > 0 ? Math.round(caTotal / totalStudents) : 0;
   const arppu = payersCount > 0 ? Math.round(caTotal / payersCount) : 0;
@@ -179,16 +214,23 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
 
   const cashMonths = months.map(m => {
     const exp = expensesList.filter(e => e.spentAt.getFullYear() === m.year && e.spentAt.getMonth() === m.month).reduce((s, e) => s + e.amount, 0);
-    return { ...m, expenses: exp, solde: m.total - exp };
+    const com = commissionsFinance.filter(c => c.status === 'PAYEE' && c.paidAt && c.paidAt.getFullYear() === m.year && c.paidAt.getMonth() === m.month).reduce((s, c) => s + c.amount, 0);
+    return { ...m, expenses: exp + com, solde: m.total - exp - com };
   });
 
   const caQuarter = caFrom(startOfQuarter);
   const caYear = caFrom(startOfYear);
+
+  // Commissions versées = sorties réelles (datées du versement)
+  const commissionsPaidFrom = (start: Date | null) => commissionsFinance
+    .filter(c => c.status === 'PAYEE' && c.paidAt && (!start || c.paidAt >= start))
+    .reduce((s, c) => s + c.amount, 0);
+
   const treso = [
-    { label: 'Ce mois', entrees: caMonth, sorties: expensesMonth },
-    { label: 'Ce trimestre', entrees: caQuarter, sorties: expensesQuarter },
-    { label: 'Cette année', entrees: caYear, sorties: expensesYear },
-    { label: 'Depuis le lancement', entrees: caTotal, sorties: expensesTotal },
+    { label: 'Ce mois', entrees: caMonth, sorties: expensesMonth + commissionsPaidFrom(startOfMonth) },
+    { label: 'Ce trimestre', entrees: caQuarter, sorties: expensesQuarter + commissionsPaidFrom(startOfQuarter) },
+    { label: 'Cette année', entrees: caYear, sorties: expensesYear + commissionsPaidFrom(startOfYear) },
+    { label: 'Depuis le lancement', entrees: caTotal, sorties: expensesTotal + commissionsPaidFrom(null) },
   ].map(p => ({ ...p, solde: p.entrees - p.sorties }));
 
   // ============================================================
@@ -381,6 +423,14 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     });
   }
 
+  if (commissionsPending > 0) {
+    alerts.push({
+      level: 'info',
+      title: `${commissionsPending.toLocaleString('fr-FR')} FCFA de commissions en attente`,
+      message: "Des commissions ambassadeurs attendent leur versement. Vérifie 🤝 Gérer les ambassadeurs (bouton Verser)."
+    });
+  }
+
   const levelOrder = { danger: 0, warning: 1, info: 2 };
   alerts.sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
   const alertCounts = {
@@ -507,7 +557,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
               <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
                 {kpiCard('CA cumulé', fmt(caTotal), 'text-emerald-600')}
                 {kpiCard('Dépenses enregistrées', fmt(expensesTotal), 'text-red-500', 'Saisie des dépenses : phase F3')}
-                {kpiCard('Commissions ambassadeurs', '0 FCFA', 'text-gray-400', 'Programme non implémenté')}
+                {kpiCard('Commissions ambassadeurs', fmt(commissionsDue), 'text-orange-500', `⏳ ${fmt(commissionsPending)} · ✅ ${fmt(commissionsPaid)}`)}
                 {kpiCard('Résultat net estimé', fmt(netResult), netResult >= 0 ? 'text-emerald-700' : 'text-red-600', 'CA − dépenses − commissions')}
                 {kpiCard('ARPU / ARPPU', `${fmt(arpu)} / ${fmt(arppu)}`, 'text-indigo-600', `par inscrit / par payant (${payersCount})`)}
               </div>
@@ -523,7 +573,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 <li>CA = montants des demandes Premium <b>validées</b> par l&apos;administration (moment de l&apos;encaissement confirmé).</li>
                 <li>{outOfScopeCount} validation{outOfScopeCount > 1 ? 's' : ''} antérieure{outOfScopeCount > 1 ? 's' : ''} au nouveau système de paiement (montant inconnu) {outOfScopeCount > 0 ? '— exclue du CA ci-dessus (historique incomplet)' : ''}.</li>
                 <li>« Résultat net estimé » = CA − dépenses − commissions : ce n&apos;est pas un bénéfice comptable (charges non saisies exclues).</li>
-                <li>Les commissions d&apos;ambassadeurs (10%) seront intégrées après la phase dédiée au programme.</li>
+                <li>Commissions ambassadeurs : {commissionsDue > 0 ? `${fmt(commissionsDue)} dues (10% des paiements validés des utilisateurs référés)` : 'aucune commission due à ce jour'}.</li>
                 <li>Les abonnés « expirés » sont purgés automatiquement à leur prochaine connexion (comportement existant).</li>
               </ul>
             </section>
@@ -802,7 +852,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-gray-400 mt-4">⚠️ Sorties = dépenses enregistrées uniquement (commissions ambassadeurs non implémentées). Entrées = paiements Premium validés.</p>
+              <p className="text-xs text-gray-400 mt-4">⚠️ Sorties = dépenses enregistrées + commissions ambassadeurs versées. Entrées = paiements Premium validés.</p>
             </div>
           </section>
         )}
@@ -1002,6 +1052,73 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
                 <li>Demandes en attente : &gt; {ALERT_THRESHOLDS.PENDING_REQUESTS_WARNING}</li>
                 <li>Seuils modifiables dans <b>src/lib/finance-alerts.ts</b> (sans base de données)</li>
               </ul>
+            </div>
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : COMMISSIONS AMBASSADEURS (F9)                */}
+        {/* ================================================== */}
+        {view === 'commissions_amb' && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">🤝 Commissions ambassadeurs</h2>
+
+            {/* Canal ambassadeur */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {kpiCard('CA généré par les ambassadeurs', fmt(ambassadorCa), 'text-emerald-600', `${ambassadorShare}% du CA total`)}
+              {kpiCard('CA direct (sans ambassadeur)', fmt(directCa), 'text-emerald-500')}
+              {kpiCard('Marge du canal ambassadeur', fmt(ambassadorCa - commissionsDue), 'text-blue-600', 'CA ambassadeur − commissions dues')}
+              {kpiCard('Commissions dues', fmt(commissionsDue), 'text-orange-500')}
+            </div>
+
+            {/* Détail des commissions */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              {kpiCard('⏳ En attente de versement', fmt(commissionsPending), 'text-orange-500')}
+              {kpiCard('✅ Déjà versées', fmt(commissionsPaid), 'text-emerald-600')}
+              {kpiCard('↩️ Annulées', fmt(commissionsCancelled), 'text-gray-400')}
+              {kpiCard('Total généré (historique)', fmt(commissionsTotal), 'text-purple-600')}
+            </div>
+
+            {/* Top ambassadeurs */}
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">🏆 Performance des ambassadeurs (par CA généré)</p>
+              {topAmbassadors.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6 bg-gray-50 rounded-2xl">Aucun ambassadeur enregistré.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-400 text-xs uppercase border-b border-gray-100">
+                        <th className="py-2 pr-4">#</th>
+                        <th className="py-2 pr-4">Ambassadeur</th>
+                        <th className="py-2 pr-4">Code</th>
+                        <th className="py-2 pr-4">Statut</th>
+                        <th className="py-2 pr-4 text-right">CA généré</th>
+                        <th className="py-2 pr-4 text-right">Commissions dues</th>
+                        <th className="py-2 text-right">Versées</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topAmbassadors.map((a, i) => (
+                        <tr key={a.id} className="border-b border-gray-50">
+                          <td className="py-2.5 pr-4 font-extrabold text-gray-300">{i + 1}</td>
+                          <td className="py-2.5 pr-4 font-bold text-gray-700">{a.name}</td>
+                          <td className="py-2.5 pr-4 text-emerald-600 font-bold whitespace-nowrap">{a.referralCode}</td>
+                          <td className="py-2.5 pr-4">
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${a.status === 'ACTIF' ? 'bg-emerald-100 text-emerald-600' : a.status === 'SUSPENDU' ? 'bg-red-100 text-red-600' : 'bg-yellow-100 text-yellow-700'}`}>
+                              {a.status === 'ACTIF' ? '✅ Actif' : a.status === 'SUSPENDU' ? '⏸️ Suspendu' : '⏳ En attente'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 pr-4 text-right font-bold text-emerald-600 whitespace-nowrap">{a.stats.ca > 0 ? a.stats.ca.toLocaleString('fr-FR') + ' F' : '—'}</td>
+                          <td className="py-2.5 pr-4 text-right font-bold text-orange-500 whitespace-nowrap">{a.stats.due > 0 ? a.stats.due.toLocaleString('fr-FR') + ' F' : '—'}</td>
+                          <td className="py-2.5 text-right font-bold text-purple-600 whitespace-nowrap">{a.stats.paid > 0 ? a.stats.paid.toLocaleString('fr-FR') + ' F' : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-4">Les commissions ne comptent que les paiements Premium <b>validés</b> des utilisateurs référés — gestion complète des versements dans 🤝 Gérer les ambassadeurs.</p>
             </div>
           </section>
         )}
