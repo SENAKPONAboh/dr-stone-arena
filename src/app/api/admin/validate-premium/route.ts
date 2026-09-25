@@ -40,6 +40,58 @@ export async function POST(request: Request) {
           premiumExpiresAt: expiryDate
         }
       });
+
+      // ============================================================
+      // 🤝 GÉNÉRATION AUTOMATIQUE DE LA COMMISSION AMBASSADEUR
+      // Conditions : payeur rattaché + ambassadeur ACTIF + montant connu
+      // + pas encore de commission pour cette transaction (anti-doublon §24)
+      // ============================================================
+      const payer = await prisma.user.findUnique({
+        where: { id: premiumRequest.userId },
+        select: { id: true, referredById: true, prenom: true, nom: true, pseudo: true }
+      });
+
+      if (payer?.referredById && premiumRequest.amount) {
+        const ambassador = await prisma.ambassador.findUnique({
+          where: { id: payer.referredById },
+          select: { id: true, status: true, commissionRate: true, userId: true }
+        });
+
+        if (ambassador && ambassador.status === 'ACTIF') {
+          const existingCommission = await prisma.ambassadorCommission.findUnique({
+            where: { premiumRequestId: premiumRequest.id }
+          });
+
+          if (!existingCommission) {
+            const commissionAmount = Math.round((premiumRequest.amount * ambassador.commissionRate) / 100);
+
+            try {
+              await prisma.ambassadorCommission.create({
+                data: {
+                  ambassadorId: ambassador.id,
+                  premiumRequestId: premiumRequest.id, // @unique → doublon impossible en base
+                  userId: payer.id,
+                  amount: commissionAmount,
+                  status: 'EN_ATTENTE'
+                }
+              });
+
+              // Notification à l'ambassadeur
+              const payerName = payer.pseudo || `${payer.prenom} ${payer.nom}`;
+              await prisma.notification.create({
+                data: {
+                  userId: ambassador.userId,
+                  message: `💰 Nouvelle commission de ${commissionAmount.toLocaleString('fr-FR')} FCFA ! ${payerName} vient de valider son abonnement Premium.`,
+                  icon: '💰'
+                }
+              });
+            } catch (e: any) {
+              // P2002 = commission déjà existante pour cette transaction (anti-doublon structurel) → on ignore
+              if (e?.code !== 'P2002') throw e;
+            }
+          }
+        }
+      }
     }
 
     return NextResponse.json({ success: true });
