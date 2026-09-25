@@ -8,10 +8,11 @@ import GoalManager from '@/components/admin/finance/GoalManager';
 import ProjectionSimulator from '@/components/admin/finance/ProjectionSimulator';
 import { EXPENSE_CATEGORIES } from '@/lib/expense-categories';
 import { GOAL_TYPES } from '@/lib/goal-types';
+import { ALERT_THRESHOLDS, FinanceAlert } from '@/lib/finance-alerts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions' | 'objectifs' | 'projections';
+type View = 'globale' | 'evolution' | 'niveaux' | 'methodes' | 'renouvellements' | 'depenses' | 'tresorerie' | 'transactions' | 'objectifs' | 'projections' | 'alertes';
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'globale', label: 'Vue globale', icon: '💰' },
@@ -24,6 +25,7 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: 'transactions', label: 'Transactions', icon: '🧾' },
   { key: 'objectifs', label: 'Objectifs', icon: '🎯' },
   { key: 'projections', label: 'Projections', icon: '🔮' },
+  { key: 'alertes', label: 'Alertes', icon: '🔔' },
 ];
 
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string; status?: string; method?: string; tier?: string; period?: string; page?: string }> }) {
@@ -55,7 +57,7 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const monthsCount = [6, 12, 24].includes(parseInt(monthsParam || '')) ? parseInt(monthsParam!) : 12;
 
   // ===== Requêtes parallèles =====
-  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList, financialGoals] = await Promise.all([
+  const [totalStudents, expiredCount, outOfScopeCount, activeByTier, userValidCounts, payers, expensesAgg, paymentMethods, expensesList, financialGoals, pendingRequestsCount, refundedCount] = await Promise.all([
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
     prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true, premiumExpiresAt: { lt: now } } }),
     prisma.premiumRequest.count({ where: { status: 'VALIDE', amount: null } }),
@@ -70,6 +72,8 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
     prisma.paymentMethod.findMany({ orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }] }),
     prisma.expense.findMany({ orderBy: { spentAt: 'desc' }, select: { id: true, amount: true, category: true, description: true, vendor: true, spentAt: true } }),
     prisma.financialGoal.findMany({ orderBy: { createdAt: 'desc' } }),
+    prisma.premiumRequest.count({ where: { status: 'EN_ATTENTE' } }),
+    prisma.premiumRequest.count({ where: { status: 'REMBOURSE' } }),
   ]);
 
   // ===== Données dérivées =====
@@ -286,6 +290,106 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
   const avgPanier = activePremium > 0 ? Math.round(mrr / activePremium) : 1500;
 
   // ============================================================
+  // F6 : ALERTES FINANCIÈRES (calculées à l'affichage)
+  // ============================================================
+  const alerts: FinanceAlert[] = [];
+
+  const activeMethodsCount = paymentMethods.filter(m => m.isActive).length;
+  if (activeMethodsCount === 0) {
+    alerts.push({
+      level: 'danger',
+      title: 'Aucune méthode de paiement active',
+      message: "Aucun moyen de paiement n'est activé : les étudiants ne peuvent pas finaliser leur abonnement. Active au moins une méthode dans 💳 Gérer les moyens de paiement."
+    });
+  }
+
+  if (expensesMonth > 0 && expensesMonth > caMonth) {
+    alerts.push({
+      level: 'danger',
+      title: 'Déficit sur le mois en cours',
+      message: `Les dépenses du mois (${fmt(expensesMonth)}) dépassent le CA encaissé (${fmt(caMonth)}).`
+    });
+  } else if (caMonth > 0 && expensesMonth > (caMonth * ALERT_THRESHOLDS.EXPENSES_RATIO_WARNING) / 100) {
+    alerts.push({
+      level: 'warning',
+      title: 'Dépenses élevées ce mois',
+      message: `Les dépenses représentent ${Math.round((expensesMonth / caMonth) * 100)}% du CA du mois (${fmt(expensesMonth)} sur ${fmt(caMonth)}).`
+    });
+  }
+
+  if (caPrevMonth > 0) {
+    const dropPct = Math.round(((caPrevMonth - caMonth) / caPrevMonth) * 100);
+    if (dropPct >= ALERT_THRESHOLDS.CA_DROP_WARNING) {
+      alerts.push({
+        level: 'warning',
+        title: `Baisse importante du CA (-${dropPct}%)`,
+        message: `CA de ce mois : ${fmt(caMonth)} contre ${fmt(caPrevMonth)} le mois précédent.`
+      });
+    } else if (dropPct > 0) {
+      alerts.push({
+        level: 'info',
+        title: `Légère baisse du CA (-${dropPct}%)`,
+        message: `CA du mois : ${fmt(caMonth)} contre ${fmt(caPrevMonth)} le mois dernier.`
+      });
+    }
+  }
+
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const expectedProgress = Math.round((now.getDate() / daysInMonth) * 100);
+  if (expectedProgress >= 20) {
+    for (const g of goalsWithProgress) {
+      if (g.progressPct === null) continue;
+      const expectedMin = Math.round((expectedProgress * ALERT_THRESHOLDS.GOAL_PROGRESS_RATIO) / 100);
+      if (g.progressPct < expectedMin) {
+        const gLabel = GOAL_TYPES.find(t => t.value === g.type)?.label ?? g.type;
+        alerts.push({
+          level: 'warning',
+          title: 'Objectif en retard',
+          message: `${gLabel} (période ${g.period}) : ${g.progressPct}% atteint alors que ${expectedProgress}% de la période est écoulée.`
+        });
+      }
+    }
+  }
+
+  if (payersCount > 0 && churnRate >= ALERT_THRESHOLDS.CHURN_WARNING) {
+    alerts.push({
+      level: 'warning',
+      title: `Taux de non-renouvellement élevé (${churnRate}%)`,
+      message: `${oneTimePayers} payant(s) sur ${payersCount} n'ont jamais renouvelé (indicatif : historique jeune).`
+    });
+  }
+
+  if (pendingRequestsCount > ALERT_THRESHOLDS.PENDING_REQUESTS_WARNING) {
+    alerts.push({
+      level: 'warning',
+      title: `${pendingRequestsCount} demandes Premium en attente`,
+      message: "Plusieurs demandes attendent une validation. Vérifie l'onglet Validation Premium."
+    });
+  } else if (pendingRequestsCount > 0) {
+    alerts.push({
+      level: 'info',
+      title: `${pendingRequestsCount} demande(s) en attente de validation`,
+      message: "Des reçus attendent ta validation dans l'onglet Validation Premium."
+    });
+  }
+
+  if (refundedCount > 0) {
+    alerts.push({
+      level: 'info',
+      title: `${refundedCount} remboursement(s) enregistré(s)`,
+      message: "Des transactions sont marquées remboursées — vérifie que c'est voulu."
+    });
+  }
+
+  const levelOrder = { danger: 0, warning: 1, info: 2 };
+  alerts.sort((a, b) => levelOrder[a.level] - levelOrder[b.level]);
+  const alertCounts = {
+    danger: alerts.filter(a => a.level === 'danger').length,
+    warning: alerts.filter(a => a.level === 'warning').length,
+    info: alerts.filter(a => a.level === 'info').length,
+  };
+
+  // ============================================================
   // RENDU
   // ============================================================
   const kpiCard = (label: string, value: string, color: string, sub?: string) => (
@@ -316,10 +420,13 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
           <div className="flex flex-wrap gap-2">
             {VIEWS.map(v => (
               <Link key={v.key} href={`/admin/finance${v.key !== 'globale' ? `?view=${v.key}` : ''}${v.key === 'evolution' ? `&months=${monthsCount}` : ''}`}
-                className={`py-2.5 px-4 rounded-2xl text-sm font-bold uppercase tracking-wide transition-all ${view === v.key
+                className={`py-2.5 px-4 rounded-2xl text-sm font-bold uppercase tracking-wide transition-all relative ${view === v.key
                   ? 'bg-blue-500 text-white shadow-md'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                 {v.icon} {v.label}
+                {v.key === 'alertes' && alertCounts.danger > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{alertCounts.danger}</span>
+                )}
               </Link>
             ))}
           </div>
@@ -841,6 +948,61 @@ export default async function FinancePage({ searchParams }: { searchParams: Prom
               initialPanier={avgPanier}
               initialDepenses={expensesMonth}
             />
+          </section>
+        )}
+
+        {/* ================================================== */}
+        {/* VUE : ALERTES (F6)                                 */}
+        {/* ================================================== */}
+        {view === 'alertes' && (
+          <section>
+            <h2 className="text-lg font-extrabold text-gray-800 mb-4">🔔 Alertes financières</h2>
+
+            {alerts.length === 0 ? (
+              <div className="bg-emerald-50 border-2 border-emerald-200 p-6 rounded-3xl text-center">
+                <p className="text-4xl mb-2">✅</p>
+                <p className="font-extrabold text-emerald-700 text-lg">Tout est au vert</p>
+                <p className="text-sm text-emerald-600 mt-1">Aucune alerte financière détectée sur tes données actuelles.</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                  {kpiCard('🔴 Alertes critiques', `${alertCounts.danger}`, alertCounts.danger > 0 ? 'text-red-600' : 'text-gray-400')}
+                  {kpiCard('🟠 Alertes attention', `${alertCounts.warning}`, alertCounts.warning > 0 ? 'text-orange-500' : 'text-gray-400')}
+                  {kpiCard('🔵 Informations', `${alertCounts.info}`, 'text-blue-500')}
+                </div>
+
+                <div className="space-y-3">
+                  {alerts.map((a, i) => {
+                    const styles = {
+                      danger: 'bg-red-50 border-red-200',
+                      warning: 'bg-orange-50 border-orange-200',
+                      info: 'bg-blue-50 border-blue-100',
+                    }[a.level];
+                    const icon = { danger: '🔴', warning: '🟠', info: '🔵' }[a.level];
+                    const titleColor = { danger: 'text-red-700', warning: 'text-orange-700', info: 'text-blue-700' }[a.level];
+                    return (
+                      <div key={i} className={`${styles} border-2 p-4 rounded-2xl`}>
+                        <p className={`font-extrabold text-sm ${titleColor}`}>{icon} {a.title}</p>
+                        <p className="text-sm text-gray-600 mt-1">{a.message}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 mt-6">
+              <h2 className="text-sm font-extrabold text-gray-500 uppercase tracking-wider mb-3">⚙️ Seuils actifs</h2>
+              <ul className="text-xs text-gray-400 space-y-1.5 list-disc list-inside">
+                <li>Baisse de CA alarmante : ≥ {ALERT_THRESHOLDS.CA_DROP_WARNING}% vs mois précédent</li>
+                <li>Dépenses inquiétantes : ≥ {ALERT_THRESHOLDS.EXPENSES_RATIO_WARNING}% du CA mensuel (rouge si dépenses &gt; CA)</li>
+                <li>Objectif en retard : progression &lt; {ALERT_THRESHOLDS.GOAL_PROGRESS_RATIO}% de l'avancement du mois</li>
+                <li>Churn élevé : ≥ {ALERT_THRESHOLDS.CHURN_WARNING}% de payants sans renouvellement</li>
+                <li>Demandes en attente : &gt; {ALERT_THRESHOLDS.PENDING_REQUESTS_WARNING}</li>
+                <li>Seuils modifiables dans <b>src/lib/finance-alerts.ts</b> (sans base de données)</li>
+              </ul>
+            </div>
           </section>
         )}
       </main>
