@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from '@/components/ThemeProvider';
 import PwaRegistrar from '@/components/PwaRegistrar';
+import NextTopLoader from 'nextjs-toploader';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,6 +34,12 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={inter.className}>
+        <NextTopLoader
+          color="#10b981"
+          height={4}
+          showSpinner={false}
+          crawlSpeed={200}
+        />
         <ThemeProvider>
           <PwaRegistrar />
           {children}
