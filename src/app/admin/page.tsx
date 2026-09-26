@@ -103,6 +103,9 @@ export default async function AdminDashboard() {
             <Link href="/admin/cases/bulk" className="inline-block bg-cyan-600 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-cyan-700 transition-all">
               📥 Importer des cas en masse
             </Link>
+            <Link href="/admin/reset" className="inline-block bg-red-600 text-white font-extrabold py-3 px-8 rounded-2xl shadow-md hover:bg-red-700 transition-all">
+              ⚠️ Initialiser les données
+            </Link>
             <SendPushButton />
           </div>
         </div>
