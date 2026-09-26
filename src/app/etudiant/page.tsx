@@ -1,10 +1,11 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import { calculateRegeneratedLives } from '@/lib/lives';
+import { calculateRegeneratedLives, getRegenIntervalMs } from '@/lib/lives';
 import Link from 'next/link';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
+import { getTodaySelection } from '@/lib/daily-cases';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
 
@@ -35,6 +36,7 @@ export default async function EtudiantDashboard() {
       data: { lives: lifeData.lives, lastLifeLostAt: lifeData.updatedAt }
     });
     user.lives = lifeData.lives;
+    user.lastLifeLostAt = lifeData.updatedAt ?? user.lastLifeLostAt;
   }
 
   // Expiration des duels
@@ -43,8 +45,26 @@ export default async function EtudiantDashboard() {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
+  // === Compte à rebours de la prochaine vie (affichage) ===
+  let nextLifeAt: string | null = null;
+  if (user.lives < 10 && user.lastLifeLostAt) {
+    const interval = getRegenIntervalMs(user.premiumTier);
+    const base = new Date(user.lastLifeLostAt).getTime();
+    const elapsed = Date.now() - base;
+    const nextPalier = (Math.floor(elapsed / interval) + 1) * interval;
+    nextLifeAt = new Date(base + nextPalier).toISOString();
+  }
+
+  const formatDelay = (iso: string) => {
+    const ms = new Date(iso).getTime() - Date.now();
+    if (ms <= 0) return "moins d'1 min";
+    const mins = Math.ceil(ms / 60000);
+    if (mins < 60) return `${mins} min`;
+    return `${Math.floor(mins / 60)}h ${mins % 60}min`;
+  };
+
   // === LECTURES parallélisées (gain de latence) ===
-  const [attemptsCount, usersAhead, aheadInLevel, attemptsToday, duelInvites, activeDuels, topUsers] = await Promise.all([
+  const [attemptsCount, usersAhead, aheadInLevel, attemptsToday, duelInvites, activeDuels, topUsers, dailyCaseIds] = await Promise.all([
     prisma.attempt.count({ where: { userId: user.id } }),
     prisma.user.count({ where: { role: 'ETUDIANT', statut: 'VALIDE', xp: { gt: user.xp } } }),
     user.anneeEtude
@@ -66,12 +86,14 @@ export default async function EtudiantDashboard() {
           select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true }
         })
       : Promise.resolve([]),
+    getTodaySelection(user.id),
   ]);
 
   const userRank = usersAhead + 1;
   const userRankLevel = aheadInLevel !== null ? aheadInLevel + 1 : null;
+  const dailyTotal = dailyCaseIds?.length ?? 10;
 
-  // Grades et helpers (restaurés)
+  // Grades et helpers
   let grade = "🥉 Clinicien Bronze";
   if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
   if (user.xp >= 3000) grade = "🥇 Clinicien Or";
@@ -80,7 +102,7 @@ export default async function EtudiantDashboard() {
   const { current: duelGrade } = getDuelGrade(user.duelsWon);
   const nameOf = (u: { prenom: string; nom: string; pseudo: string | null }) => u.pseudo || `${u.prenom} ${u.nom}`;
 
-  // Notifications intelligentes (conservées — write conditionnel après les lectures)
+  // Notifications intelligentes (write conditionnel après les lectures)
   if (attemptsToday === 0) {
     const todayNotifExists = await prisma.notification.findFirst({
       where: { userId: user.id, createdAt: { gte: todayStart }, message: { contains: "défi quotidien" } }
@@ -137,9 +159,14 @@ export default async function EtudiantDashboard() {
         <div className={`${cardClass} rounded-3xl shadow-sm p-4`}>
           <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Vies</p>
           <p className="text-2xl font-extrabold text-red-500 mt-1">❤️ {user.lives}/10</p>
+          {nextLifeAt && (
+            <p className={`text-[10px] ${labelClass} mt-1 font-bold`}>
+              ⏳ {premium ? (user.premiumTier === 3 ? "1/h" : user.premiumTier === 2 ? "1/6h" : "1/12h") : "1/24h"} · dans {formatDelay(nextLifeAt)}
+            </p>
+          )}
         </div>
         <Link href="/etudiant/leaderboard?scope=niveau" className={`${cardClass} rounded-3xl shadow-sm p-4 hover:shadow-md transition-all`}>
-          <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Rang {userRankLevel ? `(${getNiveauLabel(user.anneeEtude)})` : ''}</p>
+          <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Rang {userRankLevel ? `(${getNiveauLabel(user.anneeEtude)})` : ""}</p>
           <p className="text-2xl font-extrabold text-blue-500 mt-1">#{userRankLevel ?? userRank}</p>
           <p className={`text-[10px] ${labelClass}`}>Global #{userRank}</p>
         </Link>
@@ -159,7 +186,10 @@ export default async function EtudiantDashboard() {
         <div className="bg-gray-200 dark:bg-slate-700 rounded-3xl p-8 text-center">
           <p className="text-4xl mb-2">❌</p>
           <p className="text-xl font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">Plus de vies</p>
-          <p className="text-sm text-gray-400 mt-1">Régénération en cours — {premium ? '1 vie/heure' : '1 vie/24h'}</p>
+          <p className="text-sm text-gray-400 mt-1">Régénération en cours — {premium ? "1 vie/heure" : "1 vie/24h"}</p>
+          {nextLifeAt && (
+            <p className="text-sm text-red-500 font-bold mt-2">⏳ Prochaine vie dans {formatDelay(nextLifeAt)}</p>
+          )}
         </div>
       )}
 
@@ -168,9 +198,9 @@ export default async function EtudiantDashboard() {
         <Link href="/etudiant/arene" className={`${cardClass} rounded-3xl shadow-sm p-5 hover:shadow-md transition-all`}>
           <div className="flex justify-between items-center mb-2">
             <p className="text-xs font-bold uppercase tracking-wider text-blue-500">🎯 Défi du jour</p>
-            <span className="text-xs font-bold text-gray-400">{Math.min(attemptsToday, 2)}/2</span>
+            <span className="text-xs font-bold text-gray-400">{Math.min(attemptsToday, dailyTotal)}/{dailyTotal}</span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Résous 2 cas aujourd'hui → +20 XP</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Termine tes cas du jour → +20 XP</p>
         </Link>
         <Link href="/etudiant/duel" className={`${cardClass} rounded-3xl shadow-sm p-5 hover:shadow-md transition-all`}>
           <div className="flex justify-between items-center mb-2">
