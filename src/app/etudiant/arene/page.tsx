@@ -9,6 +9,7 @@ import ChestButton from '@/components/dashboard/ChestButton';
 import PushNotificationManager from '@/components/dashboard/PushNotificationManager';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
+import { getTodaySelection } from '@/lib/daily-cases';
 import { getDailyDuelQuota, getDuelGrade } from '@/lib/duel';
 
 export default async function ArenePage() {
@@ -28,7 +29,7 @@ export default async function ArenePage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // === LECTURES parallélisées ===
-  const [attemptsToday, weeklyCases, monthlyAttempts, invites, activeDuels, quotaUsed] = await Promise.all([
+  const [attemptsToday, weeklyCases, monthlyAttempts, invites, activeDuels, quotaUsed, dailyCaseIds] = await Promise.all([
     prisma.attempt.count({ where: { userId: user.id, createdAt: { gte: todayStart } } }),
     prisma.attempt.count({ where: { userId: user.id, createdAt: { gte: mondayStart } } }),
     prisma.attempt.findMany({ where: { userId: user.id, createdAt: { gte: monthStart } }, select: { xpEarned: true } }),
@@ -45,8 +46,10 @@ export default async function ArenePage() {
         acceptedAt: { gte: todayStart }
       }
     }),
+    getTodaySelection(user.id),
   ]);
 
+  const dailyTotal = dailyCaseIds?.length ?? 10;
   const monthlyXp = monthlyAttempts.reduce((sum, a) => sum + a.xpEarned, 0);
   const dailyClaimed = user.lastDailyRewardClaimedAt
     ? new Date(user.lastDailyRewardClaimedAt).setHours(0, 0, 0, 0) === todayStart.getTime()

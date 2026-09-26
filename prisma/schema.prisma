@@ -40,6 +40,7 @@ model User {
   premiumRequests PremiumRequest[]
   notifications Notification[]
   ambassadorCommissions AmbassadorCommission[] @relation("CommissionPayer")
+  dailySelections DailyCaseSelection[]
   pushSubscription Json?
   duelsWon    Int @default(0)
   duelsLost   Int @default(0)
@@ -248,4 +249,14 @@ model AmbassadorPayout {
   note         String?  // référence de versement
   paidAt       DateTime
   createdAt    DateTime @default(now())
+}
+model DailyCaseSelection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime // le jour (à minuit)
+  caseIds   String[] // les 10 cas du jour de CET étudiant
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date]) // une seule sélection par étudiant et par jour
 }

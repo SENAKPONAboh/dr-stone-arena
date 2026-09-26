@@ -117,7 +117,7 @@ export async function POST(request: Request) {
 
       // ===== Validations =====
       if (!c.titre) { ignored.push({ numero: i + 1, titre: '(sans titre)', raison: 'TITRE manquant' }); continue; }
-      if (c.annee < 1 || c.annee > 7) { ignored.push({ numero: i + 1, titre: c.titre, raison: `ANNEE invalide (${c.anneeRaw ?? 'absente'}) — doit être 1 à 7` }); continue; }
+           if (c.annee < 1 || c.annee > 7) { ignored.push({ numero: i + 1, titre: c.titre, raison: 'ANNEE invalide ou absente — doit être un chiffre de 1 à 7 (7 = Médecin)' }); continue; }
       if (!c.matiere) { ignored.push({ numero: i + 1, titre: c.titre, raison: 'MATIERE manquante' }); continue; }
       if (!c.enonce) { ignored.push({ numero: i + 1, titre: c.titre, raison: 'ENONCE manquant' }); continue; }
       if (c.options.length < 2) { ignored.push({ numero: i + 1, titre: c.titre, raison: 'OPTIONS : au moins 2 options requises (lignes commençant par "- ")' }); continue; }

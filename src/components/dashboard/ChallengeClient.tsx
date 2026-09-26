@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 // On définit le type des props que reçoit le composant
 type ClinicalCaseProps = {
+  progressLabel?: string;
   clinicalCase: {
     id: string;
     title: string;
@@ -19,7 +20,7 @@ type ClinicalCaseProps = {
   };
 };
 
-export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
+export default function ChallengeClient({ clinicalCase, progressLabel }: ClinicalCaseProps) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(clinicalCase.durationMax);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -77,12 +78,15 @@ export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-4 transition-colors duration-300">
       <div className="max-w-3xl mx-auto">
-        
+
         {/* En-tête du défi */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{clinicalCase.chapter.subject.name} • {clinicalCase.chapter.name}</span>
             <h1 className="text-2xl font-extrabold text-gray-800 dark:text-white mt-1">{clinicalCase.title}</h1>
+            {progressLabel && (
+              <span className="inline-block mt-2 text-xs font-extrabold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full">{progressLabel}</span>
+            )}
           </div>
           <div className={`px-4 py-2 rounded-xl font-extrabold text-lg ${timeLeft <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 text-gray-800 dark:text-white'}`}>
             ⏱️ {timeLeft}s
@@ -102,7 +106,7 @@ export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
           <div className="space-y-3">
             {clinicalCase.options.map((option, index) => {
               let buttonClass = "w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ";
-              
+
               if (isSubmitted) {
                 // Si la correction est affichée
                 if (option === clinicalCase.correctAnswer) {
@@ -114,8 +118,8 @@ export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
                 }
               } else {
                 // Si en cours de jeu
-                buttonClass += selectedAnswer === option 
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold shadow-md" 
+                buttonClass += selectedAnswer === option
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold shadow-md"
                   : "border-gray-200 dark:border-slate-600 text-gray-800 dark:text-gray-100 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-slate-700/50";
               }
 
@@ -137,7 +141,7 @@ export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
 
           {/* Bouton de validation ou Correction */}
           {!isSubmitted ? (
-            <button 
+            <button
               onClick={() => handleSubmit(false)}
               disabled={!selectedAnswer || loading}
               className="w-full mt-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-all"
@@ -156,13 +160,13 @@ export default function ChallengeClient({ clinicalCase }: ClinicalCaseProps) {
                 </div>
               )}
               <div className="flex flex-col gap-3">
-                <button 
+                <button
                   onClick={() => window.location.href = '/etudiant/challenge'}
                   className="w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide transition-all"
                 >
                   Continuer le défi
                 </button>
-                <button 
+                <button
                   onClick={() => window.location.href = '/etudiant'}
                   className="w-full py-2 text-gray-500 dark:text-gray-400 text-sm font-bold hover:text-blue-600 transition-all"
                 >
