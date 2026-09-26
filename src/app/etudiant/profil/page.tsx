@@ -93,6 +93,9 @@ export default async function ProfilPage() {
           <div className={`mt-6 p-4 rounded-2xl ${user.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
             <p className={`text-xs font-bold uppercase tracking-wider ${user.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
             <p className={`text-xl mt-1 ${gradeStyle}`}>{grade}</p>
+            <Link href="/etudiant/grades" className={`mt-2 inline-block text-xs font-bold ${user.isPremium ? 'text-yellow-300 hover:text-yellow-200' : 'text-blue-600 hover:underline'}`}>
+              🏅 Voir tous les grades →
+            </Link>
           </div>
 
           {/* Formulaire de modification (Nouveau composant) */}
