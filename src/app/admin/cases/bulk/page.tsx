@@ -25,12 +25,13 @@ export default async function BulkImportPage() {
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
 
           <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-sm text-blue-900 space-y-2 mb-6">
-            <p className="font-bold">📖 Format attendu (un bloc par cas, séparés par <code>=== CAS ===</code>) :</p>
-            <p>• <b>TITRE, ANNEE</b> (1 à 7 — 7 = Médecin), <b>MATIERE, ENONCE, OPTIONS, REPONSE, EXPLICATION</b> : obligatoires</p>
-            <p>• <b>CHAPITRE</b> : optionnel (défaut = nom de la matière) · <b>DIFFICULTE</b> : FACILE / MOYEN (défaut) / DIFFICILE · <b>TEMPS</b> : secondes (défaut 60)</p>
-            <p>• <b>XP calculée automatiquement</b> selon la difficulté (10 / 20 / 35)</p>
-            <p>• La <b>REPONSE doit correspondre exactement</b> à une des options (la casse peut différer)</p>
-            <p>• Matière et chapitre inexistants → <b>créés automatiquement</b> · Doublons (même titre + même chapitre) → ignorés</p>
+            <p className="font-bold">📖 Format accepté (ton format de rédaction) :</p>
+            <p>• Chaque cas commence par une ligne <b><code>CAS &lt;numéro&gt;</code></b> (la ligne d'en-tête « Matière · Chapitre » au-dessus est ignorée automatiquement)</p>
+            <p>• <b>Année</b> : <code>EM1</code> à <code>EM6</code>, ou <code>Médecin</code>, ou 1 à 7</p>
+            <p>• <b>Difficulté</b> : ⭐ (facile) · ⭐⭐ (moyen) · ⭐⭐⭐ (difficile) — XP calculée automatiquement (10/20/35)</p>
+            <p>• <b>Énoncé</b> et <b>Question</b> : sections séparées, combinées dans le cas · <b>Semestre</b> et <b>Objectif pédagogique</b> : ignorés</p>
+            <p>• <b>Propositions</b> : lignes <code>A.</code> <code>B.</code> <code>C.</code> <code>D.</code> · <b>Réponse correcte</b> : la <b>lettre</b> (A, B, C, D) ou le texte exact</p>
+            <p>• <b>Temps</b> : optionnel (défaut 60s) · Matière/chapitre inexistants → créés · Doublons → ignorés</p>
           </div>
 
           <BulkCaseImporter />

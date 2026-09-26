@@ -8,21 +8,45 @@ type ImportReport = {
   ignored: { numero: number; titre: string; raison: string }[];
 };
 
-const MODELE = `=== CAS ===
-TITRE: Douleur thoracique chez un homme de 55 ans
-ANNEE: 4
-MATIERE: Pathologies cardiovasculaires
-CHAPITRE: Insuffisance coronaire
-DIFFICULTE: MOYEN
-TEMPS: 90
-ENONCE: Un homme de 55 ans, fumeur, présente une douleur thoracique constrictive irradiant dans le bras gauche depuis 2 heures...
-OPTIONS:
-- Péricardite
-- Infarctus du myocarde
-- RGO
-- Crise d'angoisse
-REPONSE: Infarctus du myocarde
-EXPLICATION: La douleur constrictive irradiant vers le bras gauche chez un fumeur de 55 ans est typique du syndrome coronarien aigu.
+const MODELE = `CAS 1
+
+Titre :
+Ce qu'il faut vérifier avant tout le reste
+
+Année :
+Médecin
+
+Matière :
+Pédiatrie
+
+Chapitre :
+Diarrhée aiguë chez l'enfant
+
+Difficulté :
+⭐⭐
+
+Énoncé
+
+Un enfant de 2 ans est amené pour une diarrhée aiguë évoluant depuis 2 jours...
+
+Question
+
+Pourquoi cette évaluation est-elle la priorité absolue ?
+
+Propositions
+
+A. La déshydratation est la complication principale et potentiellement grave de la diarrhée aiguë chez l'enfant
+B. L'hydratation n'a aucune importance particulière
+C. Seule la cause précise doit être recherchée en priorité
+D. La déshydratation ne constitue jamais un risque significatif
+
+Réponse correcte
+
+A
+
+Justification
+
+La déshydratation est la complication principale de la diarrhée aiguë chez le jeune enfant.
 `;
 
 export default function BulkCaseImporter() {

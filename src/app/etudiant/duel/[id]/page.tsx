@@ -80,7 +80,18 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
   if (duel.status === 'TERMINE') {
     const myScore = isRequester ? duel.requesterScore : duel.opponentScore;
     const oppScore = isRequester ? duel.opponentScore : duel.requesterScore;
+    const myTime = isRequester ? duel.requesterTime : duel.opponentTime;
+    const oppTime = isRequester ? duel.opponentTime : duel.requesterTime;
     const won = duel.winnerId === null ? null : duel.winnerId === user.id;
+
+    const totalCases = duel.caseIds.length;
+    const avg = (t: number | null) => (t !== null && totalCases > 0 ? Math.round(t / totalCases) : null);
+
+    // Critère de départage (recalculé pour l'affichage)
+    let departage = 'la rapidité à terminer';
+    if ((myScore ?? 0) !== (oppScore ?? 0)) departage = 'le nombre de bonnes réponses';
+    else if ((myTime ?? 0) !== (oppTime ?? 0)) departage = 'le temps total';
+
     return (
       <div className="min-h-screen bg-gray-50 pb-10">
         {header}
@@ -90,16 +101,22 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
             <h2 className="text-2xl font-extrabold text-gray-800 mb-4">
               {won === true ? 'Victoire !' : won === false ? 'Défaite' : 'Égalité'}
             </h2>
-            <div className="flex justify-center gap-4 mb-6">
-              <div className="bg-emerald-50 px-6 py-3 rounded-2xl">
+
+            {/* Scores + temps des deux joueurs */}
+            <div className="flex justify-center gap-3 mb-6">
+              <div className="bg-emerald-50 px-4 py-4 rounded-2xl flex-1">
                 <p className="text-xs font-bold text-emerald-500 uppercase">Toi</p>
-                <p className="text-2xl font-extrabold text-emerald-600">{myScore ?? '—'}/5</p>
+                <p className="text-3xl font-extrabold text-emerald-600">{myScore ?? '—'}/{totalCases}</p>
+                <p className="text-xs text-gray-500 mt-1">⏱️ {myTime !== null ? `${myTime}s` : '—'}{avg(myTime) !== null ? ` · ${avg(myTime)}s/cas` : ''}</p>
               </div>
-              <div className="bg-red-50 px-6 py-3 rounded-2xl">
-                <p className="text-xs font-bold text-red-400 uppercase">{opponentName}</p>
-                <p className="text-2xl font-extrabold text-red-500">{oppScore ?? '—'}/5</p>
+              <div className="bg-red-50 px-4 py-4 rounded-2xl flex-1">
+                <p className="text-xs font-bold text-red-400 uppercase truncate">{opponentName}</p>
+                <p className="text-3xl font-extrabold text-red-500">{oppScore ?? '—'}/{totalCases}</p>
+                <p className="text-xs text-gray-500 mt-1">⏱️ {oppTime !== null ? `${oppTime}s` : '—'}{avg(oppTime) !== null ? ` · ${avg(oppTime)}s/cas` : ''}</p>
               </div>
             </div>
+
+            <p className="text-xs text-gray-400 mb-2">⚔️ Départagé par <b>{departage}</b></p>
             {won === true && <p className="text-purple-600 font-bold mb-6">🏟️ +10 Points Arena</p>}
             <Link href="/etudiant/duel" className="inline-block py-3 px-6 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-2xl">Retour aux duels</Link>
           </div>

@@ -160,6 +160,8 @@ model Duel {
   opponentTime       Int?
   requesterCompleted Boolean   @default(false)
   opponentCompleted  Boolean   @default(false)
+  requesterCompletedAt DateTime? // date de fin du joueur 1 (3e critère anti-égalité)
+  opponentCompletedAt  DateTime? // date de fin du joueur 2
   expiresAt          DateTime
   playDeadline       DateTime?
   acceptedAt         DateTime?
