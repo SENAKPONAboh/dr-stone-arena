@@ -54,6 +54,28 @@ export default function BulkCaseImporter() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [report, setReport] = useState<ImportReport | null>(null);
+  const [shuffling, setShuffling] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  const handleShuffleAll = async () => {
+    if (!confirm('Remélanger les propositions de TOUS les cas de la banque ? (Utile si la bonne réponse était toujours en A — la bonne réponse est conservée.)')) return;
+    setShuffling(true);
+    setError('');
+    setNotice('');
+    try {
+      const res = await fetch('/api/admin/cases-shuffle', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) setError(data.error || 'Erreur');
+      else {
+        setNotice(`🔀 ${data.count} cas remélangés ✅`);
+        setTimeout(() => setNotice(''), 4000);
+      }
+    } catch (e) {
+      setError('Erreur de connexion au serveur.');
+    } finally {
+      setShuffling(false);
+    }
+  };
 
   const handleImport = async () => {
     if (!content.trim()) { setError('Colle d\'abord tes cas dans la zone de texte.'); return; }
@@ -93,7 +115,13 @@ export default function BulkCaseImporter() {
           className="py-2.5 px-6 bg-blue-500 hover:bg-blue-600 text-white font-extrabold rounded-2xl text-sm uppercase tracking-wide disabled:opacity-50 transition-all">
           {loading ? '⏳ Import en cours...' : '📥 Importer les cas'}
         </button>
+        <button onClick={handleShuffleAll} disabled={shuffling}
+          className="py-2.5 px-5 bg-purple-500 hover:bg-purple-600 text-white font-bold rounded-2xl text-sm disabled:opacity-50 transition-all">
+          {shuffling ? '⏳ Remélange...' : '🔀 Remélanger la banque'}
+        </button>
       </div>
+
+      {notice && <div className="bg-purple-50 border-2 border-purple-200 text-purple-600 px-4 py-3 rounded-2xl text-sm font-bold text-center">{notice}</div>}
 
       <textarea
         value={content}

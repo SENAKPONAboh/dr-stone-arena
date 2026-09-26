@@ -56,6 +56,16 @@ function parseDifficulte(raw: string): string {
   return 'MOYEN';
 }
 
+// Mélange aléatoire (Fisher-Yates) — évite que la bonne réponse reste toujours en position A
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // Propositions : "A. xxx" (multi-lignes), "- xxx", ou "xxx ; yyy"
 function parsePropositions(raw: string): { options: string[]; letters: string[] } {
   const lines = raw.split('\n').map(l => l.trim()).filter(l => l !== '');
@@ -295,7 +305,7 @@ export async function POST(request: Request) {
           difficulty: c.difficulte,
           xp: XP_BY_DIFFICULTY[c.difficulte] ?? 10,
           statement: c.statement,
-          options: c.options,
+          options: shuffleArray(c.options), // 🔀 mélange automatique : la bonne réponse (comparée par texte) change de position
           correctAnswer: c.reponse,
           explanation: c.explication,
           durationMax: c.temps,
