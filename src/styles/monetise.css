@@ -1,0 +1,60 @@
+/* ===== ANIMATIONS — PLATEFORME MONÉTISÉE (identité or) ===== */
+
+/* Gradient or qui coule en continu */
+@keyframes goldFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.animate-gold-flow {
+  background-size: 200% 200%;
+  animation: goldFlow 6s ease infinite;
+}
+
+/* Flottement doux (logos, icônes) */
+@keyframes floatIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float { animation: floatIdle 3.5s ease-in-out infinite; }
+
+/* Glow or pulsé (cagnotte, boutons premium) */
+@keyframes glowGold {
+  0%, 100% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.35); }
+  50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.7); }
+}
+.animate-glow-gold { animation: glowGold 2.5s ease-in-out infinite; }
+
+/* Flamme qui pulse selon l'intensité */
+@keyframes flamePulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.12); filter: brightness(1.25); }
+}
+.animate-flame { animation: flamePulse 1.8s ease-in-out infinite; }
+.animate-flame-intense { animation: flamePulse 1s ease-in-out infinite; }
+
+/* Shimmer doré (chargement) */
+@keyframes shimmerGold {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.animate-shimmer-gold {
+  background: linear-gradient(90deg, rgba(251,191,36,0.05) 25%, rgba(251,191,36,0.25) 50%, rgba(251,191,36,0.05) 75%);
+  background-size: 800px 100%;
+  animation: shimmerGold 1.6s linear infinite;
+}
+
+/* Pièce UA flottante */
+@keyframes coinFly {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-60px) rotate(360deg); opacity: 0; }
+}
+.animate-coin { animation: coinFly 1.2s ease-out forwards; }
+
+/* Accessibilité : réduire les animations si demandé par l'OS */
+@media (prefers-reduced-motion: reduce) {
+  .animate-gold-flow, .animate-float, .animate-glow-gold,
+  .animate-flame, .animate-flame-intense, .animate-shimmer-gold, .animate-coin {
+    animation: none;
+  }
+}

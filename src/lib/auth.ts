@@ -109,6 +109,12 @@ export async function getCurrentUserCore() {
       duelsLost: true,
       pointsArena: true,
       onboardingCompleted: true,
+      uaBalance: true,
+      uaLocked: true,
+      passActive: true,
+      passExpiresAt: true,
+      streakBeforeReset: true,
+      flameProtectedUntil: true,
       createdAt: true,
     }
   });

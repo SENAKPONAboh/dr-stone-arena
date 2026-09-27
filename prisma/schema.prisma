@@ -41,6 +41,18 @@ model User {
   notifications Notification[]
   ambassadorCommissions AmbassadorCommission[] @relation("CommissionPayer")
   dailySelections DailyCaseSelection[]
+  // ===== Espace monétisé (UA) =====
+  uaBalance          Int       @default(0)
+  uaLocked           Int       @default(0)
+  passActive         Boolean   @default(false)
+  passExpiresAt      DateTime?
+  streakBeforeReset  Int       @default(0)
+  flameProtectedUntil DateTime?
+  activeThemeId      String?
+  uaTransactions     UaTransaction[]
+  rushSessions       RushSession[]
+  withdrawals        WithdrawalRequest[]
+  inventory          UserInventory[]
   pushSubscription Json?
   duelsWon    Int @default(0)
   duelsLost   Int @default(0)
@@ -261,4 +273,71 @@ model DailyCaseSelection {
   createdAt DateTime @default(now())
 
   @@unique([userId, date]) // une seule sélection par étudiant et par jour
+}
+model UaTransaction {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String   // CAS_REUSSI | RUSH_PALIER_1/2/3 | RUSH_COFFRE | PASS_RENOUVELLEMENT | ACHAT_BOUTIQUE | TICKET_RUSH | RETRAIT_BLOCAGE | RETRAIT_PAYE | RETRAIT_REJET | RETRAIT_ANNUL | ADMIN_CORRECTION
+  amount        Int      // positif = crédit, négatif = débit
+  balanceBefore Int
+  balanceAfter  Int
+  reference     String?  // clinicalCaseId, rushSessionId, itemId...
+  createdAt     DateTime @default(now())
+}
+
+model RushSession {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekend       String    // "2026-W03" (année-semaine ISO)
+  attemptNumber Int
+  wasFree       Boolean
+  errors        Int       @default(0)
+  currentStreak Int       @default(0)
+  palier1       Boolean   @default(false)
+  palier2       Boolean   @default(false)
+  palier3       Boolean   @default(false)
+  status        String    @default("EN_COURS") // EN_COURS | TERMINE_ECHEC | TERMINE_PLAFOND | TERMINE_ABANDON
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+}
+
+model WithdrawalRequest {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountUA    Int
+  amountFCFA  Int
+  operator    String    // ORANGE_MONEY | MOOV_MONEY
+  phoneNumber String
+  accountName String?
+  status      String    @default("EN_ATTENTE") // EN_ATTENTE | EN_TRAITEMENT | PAYE | REJETE | ANNULE
+  note        String?
+  processedAt DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model ShopItem {
+  id          String          @id @default(cuid())
+  category    String          // FLAMME | RUSH | THEME | CADRE | TITRE | EFFET | COFFRE
+  name        String
+  description String?
+  icon        String?
+  priceUA     Int
+  effectKey   String?
+  payload     Json?
+  isActive    Boolean         @default(true)
+  inventory   UserInventory[]
+}
+
+model UserInventory {
+  userId      String    @default(cuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        ShopItem  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  quantity    Int       @default(1)
+  purchasedAt DateTime  @default(now())
+
+  @@unique([userId, itemId])
 }

@@ -249,6 +249,26 @@ export default async function EtudiantDashboard() {
           : 'bg-gray-100 dark:bg-slate-800 text-gray-400 hover:text-emerald-600'}`}>
         <span>💬</span> Rejoins la communauté WhatsApp
       </a>
+
+      {/* Pass Arène Monétisé — découverte */}
+      <Link href="/etudiant/monetise/pass" className={`block rounded-3xl p-6 transition-all hover:scale-[1.01] hover:shadow-xl ${user.passActive
+        ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-[#1a1308]"
+        : "bg-white dark:bg-slate-800 border-2 border-yellow-400/40"}`}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl animate-float">🪙</span>
+            <div>
+              <p className="font-extrabold">{user.passActive ? "⚔️ Arène Monétisée" : "Pass Arène Monétisé"}</p>
+              <p className={`text-xs mt-0.5 ${user.passActive ? "opacity-70" : "text-gray-400"}`}>
+                {user.passActive
+                  ? `Cagnotte : ${user.uaBalance.toLocaleString("fr-FR")} UA — entre dans ton espace`
+                  : "+1 000 UA par cas, Rush du week-end, Boutique, retraits réels"}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-extrabold uppercase tracking-wide whitespace-nowrap">→</span>
+        </div>
+      </Link>
     </div>
   );
 }
