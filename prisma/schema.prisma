@@ -51,6 +51,8 @@ model User {
   activeThemeId      String?
   uaTransactions     UaTransaction[]
   passRequests       PassRequest[]
+  monetiseSelections MonetiseSelection[]
+  monetiseAttempts   MonetiseAttempt[]
   rushSessions       RushSession[]
   withdrawals        WithdrawalRequest[]
   inventory          UserInventory[]
@@ -98,6 +100,7 @@ model ClinicalCase {
   chapterId     String
   chapter       Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   attempts      Attempt[]
+  monetiseAttempts MonetiseAttempt[]
   createdAt     DateTime @default(now())
 }
 
@@ -353,4 +356,26 @@ model PassRequest {
   status          String    @default("EN_ATTENTE") // EN_ATTENTE | VALIDE | REJETE
   createdAt       DateTime  @default(now())
   validatedAt     DateTime?
+}
+model MonetiseSelection {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  caseIds   String[]
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model MonetiseAttempt {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinicalCaseId String
+  clinicalCase   ClinicalCase @relation(fields: [clinicalCaseId], references: [id], onDelete: Cascade)
+  userAnswer     String
+  isCorrect      Boolean
+  timeSpent      Int
+  createdAt      DateTime @default(now())
 }

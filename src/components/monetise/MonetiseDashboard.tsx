@@ -58,6 +58,9 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
             💰 Retrait disponible
           </Link>
         )}
+        <a href="/etudiant/monetise/jouer" className="inline-block mt-4 py-2 px-6 bg-[#1a1308] text-yellow-400 font-extrabold rounded-2xl text-sm uppercase tracking-wide">
+          ▶️ Jouer mes 10 cas du jour
+        </a>
       </motion.div>
 
       {/* Cartes en cascade */}

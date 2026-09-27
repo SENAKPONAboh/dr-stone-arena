@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 
 const ITEMS = [
   { href: '/etudiant/monetise', label: 'Dashboard', icon: '📊', available: true },
+  { href: '/etudiant/monetise/jouer', label: 'Jouer', icon: '▶️', available: true },
   { href: '/etudiant/monetise/pass', label: 'Pass', icon: '🪙', available: true },
   { href: '/etudiant/monetise/rush', label: 'Rush', icon: '⚔️', available: false, phase: 'U4' },
   { href: '/etudiant/monetise/boutique', label: 'Boutique', icon: '🏪', available: false, phase: 'U6' },
