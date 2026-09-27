@@ -119,6 +119,7 @@ export default async function AdminDashboard() {
             {actionCard('/admin/premium', '👑', 'Validation Premium', 'Vérifier les reçus et activer les abonnements I/II/III', 'bg-yellow-50')}
             {actionCard('/admin/ambassadors', '🤝', 'Ambassadeurs', 'Codes, statuts, commissions et versements', 'bg-teal-50')}
             {actionCard('/admin/payment-methods', '💳', 'Moyens de paiement', 'Wave, Nita, Amanata, MTN MoMo — numéros et instructions', 'bg-purple-50')}
+            {actionCard('/admin/monetise', '🪙', 'Pass Monétisé', 'Validation des demandes de Pass Arène (2 000 FCFA/mois)', 'bg-yellow-50')}
           </div>
         </section>
 

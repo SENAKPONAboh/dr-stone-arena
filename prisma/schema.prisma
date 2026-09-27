@@ -50,6 +50,7 @@ model User {
   flameProtectedUntil DateTime?
   activeThemeId      String?
   uaTransactions     UaTransaction[]
+  passRequests       PassRequest[]
   rushSessions       RushSession[]
   withdrawals        WithdrawalRequest[]
   inventory          UserInventory[]
@@ -204,6 +205,7 @@ model PaymentMethod {
   displayOrder      Int      @default(99)
   provider          String?
   premiumRequests   PremiumRequest[]
+  passRequests      PassRequest[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -340,4 +342,15 @@ model UserInventory {
   purchasedAt DateTime  @default(now())
 
   @@unique([userId, itemId])
+}
+model PassRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receiptUrl      String    // chemin Supabase Storage (bucket receipts)
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  status          String    @default("EN_ATTENTE") // EN_ATTENTE | VALIDE | REJETE
+  createdAt       DateTime  @default(now())
+  validatedAt     DateTime?
 }

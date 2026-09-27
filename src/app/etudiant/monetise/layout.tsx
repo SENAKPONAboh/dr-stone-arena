@@ -1,6 +1,7 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import prisma from '@/lib/prisma';
 import MonetiseNav from '@/components/monetise/MonetiseNav';
 import '@/styles/monetise.css';
 
@@ -9,6 +10,16 @@ export default async function MonetiseLayout({ children }: { children: React.Rea
   if (!user) redirect('/login');
   if (user.role === 'ADMIN') redirect('/admin');
   if (user.role === 'CORRECTEUR') redirect('/correcteur');
+
+  // Purge d'expiration du Pass (même pattern que le Premium au dashboard)
+  if (user.passActive && user.passExpiresAt && new Date(user.passExpiresAt) < new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passActive: false, passExpiresAt: null }
+    });
+    user.passActive = false;
+    user.passExpiresAt = null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] pb-24 md:pb-10">
