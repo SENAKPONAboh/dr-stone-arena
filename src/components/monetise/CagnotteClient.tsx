@@ -11,6 +11,11 @@ type PendingRequest = {
 
 type TxHistory = { id: string; type: string; amount: number; balanceAfter: number; createdAt: string };
 
+type PaymentMethodUI = {
+  id: string; name: string; icon: string | null;
+  beneficiaryName: string | null; paymentIdentifier: string | null; instructions: string | null;
+};
+
 const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   CAS_REUSSI: { label: 'Cas réussi', icon: '✅' },
   RUSH_P1: { label: 'Rush — Palier 1', icon: '🪙' },
@@ -29,7 +34,6 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   ADMIN_CORRECTION: { label: 'Correction admin', icon: '🛠️' },
 };
 
-// Compteur animé
 function AnimatedCounter({ target }: { target: number }) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -46,15 +50,20 @@ function AnimatedCounter({ target }: { target: number }) {
   return <span>{value.toLocaleString('fr-FR')}</span>;
 }
 
-export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, history }: {
-  uaBalance: number; uaLocked: number; pendingRequest: PendingRequest | null; history: TxHistory[];
+export default function CagnotteClient({
+  uaBalance, uaLocked, pendingRequest, history, paymentMethods,
+}: {
+  uaBalance: number; uaLocked: number; pendingRequest: PendingRequest | null;
+  history: TxHistory[]; paymentMethods: PaymentMethodUI[];
 }) {
   const [amount, setAmount] = useState('');
-  const [operator, setOperator] = useState('ORANGE_MONEY');
+  const [methodId, setMethodId] = useState(paymentMethods[0]?.id ?? '');
   const [phone, setPhone] = useState('');
   const [accountName, setAccountName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const selectedMethod = paymentMethods.find(m => m.id === methodId) ?? null;
 
   const amountNum = parseInt(amount || '0', 10) || 0;
   const amountError = amountNum === 0 ? ''
@@ -64,18 +73,18 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
     : '';
   const phoneDigits = phone.replace(/\D/g, '');
   const phoneOk = phoneDigits.length >= 8 && phoneDigits.length <= 15;
-  const canWithdraw = !pendingRequest && uaBalance >= WITHDRAWAL_MIN_UA;
+  const canWithdraw = !pendingRequest && uaBalance >= WITHDRAWAL_MIN_UA && paymentMethods.length > 0;
 
   const submit = async () => {
-    if (amountError || !phoneOk || submitting) return;
-    if (!confirm(`Demander le retrait de ${amountNum.toLocaleString('fr-FR')} UA (= ${uaToFCFA(amountNum).toLocaleString('fr-FR')} FCFA) sur ${operator === 'ORANGE_MONEY' ? 'Orange Money' : 'Moov Money'} ${phoneDigits} ?`)) return;
+    if (amountError || !phoneOk || submitting || !selectedMethod) return;
+    if (!confirm(`Demander le retrait de ${amountNum.toLocaleString('fr-FR')} UA (= ${uaToFCFA(amountNum).toLocaleString('fr-FR')} FCFA) sur ${selectedMethod.name} ${phoneDigits} ?`)) return;
     setSubmitting(true);
     setError('');
     try {
       const res = await fetch('/api/monetise/withdraw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'CREATE', amountUA: amountNum, operator, phoneNumber: phoneDigits, accountName: accountName || null }),
+        body: JSON.stringify({ action: 'CREATE', amountUA: amountNum, paymentMethodId: methodId, phoneNumber: phoneDigits, accountName: accountName || null }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data?.error || 'Erreur serveur'); return; }
@@ -111,7 +120,6 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
   return (
     <div className="space-y-6">
 
-      {/* Hero solde */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
         className="animate-gold-flow bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 rounded-3xl p-8 text-center text-[#1a1308] shadow-2xl shadow-yellow-900/30"
@@ -128,7 +136,6 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
         <div className="bg-red-400/10 border-2 border-red-400/30 text-red-300 px-4 py-3 rounded-2xl text-sm font-bold text-center">{error}</div>
       )}
 
-      {/* Demande en cours */}
       {pendingRequest && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           className="bg-white/5 border-2 border-yellow-500/30 rounded-3xl p-6">
@@ -140,7 +147,7 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
           </div>
           <div className="space-y-1 text-sm text-white/60">
             <p>Montant : <span className="font-extrabold text-yellow-300">{pendingRequest.amountUA.toLocaleString('fr-FR')} UA</span> → <span className="font-extrabold text-emerald-300">{pendingRequest.amountFCFA.toLocaleString('fr-FR')} FCFA</span></p>
-            <p>{pendingRequest.operator === 'ORANGE_MONEY' ? '🟠 Orange Money' : '🔵 Moov Money'} · {pendingRequest.phoneNumber}{pendingRequest.accountName ? ` · ${pendingRequest.accountName}` : ''}</p>
+            <p>{pendingRequest.operator} · {pendingRequest.phoneNumber}{pendingRequest.accountName ? ` · ${pendingRequest.accountName}` : ''}</p>
             <p className="text-xs text-white/30">Demandé le {new Date(pendingRequest.createdAt).toLocaleString('fr-FR')}</p>
           </div>
           <p className="text-xs text-white/40 mt-4">🔒 Ces UA sont bloquées jusqu'au paiement — elles te seront rendues si la demande est rejetée.</p>
@@ -153,23 +160,26 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
         </motion.div>
       )}
 
-      {/* Formulaire de retrait */}
       {!pendingRequest && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
           <h2 className="font-extrabold text-white mb-1">💰 Demander un retrait</h2>
           <p className="text-xs text-white/40 mb-5">100 UA = 1 FCFA · Minimum {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (2 000 FCFA) · Paiement manuel après vérification — tu seras notifié.</p>
 
-          {!canWithdraw && (
+          {uaBalance < WITHDRAWAL_MIN_UA && (
             <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-5 text-center text-sm text-white/50">
               💵 Solde insuffisant pour un retrait — il te faut au moins {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (tu en as {uaBalance.toLocaleString('fr-FR')}).
-              <br />Joue tes cas du jour et le Rush du week-end pour grossir ta cagnotte !
+            </div>
+          )}
+
+          {uaBalance >= WITHDRAWAL_MIN_UA && paymentMethods.length === 0 && (
+            <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-5 text-center text-sm text-white/50">
+              🏦 Aucun moyen de paiement disponible pour le moment — reviens bientôt.
             </div>
           )}
 
           {canWithdraw && (
             <div className="space-y-5">
-              {/* Montant */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-white/50">Montant (UA)</label>
                 <input
@@ -184,22 +194,21 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
                 {amountError && <p className="text-xs text-red-300 mt-1 font-bold">{amountError}</p>}
               </div>
 
-              {/* Opérateur */}
+              {/* 🏦 Moyens de paiement — ceux configurés dans le panel admin */}
               <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-white/50">Opérateur</label>
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <button type="button" onClick={() => setOperator('ORANGE_MONEY')}
-                    className={`py-3 rounded-2xl border-2 font-bold text-sm transition-all ${operator === 'ORANGE_MONEY' ? 'border-orange-500 bg-orange-500/10 text-orange-300' : 'border-white/10 text-white/50'}`}>
-                    🟠 Orange Money
-                  </button>
-                  <button type="button" onClick={() => setOperator('MOOV_MONEY')}
-                    className={`py-3 rounded-2xl border-2 font-bold text-sm transition-all ${operator === 'MOOV_MONEY' ? 'border-blue-500 bg-blue-500/10 text-blue-300' : 'border-white/10 text-white/50'}`}>
-                    🔵 Moov Money
-                  </button>
+                <label className="text-xs font-bold uppercase tracking-wider text-white/50">Moyen de paiement</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
+                  {paymentMethods.map(m => (
+                    <button type="button" key={m.id} onClick={() => setMethodId(m.id)}
+                      className={`py-3 px-4 rounded-2xl border-2 font-bold text-sm flex items-center gap-2 transition-all ${methodId === m.id
+                        ? 'border-yellow-500 bg-yellow-500/10 text-yellow-300'
+                        : 'border-white/10 text-white/50'}`}>
+                      <span className="text-lg">{m.icon ?? '🏦'}</span> {m.name}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Téléphone */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-white/50">Numéro de téléphone</label>
                 <input
@@ -211,7 +220,6 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
                 {phone.length > 0 && !phoneOk && <p className="text-xs text-red-300 mt-1 font-bold">Numéro invalide (8 à 15 chiffres).</p>}
               </div>
 
-              {/* Nom du compte */}
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-white/50">Nom du compte <span className="opacity-50">(optionnel)</span></label>
                 <input
@@ -223,7 +231,7 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
               </div>
 
               <motion.button
-                onClick={submit} disabled={submitting || !!amountError || !phoneOk}
+                onClick={submit} disabled={submitting || !!amountError || !phoneOk || !selectedMethod}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 className="w-full py-4 bg-gradient-to-r from-yellow-400 to-amber-500 text-[#1a1308] text-lg font-extrabold rounded-2xl uppercase tracking-wide disabled:opacity-40 disabled:cursor-not-allowed"
               >
@@ -234,7 +242,6 @@ export default function CagnotteClient({ uaBalance, uaLocked, pendingRequest, hi
         </motion.div>
       )}
 
-      {/* Historique */}
       <div className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
         <h2 className="font-extrabold text-white mb-4">📜 Historique de ta cagnotte</h2>
         {history.length === 0 ? (

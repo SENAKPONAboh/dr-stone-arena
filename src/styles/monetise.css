@@ -51,10 +51,75 @@
 }
 .animate-coin { animation: coinFly 1.2s ease-out forwards; }
 
+/* ===== PERSONNALISATION 2.0 — EFFETS SPECTACULAIRES ===== */
+
+/* Flamme qui vacille (Cadre de Feu) */
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1, 1) translateY(0) rotate(0deg); opacity: 0.85; }
+  20% { transform: scale(1.2, 1.35) translateY(-2px) rotate(4deg); opacity: 1; }
+  45% { transform: scale(0.88, 0.8) translateY(1px) rotate(-3deg); opacity: 0.65; }
+  70% { transform: scale(1.12, 1.22) translateY(-1px) rotate(2deg); opacity: 0.95; }
+}
+
+/* Braises qui montent */
+@keyframes emberRise {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate(7px, -44px) scale(0.2); opacity: 0; }
+}
+
+/* Étoile qui scintille (opacité seule — compatible tout positionnement) */
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+/* Enseigne néon qui grésille */
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  7% { opacity: 0.3; }
+  9% { opacity: 1; }
+  30% { opacity: 0.45; }
+  33% { opacity: 1; }
+  75% { opacity: 0.6; }
+  78% { opacity: 1; }
+}
+
+/* Rotation de teintes (Cadre Arc-en-Ciel) */
+@keyframes hueShift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+/* Fond de thème qui dérive lentement */
+@keyframes themeDrift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Particules flottantes du thème */
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  12% { opacity: 0.85; }
+  85% { opacity: 0.5; }
+  100% { transform: translateY(-130px) translateX(18px); opacity: 0; }
+}
+
+/* Halo du thème qui respire */
+@keyframes auraPulse {
+  0%, 100% { box-shadow: 0 0 25px var(--aura-color, rgba(255,255,255,0.2)), 0 0 70px var(--aura-color, rgba(255,255,255,0.1)); }
+  50% { box-shadow: 0 0 45px var(--aura-color, rgba(255,255,255,0.45)), 0 0 130px var(--aura-color, rgba(255,255,255,0.25)); }
+}
+
+/* Classes utilitaires thèmes */
+.theme-bg-anim { background-size: 200% 200%; animation: themeDrift 14s ease infinite; }
+.theme-particle { position: absolute; border-radius: 50%; animation: particleFloat 7s linear infinite; opacity: 0.7; }
+
 /* Accessibilité : réduire les animations si demandé par l'OS */
 @media (prefers-reduced-motion: reduce) {
   .animate-gold-flow, .animate-float, .animate-glow-gold,
-  .animate-flame, .animate-flame-intense, .animate-shimmer-gold, .animate-coin {
+  .animate-flame, .animate-flame-intense, .animate-shimmer-gold, .animate-coin,
+  .theme-bg-anim, .theme-particle {
     animation: none;
   }
 }

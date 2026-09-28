@@ -3,8 +3,6 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { WITHDRAWAL_MIN_UA, uaToFCFA } from '@/lib/monetise';
 
-const OPERATORS = ['ORANGE_MONEY', 'MOOV_MONEY'];
-
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
   if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -14,10 +12,10 @@ export async function POST(request: Request) {
     const body = await request.json();
     const action = body?.action;
 
-    // ===== CRÉATION d'une demande de retrait =====
+    // ===== CRÉATION =====
     if (action === 'CREATE') {
       const amountUA = Number(body?.amountUA);
-      const operator = String(body?.operator ?? '');
+      const paymentMethodId = String(body?.paymentMethodId ?? '');
       const phoneNumber = String(body?.phoneNumber ?? '').trim();
       const accountName = body?.accountName ? String(body.accountName).trim() : null;
 
@@ -27,9 +25,10 @@ export async function POST(request: Request) {
       if (amountUA % 100 !== 0) {
         return NextResponse.json({ error: "Le montant doit être un multiple de 100 UA (100 UA = 1 FCFA)." }, { status: 400 });
       }
-      if (!OPERATORS.includes(operator)) {
-        return NextResponse.json({ error: "Opérateur invalide." }, { status: 400 });
-      }
+      // 🏦 Moyen de paiement : uniquement ceux ACTIVÉS dans votre panel admin
+      const method = await prisma.paymentMethod.findFirst({ where: { id: paymentMethodId, isActive: true } });
+      if (!method) return NextResponse.json({ error: "Moyen de paiement invalide ou indisponible." }, { status: 400 });
+
       const digits = phoneNumber.replace(/\D/g, '');
       if (digits.length < 8 || digits.length > 15) {
         return NextResponse.json({ error: "Numéro de téléphone invalide (8 à 15 chiffres)." }, { status: 400 });
@@ -53,20 +52,18 @@ export async function POST(request: Request) {
 
         const amountFCFA = uaToFCFA(amountUA);
 
-        // 1. Demande
         const wd = await tx.withdrawalRequest.create({
           data: {
-            userId: user.id, amountUA, amountFCFA, operator,
+            userId: user.id, amountUA, amountFCFA,
+            operator: method.name, // nom du moyen de paiement configuré dans le panel
             phoneNumber: digits, accountName, status: 'EN_ATTENTE',
           },
         });
-        // 2. Blocage des UA (retirées du solde disponible, suivies dans uaLocked)
         const updated = await tx.user.update({
           where: { id: user.id },
           data: { uaBalance: { decrement: amountUA }, uaLocked: { increment: amountUA } },
           select: { uaBalance: true },
         });
-        // 3. Registre
         await tx.uaTransaction.create({
           data: {
             userId: user.id, type: 'RETRAIT_BLOCAGE', amount: -amountUA,
@@ -74,13 +71,13 @@ export async function POST(request: Request) {
           },
         });
 
-        return { requestId: wd.id, amountUA, amountFCFA, balanceAfter: updated.uaBalance };
+        return { requestId: wd.id, amountUA, amountFCFA, methodName: method.name, balanceAfter: updated.uaBalance };
       });
 
       return NextResponse.json({ success: true, ...result });
     }
 
-    // ===== ANNULATION par l'étudiant (uniquement si EN_ATTENTE) =====
+    // ===== ANNULATION =====
     if (action === 'CANCEL') {
       const requestId = String(body?.requestId ?? '');
 

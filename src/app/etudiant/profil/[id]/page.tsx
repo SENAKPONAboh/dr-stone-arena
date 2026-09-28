@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
@@ -39,7 +40,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   if (profileUser.xp >= 3000) grade = "🥇 Clinicien Or";
   if (profileUser.xp >= 6000) grade = "💎 Expert Clinicien";
 
-  // Styles : le THÈME équipé prend le dessus, sinon Premium/classique
   const cardStyle = themeDef
     ? themeDef.card
     : profileUser.isPremium
@@ -67,10 +67,32 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       ? "bg-yellow-500/10 border-2 border-yellow-400/30 rounded-2xl"
       : "bg-yellow-50 border-2 border-yellow-100 rounded-2xl";
 
-  return (
-    <div className={`min-h-screen pb-10 ${pageBg}`}>
+  const cardAnimStyle: CSSProperties | undefined = themeDef
+    ? ({ '--aura-color': themeDef.aura, animation: 'auraPulse 3.5s ease-in-out infinite' } as CSSProperties)
+    : undefined;
 
-      <header className={`border-b-2 ${themeDef ? 'border-white/10 bg-black/30' : profileUser.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
+  return (
+    <div className={`min-h-screen pb-10 relative overflow-hidden ${pageBg} ${themeDef ? 'theme-bg-anim' : ''}`}>
+
+      {/* ✨ PARTICULES DU THÈME — flottent en continu sur tout le profil */}
+      {themeDef && (
+        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+          {Array.from({ length: 14 }).map((_, i) => (
+            <span key={i} className="theme-particle"
+              style={{
+                bottom: '-10px',
+                left: `${(i * 7.3 + 3) % 100}%`,
+                width: 3 + (i % 3) * 2,
+                height: 3 + (i % 3) * 2,
+                background: themeDef.particleColor,
+                animationDelay: `${i * 0.9}s`,
+                animationDuration: `${6 + (i % 5) * 2}s`,
+              }} />
+          ))}
+        </div>
+      )}
+
+      <header className={`relative z-10 border-b-2 ${themeDef ? 'border-white/10 bg-black/30 backdrop-blur-sm' : profileUser.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link href="/etudiant" className={`flex items-center gap-2 ${themeDef || profileUser.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -89,10 +111,10 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 mt-6">
-        <div className={`rounded-3xl p-8 text-center transition-all ${cardStyle}`}>
+      <main className="relative z-10 max-w-md mx-auto px-4 mt-6">
+        <div className={`rounded-3xl p-8 text-center transition-all ${cardStyle}`} style={cardAnimStyle}>
 
-          {/* Photo — CADRE équipé (remplace l'Anneau d'Or) > Anneau d'Or > simple */}
+          {/* Photo — CADRE 2.0 (flammes, étoiles, néon…) > Anneau d'Or > simple */}
           <div className="relative mx-auto mb-4">
             {profileUser.passActive || profileUser.activeFrameId ? (
               <GoldAvatar
@@ -124,7 +146,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             {profileUser.pseudo || `${profileUser.prenom} ${profileUser.nom}`}
           </h2>
 
-          {/* 🏷️ Titre équipé */}
           {titleDef && (
             <span className={`inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-extrabold ${RARITY_STYLES[titleDef.rarity].cls}`}>
               {titleDef.icon} {titleDef.name}
@@ -137,8 +158,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-orange-500/20 text-orange-300', 'bg-orange-50 text-orange-600')}`}>🔥 {profileUser.streak} Jours</span>
           </div>
 
-          <div className={`mt-6 p-4 rounded-2xl ${themeDef ? 'bg-white/5' : profileUser.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
-            <p className={`text-xs font-bold uppercase tracking-wider ${themeDef ? 'text-white/50' : profileUser.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
+          <div className={`mt-6 p-4 rounded-2xl ${themeDef || profileUser.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
+            <p className="text-xs font-bold uppercase tracking-wider text-white/50">Grade Actuel</p>
             <p className={`text-xl mt-1 ${gradeStyle}`}>{grade}</p>
           </div>
 

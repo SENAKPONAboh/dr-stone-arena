@@ -14,6 +14,12 @@ export default async function CagnottePage() {
     select: { uaBalance: true, uaLocked: true },
   });
 
+  // 🏦 Moyens de paiement ACTIFS — configurés depuis le panel admin
+  const paymentMethods = await prisma.paymentMethod.findMany({
+    where: { isActive: true },
+    orderBy: { displayOrder: 'asc' },
+  });
+
   const pendingRequest = await prisma.withdrawalRequest.findFirst({
     where: { userId: user.id, status: { in: ['EN_ATTENTE', 'EN_TRAITEMENT'] } },
     orderBy: { createdAt: 'desc' },
@@ -45,6 +51,10 @@ export default async function CagnottePage() {
           history={history.map(t => ({
             id: t.id, type: t.type, amount: t.amount,
             balanceAfter: t.balanceAfter, createdAt: t.createdAt.toISOString(),
+          }))}
+          paymentMethods={paymentMethods.map(m => ({
+            id: m.id, name: m.name, icon: m.icon,
+            beneficiaryName: m.beneficiaryName, paymentIdentifier: m.paymentIdentifier, instructions: m.instructions,
           }))}
         />
       </div>
