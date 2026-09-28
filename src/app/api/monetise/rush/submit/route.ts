@@ -6,7 +6,6 @@ import { isRushWeekend, getWeekendSaturday } from '@/lib/monetise-rush';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
-// Paliers du Rush — montants importés de la source unique (lib/monetise.ts), plus de valeurs en dur
 const PALIERS = [
   { flag: 'palier1' as const, threshold: 10, amount: RUSH_PALIER_1_UA, type: 'RUSH_P1' },
   { flag: 'palier2' as const, threshold: 15, amount: RUSH_PALIER_2_UA, type: 'RUSH_P2' },
@@ -28,10 +27,13 @@ export async function POST(request: Request) {
     if (!clinicalCase) return NextResponse.json({ error: "Cas introuvable" }, { status: 404 });
 
     const response = await prisma.$transaction(async (tx) => {
-      // 🔒 VERROU PAR JOUEUR : une seule opération Rush simultanée → plus de double crédit possible
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
+      // 🔒 VERROU best effort (voir route semaine)
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
+      } catch (lockErr) {
+        console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
+      }
 
-      // === TOUTES les vérifications sont refaites APRÈS le verrou (état garanti frais) ===
       const session = await tx.rushSession.findUnique({ where: { id: sessionId } });
       if (!session || session.userId !== user.id) throw new Error('NOT_FOUND');
       if (session.status !== 'EN_COURS') throw new Error('SESSION_CLOSED');
@@ -43,7 +45,6 @@ export async function POST(request: Request) {
       const newStreak = isCorrect ? session.currentStreak + 1 : session.currentStreak;
       const newErrors = isCorrect ? session.errors : session.errors + 1;
 
-      // Plafond week-end : recalculé SOUS le verrou
       const saturday = getWeekendSaturday();
       const weekendAgg = await tx.uaTransaction.aggregate({
         where: { userId: user.id, type: { in: ['RUSH_P1', 'RUSH_P2', 'RUSH_P3'] }, createdAt: { gte: saturday } },
@@ -51,7 +52,6 @@ export async function POST(request: Request) {
       });
       const totalWeekend = weekendAgg._sum.amount ?? 0;
 
-      // Paliers à créditer (anti-double-crédit : flags relus sous verrou)
       const paliersToCredit = isCorrect ? PALIERS.filter(p => newStreak >= p.threshold && !session[p.flag]) : [];
 
       let sessionStatus: string = 'EN_COURS';
@@ -63,7 +63,6 @@ export async function POST(request: Request) {
       let balanceAfter: number | null = null;
       let currentTotal = totalWeekend;
 
-      // Crédit des paliers (écrêté au plafond week-end)
       for (const p of paliersToCredit) {
         const effective = Math.max(0, Math.min(p.amount, RUSH_WEEKEND_CAP_UA - currentTotal));
         if (effective <= 0) continue;
@@ -82,13 +81,12 @@ export async function POST(request: Request) {
         totalEarned += effective;
       }
 
-      // Solde frais pour la réponse (même sans palier crédité)
       if (balanceAfter === null) {
         const u = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true } });
         balanceAfter = u?.uaBalance ?? 0;
       }
 
-      // === COFFRE DU PALIER 3 (Coffre d'Élite du Major : Gel de Flamme + Restaure-Flamme) ===
+      // === COFFRE DU PALIER 3 ===
       let chestGranted = false;
       const chestItems: string[] = [];
       if (paliersToCredit.some(p => p.flag === 'palier3')) {
@@ -97,7 +95,6 @@ export async function POST(request: Request) {
           { name: 'Restaure-Flamme', category: 'FLAMME', priceUA: RESTAURE_FLAMME_UA, icon: '🔥', description: 'Restaure une Flamme perdue.' },
         ];
         for (const it of itemsToGrant) {
-          // Objet déjà présent au catalogue ? Sinon création (catalogue non encore semé — la boutique les réutilisera)
           let shopItem = await tx.shopItem.findFirst({ where: { name: it.name, category: it.category } });
           if (!shopItem) {
             shopItem = await tx.shopItem.create({
@@ -112,13 +109,11 @@ export async function POST(request: Request) {
           chestItems.push(it.name);
         }
         chestGranted = true;
-        // Marqueur d'attribution (0 UA : aucun mouvement de monnaie)
         await tx.uaTransaction.create({
           data: { userId: user.id, type: 'RUSH_COFFRE', amount: 0, balanceBefore: balanceAfter, balanceAfter: balanceAfter, reference: session.id },
         });
       }
 
-      // Mise à jour de la session — unique et atomique
       await tx.rushSession.update({
         where: { id: session.id },
         data: {
@@ -133,7 +128,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // Contrat de réponse (champs chest* additifs — le RushClient les exploite)
       return {
         isCorrect: isCorrect,
         errors: newErrors,
@@ -155,6 +149,7 @@ export async function POST(request: Request) {
     if (e?.message === 'SESSION_CLOSED') return NextResponse.json({ error: "Cette tentative est terminée ou expirée." }, { status: 400 });
     if (e?.message === 'CASE_PLAYED') return NextResponse.json({ error: "Ce cas a déjà été joué dans cette tentative." }, { status: 400 });
     console.error(e);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    const detail = [e?.code, e?.message].filter(Boolean).join(' — ') || String(e);
+    return NextResponse.json({ error: `Erreur serveur [${detail}]` }, { status: 500 });
   }
 }

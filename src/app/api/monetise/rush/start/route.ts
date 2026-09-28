@@ -15,18 +15,18 @@ export async function POST(request: Request) {
     const weekendId = getWeekendId();
 
     const result = await prisma.$transaction(async (tx) => {
-      // 🔒 VERROU PAR JOUEUR : une seule opération Rush simultanée pour cet utilisateur.
-      // Toute autre requête Rush du même joueur attend la fin de celle-ci → plus de double débit possible.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
+      // 🔒 VERROU best effort (voir route semaine)
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
+      } catch (lockErr) {
+        console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
+      }
 
-      // C8 : clôture des sessions d'un ANCIEN week-end restées en cours
       await closeStaleRushSessions(user.id, tx);
 
-      // Session du week-end courant déjà en cours ? (relecture APRÈS verrou = état garanti frais)
       const existing = await tx.rushSession.findFirst({ where: { userId: user.id, status: 'EN_COURS' } });
       if (existing) throw new Error('SESSION_EXISTS');
 
-      // Plafond week-end (recalculé sous verrou)
       const saturday = getWeekendSaturday();
       const weekendAgg = await tx.uaTransaction.aggregate({
         where: { userId: user.id, type: { in: ['RUSH_P1', 'RUSH_P2', 'RUSH_P3'] }, createdAt: { gte: saturday } },
@@ -34,7 +34,6 @@ export async function POST(request: Request) {
       });
       if ((weekendAgg._sum.amount ?? 0) >= RUSH_WEEKEND_CAP_UA) throw new Error('CAP_REACHED');
 
-      // Flamme : 5 jours actifs (lundi → vendredi, classique OU monétisé)
       const activeDays = await getActiveDaysThisWeek(user.id);
       const flameOk = activeDays >= RUSH_FLAME_REQUIRED;
 
@@ -42,7 +41,6 @@ export async function POST(request: Request) {
       const attemptNumber = sessionsCount + 1;
       const isFree = flameOk && attemptNumber <= RUSH_FREE_ATTEMPTS;
 
-      // Retry direct payant : débit atomique (type RETRY_RUSH, distinct du Ticket de boutique)
       if (!isFree) {
         const u = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true } });
         if (!u || u.uaBalance < RETRY_RUSH_UA) throw new Error('INSUFFICIENT');
@@ -81,6 +79,7 @@ export async function POST(request: Request) {
     if (e?.message === 'INSUFFICIENT') return NextResponse.json({ error: "Solde insuffisant pour lancer une tentative supplémentaire." }, { status: 400 });
     if (e?.message === 'CAP_REACHED') return NextResponse.json({ error: "Récompense Rush maximale atteinte pour ce week-end." }, { status: 400 });
     console.error(e);
-    return NextResponse.json({ error: "Erreur serveur." }, { status: 500 });
+    const detail = [e?.code, e?.message].filter(Boolean).join(' — ') || String(e);
+    return NextResponse.json({ error: `Erreur serveur [${detail}]` }, { status: 500 });
   }
 }

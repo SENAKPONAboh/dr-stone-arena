@@ -19,7 +19,6 @@ export async function POST(request: Request) {
   try {
     const { clinicalCaseId, userAnswer, timeSpent } = await request.json();
 
-    // Le cas est une donnée fixe : lecture hors zone critique
     const clinicalCase = await prisma.clinicalCase.findUnique({ where: { id: clinicalCaseId } });
     if (!clinicalCase) return NextResponse.json({ error: "Cas introuvable" }, { status: 404 });
 
@@ -28,19 +27,22 @@ export async function POST(request: Request) {
     tomorrow.setDate(today.getDate() + 1);
 
     const response = await prisma.$transaction(async (tx) => {
-      // 🔒 VERROU PAR JOUEUR (même verrou que le Rush) : une soumission à la fois, aucun double crédit
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
+      // 🔒 VERROU PAR JOUEUR — "best effort" : si le verrou est indisponible sur
+      // l'infrastructure, on continue quand même (la transaction et les vérifications
+      // serveur restent la protection principale). L'incident est tracé dans les logs.
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
+      } catch (lockErr) {
+        console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
+      }
 
       // === 1. Vérifications serveur — aucune confiance au client ===
-      // a) Sélection du jour (figée par la page) : le cas soumis doit en faire partie
       const selection = await tx.monetiseSelection.findFirst({
         where: { userId: user.id, date: { gte: today, lt: tomorrow } },
       });
       if (!selection) throw new Error('NO_SELECTION');
       if (!selection.caseIds.includes(clinicalCaseId)) throw new Error('NOT_IN_SELECTION');
 
-      // b) Anti-rejoue : ce cas ne doit pas avoir été tenté aujourd'hui
-      //    (avec le a), le plafond journalier 10 cas × 1 000 UA est garanti structurellement)
       const alreadyPlayed = await tx.monetiseAttempt.findFirst({
         where: { userId: user.id, clinicalCaseId: clinicalCaseId, createdAt: { gte: today } },
       });
@@ -60,14 +62,13 @@ export async function POST(request: Request) {
         },
       });
 
-      // Relecture fraîche du compte (solde + Flamme)
       const fresh = await tx.user.findUnique({
         where: { id: user.id },
         select: { uaBalance: true, streak: true, lastActive: true, chestAvailable: true },
       });
       if (!fresh) throw new Error('NO_USER');
 
-      // === 4. UA : +1 000 UA par bonne réponse — AUCUN XP (décision actée) ===
+      // === 4. UA : +1 000 UA par bonne réponse — AUCUN XP ===
       let uaEarned = 0;
       let balanceAfter = fresh.uaBalance;
       if (isCorrect) {
@@ -90,8 +91,7 @@ export async function POST(request: Request) {
         });
       }
 
-      // === 5. Flamme PARTAGÉE — même logique que le mode classique (api/challenge/submit) ===
-      // Compteur + coffre des 7 jours + badges de série. Pas d'XP, pas de vies.
+      // === 5. Flamme PARTAGÉE — même logique que le mode classique ===
       const lastActive = fresh.lastActive ? new Date(fresh.lastActive) : null;
       let newStreak = fresh.streak;
       let streakIncreased = false;
@@ -111,7 +111,6 @@ export async function POST(request: Request) {
         streakIncreased = true;
       }
 
-      // Coffre : tous les 7 jours de série
       const chestUnlocked = streakIncreased && newStreak % 7 === 0;
 
       await tx.user.update({
@@ -141,7 +140,7 @@ export async function POST(request: Request) {
         }
       }
 
-      // === 7. Réponse — correctAnswer/explication retournés SEULEMENT après soumission ===
+      // === 7. Réponse ===
       return {
         isCorrect: isCorrect,
         correctAnswer: clinicalCase.correctAnswer,
@@ -160,6 +159,8 @@ export async function POST(request: Request) {
     if (e?.message === 'NOT_IN_SELECTION') return NextResponse.json({ error: "Ce cas ne fait pas partie de ta sélection du jour." }, { status: 400 });
     if (e?.message === 'ALREADY_PLAYED') return NextResponse.json({ error: "Ce cas a déjà été joué aujourd'hui." }, { status: 400 });
     console.error(e);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    // 🔍 DIAGNOSTIC TEMPORAIRE : renvoyer le détail exact pour identifier la cause.
+    const detail = [e?.code, e?.message].filter(Boolean).join(' — ') || String(e);
+    return NextResponse.json({ error: `Erreur serveur [${detail}]` }, { status: 500 });
   }
 }
