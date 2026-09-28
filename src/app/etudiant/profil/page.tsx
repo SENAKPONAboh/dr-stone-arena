@@ -18,7 +18,8 @@ export default async function ProfilPage() {
   if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
   if (user.xp >= 3000) grade = "🥇 Clinicien Or";
   if (user.xp >= 6000) grade = "💎 Expert Clinicien";
-    const { current: duelGrade, next: nextDuelGrade } = getDuelGrade(user.duelsWon);
+
+  const { current: duelGrade, next: nextDuelGrade } = getDuelGrade(user.duelsWon);
   const duelProgress = nextDuelGrade
     ? Math.min(100, Math.round(((user.duelsWon - duelGrade.minWins) / (nextDuelGrade.minWins - duelGrade.minWins)) * 100))
     : 100;
@@ -37,8 +38,9 @@ export default async function ProfilPage() {
     : "bg-yellow-50 border-2 border-yellow-100 rounded-2xl";
 
   return (
-    <div className={`min-h-screen pb-10 ${user.isPremium ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800' : 'bg-gray-50'}`}>
-      
+    // 🖥️📱 PLEIN ÉCRAN : recouvre la coquille classique — la flèche retour sert de sortie
+    <div className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 ${user.isPremium ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800' : 'bg-gray-50'}`}>
+
       <header className={`border-b-2 ${user.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
           <a href="/etudiant" className={`flex items-center gap-2 ${user.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
@@ -55,7 +57,7 @@ export default async function ProfilPage() {
 
       <main className="max-w-md mx-auto px-4 mt-6">
         <div className={`rounded-3xl p-8 text-center transition-all ${cardStyle}`}>
-          
+
           {/* Photo de profil avec cadre animé Premium */}
           <div className="relative mx-auto mb-4 w-24 h-24">
             {user.isPremium && (
@@ -98,12 +100,13 @@ export default async function ProfilPage() {
             </Link>
           </div>
 
-          {/* Formulaire de modification (Nouveau composant) */}
+          {/* Formulaire de modification */}
           <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">Modifier mes informations</h3>
             <UpdateProfileForm currentPseudo={user.pseudo} currentImageUrl={user.imageUrl} isPremium={user.isPremium} currentAnneeEtude={user.anneeEtude} />
           </div>
-                    {/* Accès rapides */}
+
+          {/* Accès rapides */}
           <div className="grid grid-cols-2 gap-3">
             <Link href="/etudiant/stats" className={`py-3 font-bold rounded-2xl text-center text-sm transition-all ${user.isPremium ? 'bg-white/5 text-white hover:bg-white/10' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}>
               📊 Mes statistiques

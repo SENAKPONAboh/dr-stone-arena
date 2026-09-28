@@ -33,7 +33,8 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
     : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    // 🖥️📱 PLEIN ÉCRAN : recouvre la coquille classique — la flèche retour sert de sortie
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-gray-50 pb-10">
 
       <header className="bg-white border-b-2 border-gray-100">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
