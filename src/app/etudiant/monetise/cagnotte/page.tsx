@@ -14,7 +14,6 @@ export default async function CagnottePage() {
     select: { uaBalance: true, uaLocked: true },
   });
 
-  // 🏦 Moyens de paiement ACTIFS — configurés depuis le panel admin
   const paymentMethods = await prisma.paymentMethod.findMany({
     where: { isActive: true },
     orderBy: { displayOrder: 'asc' },
@@ -25,7 +24,6 @@ export default async function CagnottePage() {
     orderBy: { createdAt: 'desc' },
   });
 
-  // ⚡ Recharge en attente de validation
   const pendingRecharge = await prisma.rechargeRequest.findFirst({
     where: { userId: user.id, status: 'EN_ATTENTE' },
     orderBy: { createdAt: 'desc' },
@@ -39,7 +37,8 @@ export default async function CagnottePage() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] py-8 px-4">
+    // 🖥️📱 Plein écran : recouvre la coquille classique
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] py-8 px-4">
       <div className="max-w-3xl mx-auto space-y-6">
         <MonetiseNav passActive={true} />
         <CagnotteClient

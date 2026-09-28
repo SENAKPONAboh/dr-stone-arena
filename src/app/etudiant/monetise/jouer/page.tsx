@@ -2,12 +2,13 @@ import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import MonetisePlayClient from '@/components/monetise/MonetisePlayClient';
+import MonetiseNav from '@/components/monetise/MonetiseNav';
 import { getOrCreateMonetiseSelection } from '@/lib/monetise-daily';
+import type { ReactNode } from 'react';
 
 export default async function MonetisePlayPage() {
   const user = await getCurrentUserCore();
   if (!user) redirect('/login');
-
   if (!user.passActive) redirect('/etudiant/monetise/pass');
 
   const level = user.anneeEtude ?? 1;
@@ -23,6 +24,16 @@ export default async function MonetisePlayPage() {
   const attemptedIds = new Set(attemptsToday.map(a => a.clinicalCaseId));
   const remaining = caseIds.filter(id => !attemptedIds.has(id));
 
+  // 🖥️📱 Écran plein écran de l'espace monétisé
+  const screen = (content: ReactNode) => (
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05]">
+      <div className="py-4 px-4 max-w-3xl mx-auto">
+        <MonetiseNav passActive={true} />
+      </div>
+      {content}
+    </div>
+  );
+
   const infoScreen = (emoji: string, title: string, text: string) => (
     <div className="min-h-[50vh] flex items-center justify-center p-4">
       <div className="text-center bg-white/5 border border-yellow-500/20 p-8 rounded-3xl max-w-md w-full">
@@ -35,11 +46,11 @@ export default async function MonetisePlayPage() {
   );
 
   if (caseIds.length === 0) {
-    return infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.');
+    return screen(infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.'));
   }
 
   if (remaining.length === 0) {
-    return infoScreen('🌙', 'Journée terminée !', `Tu as joué tes ${caseIds.length} cas du jour. Reviens demain pour 10 nouveaux cas.`);
+    return screen(infoScreen('🌙', 'Journée terminée !', `Tu as joué tes ${caseIds.length} cas du jour. Reviens demain pour 10 nouveaux cas.`));
   }
 
   // Prochain cas
@@ -47,11 +58,11 @@ export default async function MonetisePlayPage() {
     where: { id: remaining[0] },
     include: { chapter: { include: { subject: true } } },
   });
-  if (!clinicalCase) return infoScreen('⚠️', 'Erreur', 'Cas introuvable, réessaie dans un instant.');
+  if (!clinicalCase) return screen(infoScreen('⚠️', 'Erreur', 'Cas introuvable, réessaie dans un instant.'));
 
   const caseNumber = caseIds.length - remaining.length + 1;
 
-  return (
+  return screen(
     <MonetisePlayClient
       clinicalCase={{
         id: clinicalCase.id,

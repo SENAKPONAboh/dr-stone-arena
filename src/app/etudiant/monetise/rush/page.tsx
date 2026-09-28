@@ -6,6 +6,7 @@ import RushStartPanel from '@/components/monetise/RushStartPanel';
 import RushClient from '@/components/monetise/RushClient';
 import { getRushState } from '@/lib/monetise-rush';
 import { getWeekendId } from '@/lib/monetise';
+import type { ReactNode } from 'react';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -18,7 +19,7 @@ function shuffle<T>(arr: T[]): T[] {
 
 function infoScreen(emoji: string, title: string, text: string) {
   return (
-    <div className="min-h-[50vh] flex items-center justify-center p-4">
+    <div className="min-h-[60vh] flex items-center justify-center p-4">
       <div className="text-center bg-white/5 border border-yellow-500/20 p-8 rounded-3xl max-w-md w-full">
         <div className="text-6xl mb-4">{emoji}</div>
         <h2 className="text-2xl font-extrabold text-yellow-300 mb-2">{title}</h2>
@@ -51,13 +52,20 @@ export default async function MonetiseRushPage() {
   });
   const stockOf = (name: string) => rushInventory.find(inv => inv.item.name === name)?.quantity ?? 0;
 
+  // 🖥️📱 Écran plein écran de l'espace monétisé
+  const screen = (content: ReactNode) => (
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05]">
+      {content}
+    </div>
+  );
+
   // ===== Tentative en cours → jeu =====
   if (state.currentSession && state.currentSession.status === 'EN_COURS') {
     const session = state.currentSession;
     const pool = await prisma.clinicalCase.findMany({ where: { anneeEtude: level }, select: { id: true } });
 
     if (pool.length === 0) {
-      return infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.');
+      return screen(infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.'));
     }
 
     let unplayed = pool.filter(c => !session.playedCaseIds.includes(c.id));
@@ -67,9 +75,9 @@ export default async function MonetiseRushPage() {
       where: { id: nextId },
       include: { chapter: { include: { subject: true } } },
     });
-    if (!clinicalCase) return infoScreen('⚠️', 'Erreur', 'Cas introuvable, réessaie dans un instant.');
+    if (!clinicalCase) return screen(infoScreen('⚠️', 'Erreur', 'Cas introuvable, réessaie dans un instant.'));
 
-    return (
+    return screen(
       <RushClient
         clinicalCase={{
           id: clinicalCase.id,
@@ -109,8 +117,8 @@ export default async function MonetiseRushPage() {
     ? (RECAP[finishedSession.status as keyof typeof RECAP] ?? { emoji: '📊', label: finishedSession.status, color: 'text-white/50' })
     : null;
 
-  return (
-    <div className="space-y-6">
+  return screen(
+    <div className="py-8 px-4 max-w-3xl mx-auto space-y-6">
       {finishedSession && recap && (
         <div className="bg-white/5 border-2 border-yellow-500/30 rounded-3xl p-6 animate-glow-gold">
           <div className="flex items-center gap-3 mb-3">
