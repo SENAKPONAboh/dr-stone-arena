@@ -62,8 +62,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       : 'rounded-3xl p-8 text-center transition-all bg-white border border-gray-100 shadow-sm text-gray-800';
 
   return (
+    // 🖥️📱 COUCHE PLEIN ÉCRAN : recouvre totalement la coquille de l'app
+    // (barre du bas incluse) — le profil a sa propre flèche retour.
+    // Défilement interne + overscroll-contain : expérience mobile propre.
     <div
-      className={`min-h-screen pb-10 relative overflow-hidden ${themeDef
+      className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 ${themeDef
         ? 'theme-bg-anim'
         : profileUser.isPremium
           ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800'
@@ -71,7 +74,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
 
-      {/* ✨✨✨ AMBIANCE PLEIN ÉCRAN — derrière le contenu, jamais devant ✨✨✨ */}
+      {/* ✨ AMBIANCE PLEIN ÉCRAN — fixée au viewport, ne défile pas, jamais devant le contenu */}
       {themeDef && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
 
@@ -109,13 +112,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           {/* 🌌 COSMOS — LÉGENDAIRE : nébuleuse + champ d'étoiles + étoiles filantes (WAOUH) */}
           {themeDef.key === 'THEME_COSMOS' && (
             <>
-              {/* Nébuleuse supplémentaire */}
               <div className="theme-orb" style={{
                 width: 520, height: 520, top: '15%', left: '55%', opacity: 0.5,
                 background: 'radial-gradient(circle, #a78bfa55 0%, transparent 70%)',
                 animation: 'orbB 40s ease-in-out infinite',
               }} />
-              {/* 28 étoiles scintillantes réparties sur tout l'écran */}
               {Array.from({ length: 28 }).map((_, i) => (
                 <span key={`s-${i}`} className="theme-star"
                   style={{
@@ -129,7 +130,6 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
                     animationDuration: `${1.6 + (i % 3) * 0.9}s`,
                   }} />
               ))}
-              {/* 2 étoiles filantes (trajectoires croisées) */}
               <div className="theme-shooting-star" style={{ top: 0, left: 0, animation: 'shootAcross 9s linear infinite' }} />
               <div className="theme-shooting-star" style={{ top: 0, left: 0, animation: 'shootAcrossB 14s linear 5s infinite' }} />
             </>
