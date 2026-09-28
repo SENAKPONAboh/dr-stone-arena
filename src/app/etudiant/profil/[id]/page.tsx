@@ -5,6 +5,7 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
 import ChallengeDuelButton from '@/components/duel/ChallengeDuelButton';
+import GoldAvatar from '@/components/ui/GoldAvatar';
 import { getCurrentUser } from '@/lib/auth';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +24,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       streak: true,
       isPremium: true,
       premiumTier: true,
+      passActive: true,
       duelsWon: true,
       duelsLost: true,
       pointsArena: true,
@@ -67,29 +69,45 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             </svg>
             <h1 className="font-extrabold text-xl">Profil Public</h1>
           </Link>
-          {profileUser.isPremium && (
-            <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(profileUser.premiumTier)}</span>
-          )}
+          <div className="flex items-center gap-2">
+            {profileUser.isPremium && (
+              <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(profileUser.premiumTier)}</span>
+            )}
+            {profileUser.passActive && (
+              <span className="bg-gradient-to-r from-yellow-500 to-amber-400 text-[#1a1308] text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">🪙 Pass Arène</span>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="max-w-md mx-auto px-4 mt-6">
         <div className={`rounded-3xl p-8 text-center transition-all ${cardStyle}`}>
           
-          {/* Photo de profil */}
-          <div className="relative mx-auto mb-4 w-24 h-24">
-            {profileUser.isPremium && (
-              <div className="absolute inset-0 rounded-full bg-yellow-400 blur-md animate-pulse"></div>
-            )}
-            <div className="relative">
-              {profileUser.imageUrl ? (
-                <img src={profileUser.imageUrl} alt="Profile" className={`w-24 h-24 rounded-full mx-auto object-cover shadow-md ${profileUser.isPremium ? 'border-4 border-yellow-400' : 'border-4 border-emerald-500'}`} />
-              ) : (
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center font-bold mx-auto shadow-md text-4xl ${profileUser.isPremium ? 'bg-blue-500 text-white border-4 border-yellow-400' : 'bg-blue-500 text-white border-4 border-blue-200'}`}>
-                  {profileUser.prenom.charAt(0)}{profileUser.nom.charAt(0)}
+          {/* Photo de profil — Pass actif : Anneau d'Or animé (l'emblème du Pass) */}
+          <div className="relative mx-auto mb-4">
+            {profileUser.passActive ? (
+              <GoldAvatar
+                imageUrl={profileUser.imageUrl}
+                initials={`${profileUser.prenom.charAt(0)}${profileUser.nom.charAt(0)}`}
+                passActive
+                size={96}
+              />
+            ) : (
+              <div className="relative w-24 h-24">
+                {profileUser.isPremium && (
+                  <div className="absolute inset-0 rounded-full bg-yellow-400 blur-md animate-pulse"></div>
+                )}
+                <div className="relative">
+                  {profileUser.imageUrl ? (
+                    <img src={profileUser.imageUrl} alt="Profile" className={`w-24 h-24 rounded-full mx-auto object-cover shadow-md ${profileUser.isPremium ? 'border-4 border-yellow-400' : 'border-4 border-emerald-500'}`} />
+                  ) : (
+                    <div className={`w-24 h-24 rounded-full flex items-center justify-center font-bold mx-auto shadow-md text-4xl ${profileUser.isPremium ? 'bg-blue-500 text-white border-4 border-yellow-400' : 'bg-blue-500 text-white border-4 border-blue-200'}`}>
+                      {profileUser.prenom.charAt(0)}{profileUser.nom.charAt(0)}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <h2 className="text-2xl font-extrabold">

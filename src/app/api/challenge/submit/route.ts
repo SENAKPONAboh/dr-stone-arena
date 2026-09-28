@@ -49,9 +49,20 @@ export async function POST(request: Request) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // AJOUT (Protection Flamme — Gel/Assurance) : lecture ciblée, uniquement utilisée
+    // si une protection est active (comptes Pass). Sans protection : comportement inchangé.
+    const flameState = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { flameProtectedUntil: true },
+    });
+    const protectionActive = flameState?.flameProtectedUntil
+      ? new Date(flameState.flameProtectedUntil) > new Date()
+      : false;
+
     const lastActive = user.lastActive ? new Date(user.lastActive) : null;
     let newStreak = user.streak;
     let streakIncreased = false;
+    let flameLost = false; // AJOUT : mémorisation de la perte (Restaure-Flamme, 48 h)
 
     if (lastActive) {
       lastActive.setHours(0, 0, 0, 0);
@@ -61,8 +72,15 @@ export async function POST(request: Request) {
         newStreak += 1;
         streakIncreased = true;
       } else if (diffDays > 1) {
-        newStreak = 1;
-        streakIncreased = true;
+        if (protectionActive) {
+          // AJOUT : Flamme protégée (Gel/Assurance) → l'absence est sautée, la série continue
+          newStreak += 1;
+          streakIncreased = true;
+        } else {
+          newStreak = 1;
+          streakIncreased = true;
+          flameLost = true;
+        }
       }
     } else {
       newStreak = 1;
@@ -100,7 +118,9 @@ export async function POST(request: Request) {
         lives: newLives,
         lastLifeLostAt: newLastLifeLostAt,
         chestAvailable: chestUnlocked ? true : user.chestAvailable,
-      }
+        // AJOUT : perte de Flamme → valeur exacte + horodatage sauvegardés (Restaure-Flamme)
+        ...(flameLost ? { streakBeforeReset: user.streak, flameLostAt: new Date() } : {}),
+      },
     });
 
     // --- Vérification des Badges (optimisé : requêtes groupées, règles identiques) ---

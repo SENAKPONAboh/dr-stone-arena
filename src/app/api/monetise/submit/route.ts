@@ -27,16 +27,12 @@ export async function POST(request: Request) {
     tomorrow.setDate(today.getDate() + 1);
 
     const response = await prisma.$transaction(async (tx) => {
-      // 🔒 VERROU PAR JOUEUR — "best effort" : si le verrou est indisponible sur
-      // l'infrastructure, on continue quand même (la transaction et les vérifications
-      // serveur restent la protection principale). L'incident est tracé dans les logs.
       try {
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${user.id}))`;
       } catch (lockErr) {
         console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
       }
 
-      // === 1. Vérifications serveur — aucune confiance au client ===
       const selection = await tx.monetiseSelection.findFirst({
         where: { userId: user.id, date: { gte: today, lt: tomorrow } },
       });
@@ -48,10 +44,8 @@ export async function POST(request: Request) {
       });
       if (alreadyPlayed) throw new Error('ALREADY_PLAYED');
 
-      // === 2. Correction serveur ===
       const isCorrect = normalizeString(userAnswer) === normalizeString(clinicalCase.correctAnswer);
 
-      // === 3. Tentative enregistrée ===
       await tx.monetiseAttempt.create({
         data: {
           userId: user.id,
@@ -64,11 +58,11 @@ export async function POST(request: Request) {
 
       const fresh = await tx.user.findUnique({
         where: { id: user.id },
-        select: { uaBalance: true, streak: true, lastActive: true, chestAvailable: true },
+        select: { uaBalance: true, streak: true, lastActive: true, chestAvailable: true, flameProtectedUntil: true },
       });
       if (!fresh) throw new Error('NO_USER');
 
-      // === 4. UA : +1 000 UA par bonne réponse — AUCUN XP ===
+      // === UA : +1 000 UA par bonne réponse — AUCUN XP ===
       let uaEarned = 0;
       let balanceAfter = fresh.uaBalance;
       if (isCorrect) {
@@ -91,10 +85,12 @@ export async function POST(request: Request) {
         });
       }
 
-      // === 5. Flamme PARTAGÉE — même logique que le mode classique ===
+      // === Flamme PARTAGÉE — même logique que le classique + protection (Gel/Assurance) ===
+      const protectionActive = fresh.flameProtectedUntil ? new Date(fresh.flameProtectedUntil) > new Date() : false;
       const lastActive = fresh.lastActive ? new Date(fresh.lastActive) : null;
       let newStreak = fresh.streak;
       let streakIncreased = false;
+      let flameLost = false;
 
       if (lastActive) {
         lastActive.setHours(0, 0, 0, 0);
@@ -103,8 +99,15 @@ export async function POST(request: Request) {
           newStreak += 1;
           streakIncreased = true;
         } else if (diffDays > 1) {
-          newStreak = 1;
-          streakIncreased = true;
+          if (protectionActive) {
+            // Flamme protégée : l'absence est sautée, la série continue
+            newStreak += 1;
+            streakIncreased = true;
+          } else {
+            newStreak = 1;
+            streakIncreased = true;
+            flameLost = true; // mémorisée pour le Restaure-Flamme (fenêtre 48 h)
+          }
         }
       } else {
         newStreak = 1;
@@ -119,10 +122,12 @@ export async function POST(request: Request) {
           streak: newStreak,
           lastActive: new Date(),
           chestAvailable: chestUnlocked ? true : fresh.chestAvailable,
+          // Perte de Flamme → valeur exacte + horodatage sauvegardés
+          ...(flameLost ? { streakBeforeReset: fresh.streak, flameLostAt: new Date() } : {}),
         },
       });
 
-      // === 6. Badges de série (comme en classique) ===
+      // === Badges de série (comme en classique) ===
       const newBadges: { name: string; icon: string }[] = [];
       const seriesBadges = await tx.badge.findMany({
         where: { name: { in: ["Série de 7 jours", "Série de 30 jours"] } },
@@ -140,7 +145,6 @@ export async function POST(request: Request) {
         }
       }
 
-      // === 7. Réponse ===
       return {
         isCorrect: isCorrect,
         correctAnswer: clinicalCase.correctAnswer,
@@ -159,7 +163,6 @@ export async function POST(request: Request) {
     if (e?.message === 'NOT_IN_SELECTION') return NextResponse.json({ error: "Ce cas ne fait pas partie de ta sélection du jour." }, { status: 400 });
     if (e?.message === 'ALREADY_PLAYED') return NextResponse.json({ error: "Ce cas a déjà été joué aujourd'hui." }, { status: 400 });
     console.error(e);
-    // 🔍 DIAGNOSTIC TEMPORAIRE : renvoyer le détail exact pour identifier la cause.
     const detail = [e?.code, e?.message].filter(Boolean).join(' — ') || String(e);
     return NextResponse.json({ error: `Erreur serveur [${detail}]` }, { status: 500 });
   }

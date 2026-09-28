@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getCountryFlag } from '@/lib/country-flags';
+import GoldAvatar from '@/components/ui/GoldAvatar';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const user = await getCurrentUser();
@@ -24,7 +25,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
   const allUsers = await prisma.user.findMany({
     where,
     orderBy: { xp: 'desc' },
-    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, anneeEtude: true, pays: true, universite: true }
+    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, anneeEtude: true, pays: true, universite: true }
   });
 
   const tabStyle = (active: boolean) => `py-2.5 px-2 text-center font-bold rounded-2xl text-xs sm:text-sm uppercase tracking-wide transition-all ${active
@@ -99,13 +100,12 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                   </div>
 
                   <Link href={`/etudiant/profil/${u.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
-                    {u.imageUrl ? (
-                      <img src={u.imageUrl} alt="Profile" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
-                        {u.prenom.charAt(0)}{u.nom.charAt(0)}
-                      </div>
-                    )}
+                    <GoldAvatar
+                      imageUrl={u.imageUrl}
+                      initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`}
+                      passActive={u.passActive}
+                      size={40}
+                    />
                     <div className="min-w-0">
                       <p className="font-bold text-gray-800 truncate flex items-center gap-1">
                         {u.pseudo || `${u.prenom} ${u.nom}`}

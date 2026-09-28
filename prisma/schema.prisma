@@ -29,7 +29,7 @@ model User {
   chestAvailable Boolean @default(false)
   lastLifeLostAt DateTime?
   lastDailyRewardClaimedAt DateTime?
-  isPremium Boolean @default(false)
+  isPremium Boolean   @default(false)
   premiumTier Int? // 1 = Premium I, 2 = Premium II, 3 = Premium III, null = non premium
   premiumExpiresAt DateTime?
   lastActive DateTime?
@@ -46,8 +46,9 @@ model User {
   uaLocked           Int       @default(0)
   passActive         Boolean   @default(false)
   passExpiresAt      DateTime?
-  streakBeforeReset  Int       @default(0)
-  flameProtectedUntil DateTime?
+  streakBeforeReset  Int       @default(0)  // valeur exacte de la Flamme avant la perte (Restaure-Flamme)
+  flameProtectedUntil DateTime?             // protection active (Gel 48 h OU Assurance 7 jours — une seule à la fois)
+  flameLostAt        DateTime?              // date de la dernière perte (fenêtre Restaure : 48 h)
   activeThemeId      String?
   uaTransactions     UaTransaction[]
   passRequests       PassRequest[]
@@ -68,6 +69,7 @@ model User {
   ambassadorProfile Ambassador? @relation("AmbassadorUser")
 
 }
+
 
 model Subject {
   id         String   @id @default(cuid())
