@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import ReceiptImage from '@/components/admin/ReceiptImage';
 
 type Recharge = {
   id: string; amountUA: number; amountFCFA: number; receiptUrl: string;
@@ -91,7 +92,7 @@ export default function RechargeManager() {
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               className="bg-gray-50 dark:bg-slate-700/50 rounded-2xl p-5 border border-gray-100 dark:border-slate-600">
               <div className="flex justify-between items-start gap-3">
-                <div>
+                <div className="min-w-0">
                   <p className="font-bold text-gray-800 dark:text-white">
                     {r.user.pseudo || `${r.user.prenom} ${r.user.nom}`}
                     <span className="text-xs font-normal text-gray-400 ml-2">{r.user.email}</span>
@@ -111,24 +112,25 @@ export default function RechargeManager() {
                 <span className={`text-xs font-extrabold px-3 py-1 rounded-full whitespace-nowrap ${badge.cls}`}>{badge.label}</span>
               </div>
 
-              <div className="flex flex-wrap gap-2 mt-4">
-                <a href={r.receiptUrl} target="_blank" rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold">
-                  🧾 Voir le reçu
-                </a>
-                {pending && (
-                  <>
-                    <button onClick={() => act(r.id, 'VALIDE')} disabled={busyId === r.id}
-                      className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold disabled:opacity-40">
-                      ✅ Valider (+{r.amountUA.toLocaleString('fr-FR')} UA)
-                    </button>
-                    <button onClick={() => act(r.id, 'REJETE')} disabled={busyId === r.id}
-                      className="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold disabled:opacity-40">
-                      ❌ Rejeter
-                    </button>
-                  </>
-                )}
-              </div>
+              {/* 🧾 Reçu — même système que les Pass/Premium (aperçu + clic pour agrandir) */}
+              {r.receiptUrl && (
+                <div className="mt-4 w-full sm:w-48">
+                  <ReceiptImage src={r.receiptUrl} />
+                </div>
+              )}
+
+              {pending && (
+                <div className="flex flex-wrap gap-2 mt-4">
+                  <button onClick={() => act(r.id, 'VALIDE')} disabled={busyId === r.id}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold disabled:opacity-40">
+                    ✅ Valider (+{r.amountUA.toLocaleString('fr-FR')} UA)
+                  </button>
+                  <button onClick={() => act(r.id, 'REJETE')} disabled={busyId === r.id}
+                    className="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold disabled:opacity-40">
+                    ❌ Rejeter
+                  </button>
+                </div>
+              )}
             </motion.div>
           );
         })}
