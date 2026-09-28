@@ -5,27 +5,36 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 export default function RushStartPanel({
-  isWeekend, activeDays, flameOk, totalWeekend, sessionsCount, hasFinishedSession,
+  isWeekend, activeDays, flameOk, totalWeekend, sessionsCount, hasFinishedSession, ticketCount,
 }: {
-  isWeekend: boolean; activeDays: number; flameOk: boolean; totalWeekend: number; sessionsCount: number; hasFinishedSession: boolean;
+  isWeekend: boolean; activeDays: number; flameOk: boolean; totalWeekend: number;
+  sessionsCount: number; hasFinishedSession: boolean; ticketCount: number;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleStart = async () => {
+  const freeEligible = sessionsCount < 2 && flameOk;
+
+  const handleStart = async (useTicket: boolean) => {
     if (!isWeekend) { setError("Le Rush est ouvert uniquement samedi et dimanche."); return; }
-    if (sessionsCount < 2 && flameOk) {
-      const ok = confirm("Lancer une tentative GRATUITE ? Le Rush commence immédiatement (3 erreurs tolérées).");
-      if (!ok) return;
+    let ok;
+    if (useTicket) {
+      ok = confirm("Utiliser un 🎫 Ticket Rush pour cette tentative ? (0 UA débité — le Ticket sera consommé)");
+    } else if (freeEligible) {
+      ok = confirm("Lancer une tentative GRATUITE ? Le Rush commence immédiatement (3 erreurs tolérées).");
     } else {
-      const ok = confirm("Lancer une tentative supplémentaire ? 15 000 UA seront débitées de ta cagnotte.");
-      if (!ok) return;
+      ok = confirm("Lancer une tentative supplémentaire ? 15 000 UA seront débitées de ta cagnotte.");
     }
+    if (!ok) return;
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/monetise/rush/start', { method: 'POST' });
+      const res = await fetch('/api/monetise/rush/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ useTicket }),
+      });
       const data = await res.json();
       if (!res.ok) setError(data.error || 'Erreur');
       else router.refresh();
@@ -72,20 +81,35 @@ export default function RushStartPanel({
         </div>
       </div>
 
+      {/* Lancement */}
       <motion.button
-        onClick={handleStart}
+        onClick={() => handleStart(false)}
         disabled={loading || !isWeekend || totalWeekend >= 50000}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
         className="w-full py-5 bg-yellow-500 text-[#1a1308] font-extrabold text-lg uppercase tracking-wide rounded-2xl shadow-xl shadow-yellow-900/30 disabled:opacity-30"
       >
-        {loading ? '⏳ Lancement...' : sessionsCount < 2 && flameOk ? "▶️ Lancer (gratuit)" : "▶️ Lancer — 15 000 UA"}
+        {loading ? '⏳ Lancement...' : freeEligible ? "▶️ Lancer (gratuit)" : "▶️ Lancer — 15 000 UA"}
       </motion.button>
+
+      {/* 🎫 Ticket Rush : alternative sans débit d'UA */}
+      {!freeEligible && ticketCount > 0 && (
+        <motion.button
+          onClick={() => handleStart(true)}
+          disabled={loading || !isWeekend || totalWeekend >= 50000}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          className="w-full py-4 bg-white/5 border-2 border-yellow-500/40 text-yellow-300 font-extrabold uppercase tracking-wide rounded-2xl disabled:opacity-30"
+        >
+          🎫 Utiliser un Ticket <span className="text-xs opacity-70">({ticketCount} en stock — 0 UA)</span>
+        </motion.button>
+      )}
 
       <div className="bg-white/5 rounded-2xl p-4 text-xs text-white/40 space-y-1">
         <p>⚔️ Série continue · 3 erreurs maximum · paliers 10 / 15 / 25 cas</p>
         <p>🪙 Palier 1 : +10 000 UA · Palier 2 : +20 000 UA · Palier 3 : +20 000 UA</p>
         <p>🎁 Palier 3 = Coffre d'Élite du Major (Gel + Restaure gratuits)</p>
+        <p>🎫 Ticket Rush = tentative sans payer en UA · 🛡️ Bouclier absorbe 1 erreur · 🔄 Seconde Chance reprend après défaite · ⏱️ Temps Bonus +30 s</p>
       </div>
     </div>
   );

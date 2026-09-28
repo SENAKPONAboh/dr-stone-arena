@@ -12,8 +12,7 @@ import {
   RUSH_PALIER_3_UA,
 } from '@/lib/monetise';
 
-// ⚠️ correctAnswer et explanation ne sont JAMAIS transmis avant la réponse :
-// ils arrivent uniquement dans la réponse du serveur APRÈS soumission (sécurité économique).
+// ⚠️ correctAnswer et explanation ne sont JAMAIS transmis avant la réponse.
 type RushCase = {
   id: string; title: string; statement: string; options: string[];
   durationMax: number; difficulty: string; subject: string; chapter: string;
@@ -39,12 +38,15 @@ const PALIERS = [
 const GOLD_CONFETTI = ['#fbbf24', '#f59e0b', '#fde68a', '#ffffff'];
 
 export default function RushClient({
-  clinicalCase, session, uaBalance, weekendTotal,
+  clinicalCase, session, uaBalance, weekendTotal, bouclierStock, secondeChanceStock, tempsBonusStock,
 }: {
   clinicalCase: RushCase;
   session: RushSessionProps;
   uaBalance: number;
   weekendTotal: number;
+  bouclierStock: number;
+  secondeChanceStock: number;
+  tempsBonusStock: number;
 }) {
   const router = useRouter();
 
@@ -61,6 +63,16 @@ export default function RushClient({
   const [refreshing, setRefreshing] = useState(false);
   const [navCount, setNavCount] = useState(0);
 
+  // Objets de Rush (stocks locaux, décrémentés à l'usage)
+  const [bouclierLeft, setBouclierLeft] = useState(bouclierStock);
+  const [secondeChanceLeft, setSecondeChanceLeft] = useState(secondeChanceStock);
+  const [tempsBonusLeft, setTempsBonusLeft] = useState(tempsBonusStock);
+  const [shieldPrompt, setShieldPrompt] = useState(false);
+  const [absorbing, setAbsorbing] = useState(false);
+  const [reviving, setReviving] = useState(false);
+  const [gameMsg, setGameMsg] = useState('');
+  const [hudError, setHudError] = useState('');
+
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
   const difficultyColors: Record<string, string> = {
     FACILE: 'bg-green-400/20 text-green-300',
@@ -68,7 +80,6 @@ export default function RushClient({
     DIFFICILE: 'bg-red-400/20 text-red-300',
   };
 
-  // Valeurs affichées : props au départ, réponse du serveur ensuite
   const streak = result?.currentStreak ?? session.currentStreak;
   const errors = result?.errors ?? session.errors;
   const nextPalier = PALIERS.find(p => p.threshold > streak);
@@ -77,7 +88,12 @@ export default function RushClient({
     ? (result.currentStreak >= 25 ? 3 : result.currentStreak >= 15 ? 2 : result.currentStreak >= 10 ? 1 : 0)
     : 0;
 
-  // ==== INTRO : 3-2-1-GO (uniquement au lancement d'une nouvelle tentative) ====
+  const showHudError = (msg: string) => {
+    setHudError(msg);
+    setTimeout(() => setHudError(''), 3000);
+  };
+
+  // ==== INTRO : 3-2-1-GO ====
   useEffect(() => {
     if (phase !== 'countdown') return;
     if (countdown < 0) { setPhase('question'); return; }
@@ -93,12 +109,12 @@ export default function RushClient({
     return () => clearTimeout(timer);
   }, [timeLeft, phase]);
 
-  // ==== NOUVEAU CAS (après router.refresh) : reset complet ====
+  // ==== NOUVEAU CAS : reset complet ====
   const prevCaseId = useRef<string | null>(null);
   useEffect(() => {
     if (prevCaseId.current === null && navCount === 0) {
       prevCaseId.current = clinicalCase.id;
-      return; // premier montage : laisser l'intro se jouer
+      return;
     }
     prevCaseId.current = clinicalCase.id;
     setTimeLeft(clinicalCase.durationMax);
@@ -107,6 +123,9 @@ export default function RushClient({
     setServerError('');
     setRefreshing(false);
     setPhase('question');
+    setShieldPrompt(false);
+    setReviving(false);
+    setGameMsg('');
   }, [clinicalCase.id, navCount]);
 
   const handleSubmit = async (timeout = false) => {
@@ -135,7 +154,11 @@ export default function RushClient({
       setBalance(data.balanceAfter);
       setEarnedTotal(e => e + (data.uaEarned ?? 0));
 
-      // 🎉 Confettis dosés : touche légère à chaque bonne réponse, explosion au palier
+      // 🛡️ Invite du Bouclier : uniquement erreur non fatale + stock disponible
+      if (!data.isCorrect && data.sessionStatus === 'EN_COURS' && data.errors >= 1 && bouclierLeft > 0) {
+        setShieldPrompt(true);
+      }
+
       if (data.isCorrect) {
         confetti({ particleCount: 35, spread: 55, origin: { y: 0.75 }, colors: GOLD_CONFETTI });
       }
@@ -144,13 +167,88 @@ export default function RushClient({
           confetti({ particleCount: 130, spread: 100, startVelocity: 45, origin: { y: 0.6 }, colors: GOLD_CONFETTI });
         }, 300);
       }
-
-      // Fin de tentative → laisser respirer le feedback, puis écran de fin
       if (data.sessionStatus && data.sessionStatus !== 'EN_COURS') {
         setTimeout(() => setPhase('finale'), data.uaEarned > 0 ? 2600 : 2000);
       }
     } catch {
       setServerError('Erreur de connexion au serveur.');
+    }
+  };
+
+  // ==== 🛡️ BOUCLIER : absorber la dernière erreur ====
+  const absorbError = async () => {
+    if (!result || absorbing) return;
+    setAbsorbing(true);
+    try {
+      const res = await fetch('/api/monetise/rush/item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.id, action: 'BOUCLIER' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResult(prev => (prev ? { ...prev, errors: data.errors } : prev));
+        setBouclierLeft(n => n - 1);
+        setShieldPrompt(false);
+        setGameMsg('🛡️ Erreur absorbée — elle ne compte pas !');
+        setTimeout(() => setGameMsg(''), 3500);
+      } else {
+        setShieldPrompt(false);
+        setServerError(data?.error || 'Erreur serveur');
+      }
+    } catch {
+      setShieldPrompt(false);
+      setServerError('Erreur de connexion au serveur.');
+    } finally {
+      setAbsorbing(false);
+    }
+  };
+
+  // ==== 🔄 SECONDE CHANCE : reprendre la tentative ====
+  const reviveRush = async () => {
+    if (reviving) return;
+    if (!confirm('Utiliser une Seconde Chance ? La tentative reprend — erreur fatale annulée, ta série conservée. (Une seule par tentative)')) return;
+    setReviving(true);
+    setServerError('');
+    try {
+      const res = await fetch('/api/monetise/rush/item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.id, action: 'SECONDE_CHANCE' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSecondeChanceLeft(n => n - 1);
+        // La page resservira un cas (session EN_COURS) → reset automatique → phase question
+        router.refresh();
+      } else {
+        setServerError(data?.error || 'Erreur serveur');
+        setReviving(false);
+      }
+    } catch {
+      setServerError('Erreur de connexion au serveur.');
+      setReviving(false);
+    }
+  };
+
+  // ==== ⏱️ TEMPS BONUS : +30 secondes ====
+  const useTimeBonus = async () => {
+    if (phase !== 'question' || tempsBonusLeft <= 0) return;
+    try {
+      const res = await fetch('/api/monetise/rush/item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.id, action: 'TEMPS_BONUS' }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTimeLeft(t => t + (data.secondsAdded ?? 30));
+        setTempsBonusLeft(n => n - 1);
+      } else {
+        showHudError(data?.error || 'Erreur serveur');
+      }
+    } catch {
+      showHudError('Erreur de connexion au serveur.');
     }
   };
 
@@ -171,14 +269,13 @@ export default function RushClient({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] py-6 px-4 relative">
-      {/* ⚠️ DANGER : dernière vie — vignette rouge pulsée */}
       {errors >= RUSH_MAX_ERRORS && phase === 'question' && (
         <div className="fixed inset-0 pointer-events-none border-4 border-red-500/50 animate-pulse z-10" />
       )}
 
       <div className="max-w-3xl mx-auto">
         {/* ===== HUD ===== */}
-        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center gap-3 mb-4">
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-wrap justify-between items-center gap-3 mb-4">
           <span className="text-xs font-extrabold uppercase tracking-wider bg-yellow-500 text-[#1a1308] px-3 py-1.5 rounded-full whitespace-nowrap">
             ⚔️ Rush · Tentative #{session.attemptNumber}
           </span>
@@ -189,10 +286,23 @@ export default function RushClient({
               </motion.span>
             ))}
           </div>
-          <div className={`px-4 py-2 rounded-xl font-extrabold text-lg ${timeLeft <= 10 && phase === 'question' ? 'bg-red-500 text-white animate-pulse' : 'bg-white/5 border-2 border-yellow-500/30 text-yellow-300'}`}>
-            ⏱️ {phase === 'countdown' ? clinicalCase.durationMax : timeLeft}s
+          <div className="flex items-center gap-2">
+            {tempsBonusLeft > 0 && phase === 'question' && (
+              <motion.button
+                onClick={useTimeBonus}
+                whileTap={{ scale: 0.92 }}
+                className="px-3 py-2 rounded-xl bg-white/5 border-2 border-blue-400/40 text-blue-300 font-extrabold text-sm whitespace-nowrap"
+                title="Ajouter 30 secondes au chronomètre"
+              >
+                ⏱️ +30s <span className="text-[10px] opacity-60">×{tempsBonusLeft}</span>
+              </motion.button>
+            )}
+            <div className={`px-4 py-2 rounded-xl font-extrabold text-lg ${timeLeft <= 10 && phase === 'question' ? 'bg-red-500 text-white animate-pulse' : 'bg-white/5 border-2 border-yellow-500/30 text-yellow-300'}`}>
+              ⏱️ {phase === 'countdown' ? clinicalCase.durationMax : timeLeft}s
+            </div>
           </div>
         </motion.div>
+        {hudError && <p className="text-red-300 text-xs font-bold text-center mb-2">{hudError}</p>}
 
         {/* ===== SÉRIE + PALIERS + CAGNOTTE ===== */}
         <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-4 mb-4">
@@ -329,7 +439,30 @@ export default function RushClient({
                       <p className="text-white/50 leading-relaxed">{result.explanation}</p>
                     </div>
 
-                    {result.sessionStatus === 'EN_COURS' ? (
+                    {gameMsg && (
+                      <motion.p initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="text-center text-blue-300 font-bold text-sm">{gameMsg}</motion.p>
+                    )}
+
+                    {/* 🛡️ Invite du Bouclier (le joueur choisit — achat ≠ activation) */}
+                    {shieldPrompt && (
+                      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                        className="bg-blue-400/10 border-2 border-blue-400/40 rounded-2xl p-5 text-center">
+                        <p className="font-extrabold text-blue-300 mb-1">🛡️ Absorber cette erreur ?</p>
+                        <p className="text-xs text-white/40 mb-4">Le Bouclier sera consommé et l'erreur ne comptera pas dans les 3 tolérées.</p>
+                        <div className="flex gap-3">
+                          <motion.button onClick={absorbError} disabled={absorbing} whileTap={{ scale: 0.96 }}
+                            className="flex-1 py-3 bg-blue-500 text-white font-extrabold rounded-xl disabled:opacity-50">
+                            {absorbing ? '⏳...' : 'Utiliser 🛡️'}
+                          </motion.button>
+                          <button onClick={() => setShieldPrompt(false)}
+                            className="flex-1 py-3 bg-white/5 text-white/50 font-bold rounded-xl">
+                            Continuer sans
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {result.sessionStatus === 'EN_COURS' && !shieldPrompt && (
                       <motion.button
                         onClick={() => { setNavCount(c => c + 1); setRefreshing(true); router.refresh(); }}
                         disabled={refreshing}
@@ -339,7 +472,8 @@ export default function RushClient({
                       >
                         {refreshing ? '⏳ Chargement…' : 'Cas suivant ⚡'}
                       </motion.button>
-                    ) : (
+                    )}
+                    {result.sessionStatus !== 'EN_COURS' && (
                       <p className="text-center text-yellow-300 font-bold animate-pulse py-2">Fin de la tentative…</p>
                     )}
                   </>
@@ -425,6 +559,24 @@ export default function RushClient({
                 {earnedTotal > 0 && <p className="text-white/50 mt-1">+{earnedTotal.toLocaleString('fr-FR')} UA gagnés sur cette tentative</p>}
                 <p className="text-white/40 mt-1">Série finale : {streak} · Erreurs : {errors}</p>
               </div>
+
+              {/* 🔄 SECONDE CHANCE — uniquement fin par erreurs, une seule par tentative (contrôle serveur) */}
+              {result.sessionStatus === 'TERMINE_ECHEC' && secondeChanceLeft > 0 && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  onClick={reviveRush}
+                  disabled={reviving}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white font-extrabold rounded-2xl uppercase tracking-wide mb-3 disabled:opacity-50"
+                >
+                  🔄 Continuer le Rush <span className="text-xs opacity-70">(Seconde Chance ×{secondeChanceLeft})</span>
+                </motion.button>
+              )}
+              {reviving && <p className="text-yellow-300 font-bold animate-pulse text-center mb-3">Reprise de la tentative…</p>}
+              {serverError && <p className="text-red-300 text-sm text-center mb-3">{serverError}</p>}
 
               <a href="/etudiant/monetise/rush" className="block w-full py-4 bg-yellow-500 text-[#1a1308] font-extrabold rounded-2xl uppercase tracking-wide text-center">
                 ⚔️ Retour au Rush

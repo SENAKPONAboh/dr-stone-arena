@@ -44,12 +44,18 @@ export default async function MonetiseRushPage() {
   const level = user.anneeEtude ?? 1;
   const state = await getRushState(user.id);
 
+  // Stocks d'objets Rush (règle achat ≠ activation : utilisables pendant le jeu)
+  const rushInventory = await prisma.userInventory.findMany({
+    where: { userId: user.id, item: { category: 'RUSH' } },
+    include: { item: true },
+  });
+  const stockOf = (name: string) => rushInventory.find(inv => inv.item.name === name)?.quantity ?? 0;
+
   // ===== Tentative en cours → jeu =====
   if (state.currentSession && state.currentSession.status === 'EN_COURS') {
     const session = state.currentSession;
     const pool = await prisma.clinicalCase.findMany({ where: { anneeEtude: level }, select: { id: true } });
 
-    // C10 : aucun cas pour ce niveau → écran propre (plus de crash)
     if (pool.length === 0) {
       return infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.');
     }
@@ -74,16 +80,18 @@ export default async function MonetiseRushPage() {
           difficulty: clinicalCase.difficulty,
           subject: clinicalCase.chapter.subject.name,
           chapter: clinicalCase.chapter.name,
-          // PAS de correctAnswer ni explanation : uniquement dans la réponse serveur
         }}
         session={{ id: session.id, errors: session.errors, currentStreak: session.currentStreak, attemptNumber: session.attemptNumber }}
         uaBalance={user.uaBalance}
         weekendTotal={state.totalWeekend}
+        bouclierStock={stockOf('Bouclier')}
+        secondeChanceStock={stockOf('Seconde Chance')}
+        tempsBonusStock={stockOf('Temps Bonus')}
       />
     );
   }
 
-  // ===== Pas de tentative en cours → lancement + récapitulatif (B9 réparé) =====
+  // ===== Pas de tentative en cours → lancement + récapitulatif =====
   const lastSession = await prisma.rushSession.findFirst({
     where: { userId: user.id, weekend: getWeekendId() },
     orderBy: { startedAt: 'desc' },
@@ -132,6 +140,7 @@ export default async function MonetiseRushPage() {
         totalWeekend={state.totalWeekend}
         sessionsCount={state.sessionsCount}
         hasFinishedSession={finishedSession !== null}
+        ticketCount={stockOf('Ticket Rush')}
       />
       <Link href="/etudiant/monetise" className="block text-center py-2 text-white/40 text-sm font-bold hover:text-yellow-300">← Retour</Link>
     </div>
