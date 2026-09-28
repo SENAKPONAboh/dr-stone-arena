@@ -8,6 +8,7 @@ import { expireStaleDuels } from '@/lib/duel-server';
 import { getTodaySelection } from '@/lib/daily-cases';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
+import GoldAvatar from '@/components/ui/GoldAvatar';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUserCore();
@@ -83,7 +84,7 @@ export default async function EtudiantDashboard() {
           where: { role: 'ETUDIANT', statut: 'VALIDE', anneeEtude: user.anneeEtude },
           orderBy: { xp: 'desc' },
           take: 3,
-          select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true }
+          select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true }
         })
       : Promise.resolve([]),
     getTodaySelection(user.id),
@@ -229,11 +230,12 @@ export default async function EtudiantDashboard() {
               <Link key={u.id} href={`/etudiant/profil/${u.id}`}
                 className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${u.id === user.id ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>
                 <span className={`font-extrabold w-6 text-sm ${i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`}>{i + 1}</span>
-                {u.imageUrl ? (
-                  <img src={u.imageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">{u.prenom.charAt(0)}{u.nom.charAt(0)}</div>
-                )}
+                <GoldAvatar
+                  imageUrl={u.imageUrl}
+                  initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`}
+                  passActive={u.passActive}
+                  size={32}
+                />
                 <p className="flex-1 text-sm font-bold truncate">{nameOf(u)} {u.isPremium && '👑'}</p>
                 <span className="text-sm font-extrabold text-gray-500">⭐ {u.xp}</span>
               </Link>
@@ -261,7 +263,7 @@ export default async function EtudiantDashboard() {
               <p className="font-extrabold">{user.passActive ? "⚔️ Arène Monétisée" : "Pass Arène Monétisé"}</p>
               <p className={`text-xs mt-0.5 ${user.passActive ? "opacity-70" : "text-gray-400"}`}>
                 {user.passActive
-                  ? `Cagnotte : ${user.uaBalance.toLocaleString("fr-FR")} UA — entre dans ton espace`
+                  ? `Cagnotte : ${user.uaBalance.toLocaleString('fr-FR')} UA — entre dans ton espace`
                   : "+1 000 UA par cas, Rush du week-end, Boutique, retraits réels"}
               </p>
             </div>
