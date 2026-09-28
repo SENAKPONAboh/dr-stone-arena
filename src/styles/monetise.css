@@ -51,7 +51,7 @@
 }
 .animate-coin { animation: coinFly 1.2s ease-out forwards; }
 
-/* ===== PERSONNALISATION 2.0 — EFFETS SPECTACULAIRES ===== */
+/* ===== PERSONNALISATION — EFFETS DE CADRES ===== */
 
 /* Flamme qui vacille (Cadre de Feu) */
 @keyframes flameFlicker {
@@ -69,7 +69,7 @@
 
 /* Étoile qui scintille (opacité seule — compatible tout positionnement) */
 @keyframes starTwinkle {
-  0%, 100% { opacity: 0.25; }
+  0%, 100% { opacity: 0.15; }
   50% { opacity: 1; }
 }
 
@@ -90,36 +90,94 @@
   100% { filter: hue-rotate(360deg); }
 }
 
+/* ===== THÈMES — AMBIANCE PLEIN ÉCRAN ===== */
+
 /* Fond de thème qui dérive lentement */
 @keyframes themeDrift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
+.theme-bg-anim { background-size: 200% 200%; animation: themeDrift 14s ease infinite; }
 
-/* Particules flottantes du thème */
-@keyframes particleFloat {
-  0% { transform: translateY(0) translateX(0); opacity: 0; }
-  12% { opacity: 0.85; }
-  85% { opacity: 0.5; }
-  100% { transform: translateY(-130px) translateX(18px); opacity: 0; }
-}
-
-/* Halo du thème qui respire */
+/* Halo du thème qui respire (carte) */
 @keyframes auraPulse {
   0%, 100% { box-shadow: 0 0 25px var(--aura-color, rgba(255,255,255,0.2)), 0 0 70px var(--aura-color, rgba(255,255,255,0.1)); }
   50% { box-shadow: 0 0 45px var(--aura-color, rgba(255,255,255,0.45)), 0 0 130px var(--aura-color, rgba(255,255,255,0.25)); }
 }
 
-/* Classes utilitaires thèmes */
-.theme-bg-anim { background-size: 200% 200%; animation: themeDrift 14s ease infinite; }
-.theme-particle { position: absolute; border-radius: 50%; animation: particleFloat 7s linear infinite; opacity: 0.7; }
+/* ✨ Particules — montée sur 60 % de l'écran, couverture totale */
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  8% { opacity: 0.75; }
+  80% { opacity: 0.4; }
+  100% { transform: translateY(-60vh) translateX(22px); opacity: 0; }
+}
+.theme-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: particleFloat 7s linear infinite;
+}
+
+/* 🌟 Orbes lumineuses — grands halos doux qui traversent tout l'écran */
+.theme-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform;
+}
+@keyframes orbA {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(38vw, 22vh) scale(1.25); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes orbB {
+  0%   { transform: translate(0, 0) scale(1.15); }
+  50%  { transform: translate(-32vw, 26vh) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1.15); }
+}
+@keyframes orbC {
+  0%   { transform: translate(0, 0) scale(0.95); }
+  50%  { transform: translate(22vw, -18vh) scale(1.2); }
+  100% { transform: translate(0, 0) scale(0.95); }
+}
+
+/* 🌌 Étoiles scintillantes (Cosmos légendaire) */
+.theme-star {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: starTwinkle 2s ease-in-out infinite;
+}
+
+/* 🌠 Étoiles filantes (Cosmos légendaire) */
+.theme-shooting-star {
+  position: absolute;
+  height: 2px;
+  width: 130px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.95));
+  pointer-events: none;
+}
+@keyframes shootAcross {
+  0%   { transform: translate(-15vw, 10vh) rotate(32deg); opacity: 0; }
+  4%   { opacity: 1; }
+  13%  { transform: translate(90vw, 50vh) rotate(32deg); opacity: 0; }
+  100% { transform: translate(90vw, 50vh) rotate(32deg); opacity: 0; }
+}
+@keyframes shootAcrossB {
+  0%   { transform: translate(105vw, 5vh) rotate(148deg); opacity: 0; }
+  4%   { opacity: 1; }
+  13%  { transform: translate(8vw, 45vh) rotate(148deg); opacity: 0; }
+  100% { transform: translate(8vw, 45vh) rotate(148deg); opacity: 0; }
+}
 
 /* Accessibilité : réduire les animations si demandé par l'OS */
 @media (prefers-reduced-motion: reduce) {
   .animate-gold-flow, .animate-float, .animate-glow-gold,
   .animate-flame, .animate-flame-intense, .animate-shimmer-gold, .animate-coin,
-  .theme-bg-anim, .theme-particle {
+  .theme-bg-anim, .theme-particle, .theme-orb, .theme-star, .theme-shooting-star {
     animation: none;
   }
 }

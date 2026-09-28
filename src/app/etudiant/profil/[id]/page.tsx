@@ -71,21 +71,69 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
 
-      {/* ✨ Particules du thème */}
+      {/* ✨✨✨ AMBIANCE PLEIN ÉCRAN — derrière le contenu, jamais devant ✨✨✨ */}
       {themeDef && (
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-          {Array.from({ length: 14 }).map((_, i) => (
-            <span key={i} className="theme-particle"
+
+          {/* 🌟 Orbes — grands halos doux qui traversent tout l'écran (tous les thèmes) */}
+          <div className="theme-orb" style={{
+            width: 440, height: 440, top: '5%', left: '2%', opacity: 0.45,
+            background: `radial-gradient(circle, ${themeDef.particleColor}66 0%, transparent 70%)`,
+            animation: 'orbA 26s ease-in-out infinite',
+          }} />
+          <div className="theme-orb" style={{
+            width: 360, height: 360, top: '40%', left: '62%', opacity: 0.4,
+            background: `radial-gradient(circle, ${themeDef.aura} 0%, transparent 70%)`,
+            animation: 'orbB 34s ease-in-out infinite',
+          }} />
+          <div className="theme-orb" style={{
+            width: 300, height: 300, top: '72%', left: '22%', opacity: 0.35,
+            background: `radial-gradient(circle, ${themeDef.particleColor}44 0%, transparent 70%)`,
+            animation: 'orbC 24s ease-in-out infinite',
+          }} />
+
+          {/* ✨ Particules — TOUT l'écran (retards négatifs : déjà remplies au chargement) */}
+          {Array.from({ length: 22 }).map((_, i) => (
+            <span key={`p-${i}`} className="theme-particle"
               style={{
-                bottom: '-10px',
-                left: `${(i * 7.3 + 3) % 100}%`,
+                top: `${(i * 43) % 100}%`,
+                left: `${(i * 61 + 7) % 100}%`,
                 width: 3 + (i % 3) * 2,
                 height: 3 + (i % 3) * 2,
                 background: themeDef.particleColor,
-                animationDelay: `${i * 0.9}s`,
+                animationDelay: `${(i * -1.35 % 7).toFixed(1)}s`,
                 animationDuration: `${6 + (i % 5) * 2}s`,
               }} />
           ))}
+
+          {/* 🌌 COSMOS — LÉGENDAIRE : nébuleuse + champ d'étoiles + étoiles filantes (WAOUH) */}
+          {themeDef.key === 'THEME_COSMOS' && (
+            <>
+              {/* Nébuleuse supplémentaire */}
+              <div className="theme-orb" style={{
+                width: 520, height: 520, top: '15%', left: '55%', opacity: 0.5,
+                background: 'radial-gradient(circle, #a78bfa55 0%, transparent 70%)',
+                animation: 'orbB 40s ease-in-out infinite',
+              }} />
+              {/* 28 étoiles scintillantes réparties sur tout l'écran */}
+              {Array.from({ length: 28 }).map((_, i) => (
+                <span key={`s-${i}`} className="theme-star"
+                  style={{
+                    top: `${(i * 37 + 11) % 100}%`,
+                    left: `${(i * 53 + 3) % 100}%`,
+                    width: i % 5 === 0 ? 4 : 2,
+                    height: i % 5 === 0 ? 4 : 2,
+                    background: '#ffffff',
+                    boxShadow: '0 0 5px rgba(255,255,255,0.9)',
+                    animationDelay: `${(i * 0.41) % 2.5}s`,
+                    animationDuration: `${1.6 + (i % 3) * 0.9}s`,
+                  }} />
+              ))}
+              {/* 2 étoiles filantes (trajectoires croisées) */}
+              <div className="theme-shooting-star" style={{ top: 0, left: 0, animation: 'shootAcross 9s linear infinite' }} />
+              <div className="theme-shooting-star" style={{ top: 0, left: 0, animation: 'shootAcrossB 14s linear 5s infinite' }} />
+            </>
+          )}
         </div>
       )}
 
