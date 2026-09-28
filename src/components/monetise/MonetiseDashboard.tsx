@@ -21,7 +21,6 @@ function AnimatedCounter({ target }: { target: number }) {
   return <span>{value.toLocaleString("fr-FR")}</span>;
 }
 
-// ⬇️ FIX : le type explicite Variants résout l'erreur "string not assignable to Easing"
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
@@ -63,19 +62,33 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
         </a>
       </motion.div>
 
-      {/* CTA Rush */}
-      <a href="/etudiant/monetise/rush" className="block rounded-3xl p-5 bg-gradient-to-r from-red-600/20 to-orange-500/20 border-2 border-red-500/30 hover:border-red-400/50 transition-all">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl animate-flame">⚔️</span>
-            <div>
-              <p className="font-extrabold text-white/90">Mode Rush</p>
-              <p className="text-xs text-white/40 mt-0.5">Week-end · 3 erreurs max · jusqu'à +50 000 UA</p>
+      {/* CTA Rush + Boutique */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <a href="/etudiant/monetise/rush" className="block rounded-3xl p-5 bg-gradient-to-r from-red-600/20 to-orange-500/20 border-2 border-red-500/30 hover:border-red-400/50 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl animate-flame">⚔️</span>
+              <div>
+                <p className="font-extrabold text-white/90">Mode Rush</p>
+                <p className="text-xs text-white/40 mt-0.5">Week-end · 3 erreurs max · jusqu'à +50 000 UA</p>
+              </div>
             </div>
-        </div>
-          <span className="text-xs font-extrabold text-yellow-300 uppercase tracking-wide">→</span>
-        </div>
-      </a>
+            <span className="text-xs font-extrabold text-yellow-300 uppercase tracking-wide">→</span>
+          </div>
+        </a>
+        <a href="/etudiant/monetise/boutique" className="block rounded-3xl p-5 bg-gradient-to-r from-yellow-500/20 to-amber-400/20 border-2 border-yellow-500/30 hover:border-yellow-400/60 transition-all">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-3xl animate-float">🏪</span>
+              <div>
+                <p className="font-extrabold text-white/90">Boutique</p>
+                <p className="text-xs text-white/40 mt-0.5">Objets Flamme · Rush · Coffres</p>
+              </div>
+            </div>
+            <span className="text-xs font-extrabold text-yellow-300 uppercase tracking-wide">→</span>
+          </div>
+        </a>
+      </div>
 
       {/* Cartes en cascade */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -102,17 +115,18 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
         </motion.div>
       </div>
 
-      {/* Statut des phases */}
+      {/* État des phases */}
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
         className="bg-white/5 border border-white/10 rounded-3xl p-6"
       >
-        <h2 className="font-extrabold text-white/60 text-sm uppercase tracking-wider mb-3">🚧 Construction en cours</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          <p className="bg-white/5 p-3 rounded-xl text-center text-white/40">U2 — Achat du Pass<br /><span className="text-yellow-500/50">en approche</span></p>
-          <p className="bg-white/5 p-3 rounded-xl text-center text-white/40">U3 — Gain des UA</p>
-          <p className="bg-white/5 p-3 rounded-xl text-center text-white/40">U4 — Mode Rush</p>
-          <p className="bg-white/5 p-3 rounded-xl text-center text-white/40">U6 — Boutique</p>
+        <h2 className="font-extrabold text-white/60 text-sm uppercase tracking-wider mb-3">🚀 État de l'Arène Monétisée</h2>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U2 — Achat du Pass<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
+          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U3 — Gain des UA<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
+          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U4 — Mode Rush<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
+          <p className="bg-white/5 p-3 rounded-xl text-center text-white/40">U5 — Cagnotne & Retrait<br /><span className="text-yellow-500/50">🔜 prochaine</span></p>
+          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U6 — Boutique<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
         </div>
       </motion.div>
     </div>
