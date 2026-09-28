@@ -7,27 +7,18 @@ import { getDuelGrade } from '@/lib/duel';
 import ChallengeDuelButton from '@/components/duel/ChallengeDuelButton';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import { getCurrentUser } from '@/lib/auth';
+import { getTitleDef, getThemeDef, RARITY_STYLES } from '@/lib/personnalisation-data';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Récupérer l'utilisateur dont l'ID est dans l'URL
   const profileUser = await prisma.user.findUnique({
     where: { id: (await params).id },
     select: {
-      id: true,
-      prenom: true,
-      nom: true,
-      pseudo: true,
-      imageUrl: true,
-      anneeEtude: true,
-      xp: true,
-      streak: true,
-      isPremium: true,
-      premiumTier: true,
-      passActive: true,
-      duelsWon: true,
-      duelsLost: true,
-      pointsArena: true,
+      id: true, prenom: true, nom: true, pseudo: true, imageUrl: true,
+      anneeEtude: true, xp: true, streak: true,
+      isPremium: true, premiumTier: true, passActive: true,
+      activeTitleId: true, activeFrameId: true, activeThemeId: true,
+      duelsWon: true, duelsLost: true, pointsArena: true,
       badges: { include: { badge: true } }
     }
   });
@@ -39,31 +30,49 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   const { current: duelGrade } = getDuelGrade(profileUser.duelsWon);
 
-  // Calcul du grade
+  // 🎨 Personnalisation équipée
+  const titleDef = getTitleDef(profileUser.activeTitleId);
+  const themeDef = getThemeDef(profileUser.activeThemeId);
+
   let grade = "🥉 Clinicien Bronze";
   if (profileUser.xp >= 1000) grade = "🥈 Clinicien Argent";
   if (profileUser.xp >= 3000) grade = "🥇 Clinicien Or";
   if (profileUser.xp >= 6000) grade = "💎 Expert Clinicien";
 
-  // Styles conditionnels
-  const cardStyle = profileUser.isPremium 
-    ? "bg-slate-900/80 backdrop-blur-xl border-2 border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] text-white"
-    : "bg-white border border-gray-100 shadow-sm text-gray-800";
+  // Styles : le THÈME équipé prend le dessus, sinon Premium/classique
+  const cardStyle = themeDef
+    ? themeDef.card
+    : profileUser.isPremium
+      ? "bg-slate-900/80 backdrop-blur-xl border-2 border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] text-white"
+      : "bg-white border border-gray-100 shadow-sm text-gray-800";
 
-  const gradeStyle = profileUser.isPremium
-    ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 animate-pulse font-extrabold"
-    : "font-extrabold text-gray-800";
+  const pageBg = themeDef
+    ? themeDef.bg
+    : profileUser.isPremium
+      ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800'
+      : 'bg-gray-50';
 
-  const badgeBoxStyle = profileUser.isPremium
-    ? "bg-yellow-500/10 border-2 border-yellow-400/30 rounded-2xl"
-    : "bg-yellow-50 border-2 border-yellow-100 rounded-2xl";
+  const gradeStyle = themeDef
+    ? `${themeDef.accent} font-extrabold`
+    : profileUser.isPremium
+      ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 animate-pulse font-extrabold"
+      : "font-extrabold text-gray-800";
+
+  const quickBadge = (fallbackPremium: string, fallbackFree: string) =>
+    themeDef ? themeDef.badge : (profileUser.isPremium ? fallbackPremium : fallbackFree);
+
+  const badgeBoxStyle = themeDef
+    ? `${themeDef.badge} rounded-2xl`
+    : profileUser.isPremium
+      ? "bg-yellow-500/10 border-2 border-yellow-400/30 rounded-2xl"
+      : "bg-yellow-50 border-2 border-yellow-100 rounded-2xl";
 
   return (
-    <div className={`min-h-screen pb-10 ${profileUser.isPremium ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800' : 'bg-gray-50'}`}>
-      
-      <header className={`border-b-2 ${profileUser.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
+    <div className={`min-h-screen pb-10 ${pageBg}`}>
+
+      <header className={`border-b-2 ${themeDef ? 'border-white/10 bg-black/30' : profileUser.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/etudiant" className={`flex items-center gap-2 ${profileUser.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
+          <Link href="/etudiant" className={`flex items-center gap-2 ${themeDef || profileUser.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -82,14 +91,15 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
       <main className="max-w-md mx-auto px-4 mt-6">
         <div className={`rounded-3xl p-8 text-center transition-all ${cardStyle}`}>
-          
-          {/* Photo de profil — Pass actif : Anneau d'Or animé (l'emblème du Pass) */}
+
+          {/* Photo — CADRE équipé (remplace l'Anneau d'Or) > Anneau d'Or > simple */}
           <div className="relative mx-auto mb-4">
-            {profileUser.passActive ? (
+            {profileUser.passActive || profileUser.activeFrameId ? (
               <GoldAvatar
                 imageUrl={profileUser.imageUrl}
                 initials={`${profileUser.prenom.charAt(0)}${profileUser.nom.charAt(0)}`}
-                passActive
+                passActive={profileUser.passActive}
+                frameKey={profileUser.activeFrameId}
                 size={96}
               />
             ) : (
@@ -114,26 +124,30 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             {profileUser.pseudo || `${profileUser.prenom} ${profileUser.nom}`}
           </h2>
 
-          {/* Badges rapides (PAS D'EMAIL) */}
+          {/* 🏷️ Titre équipé */}
+          {titleDef && (
+            <span className={`inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-extrabold ${RARITY_STYLES[titleDef.rarity].cls}`}>
+              {titleDef.icon} {titleDef.name}
+            </span>
+          )}
+
           <div className="flex justify-center gap-2 mt-4">
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600'}`}>{getNiveauLabel(profileUser.anneeEtude)}</span>
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>⭐ {profileUser.xp} XP</span>
-            <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-orange-500/20 text-orange-300' : 'bg-orange-50 text-orange-600'}`}>🔥 {profileUser.streak} Jours</span>
+            <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-blue-500/20 text-blue-300', 'bg-blue-50 text-blue-600')}`}>{getNiveauLabel(profileUser.anneeEtude)}</span>
+            <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-emerald-500/20 text-emerald-300', 'bg-emerald-50 text-emerald-600')}`}>⭐ {profileUser.xp} XP</span>
+            <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-orange-500/20 text-orange-300', 'bg-orange-50 text-orange-600')}`}>🔥 {profileUser.streak} Jours</span>
           </div>
 
-          {/* Grade */}
-          <div className={`mt-6 p-4 rounded-2xl ${profileUser.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
-            <p className={`text-xs font-bold uppercase tracking-wider ${profileUser.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
+          <div className={`mt-6 p-4 rounded-2xl ${themeDef ? 'bg-white/5' : profileUser.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
+            <p className={`text-xs font-bold uppercase tracking-wider ${themeDef ? 'text-white/50' : profileUser.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
             <p className={`text-xl mt-1 ${gradeStyle}`}>{grade}</p>
           </div>
 
-          {/* Statistiques de Duel + Défier */}
-          <div className={`mt-8 text-left border-t pt-6 ${profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
+          <div className={`mt-8 text-left border-t pt-6 ${themeDef || profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>
             <div className="flex justify-center flex-wrap gap-2 mb-4">
-              <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-600'}`}>🏆 {profileUser.duelsWon} Victoires</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-red-500/20 text-red-300' : 'bg-red-50 text-red-600'}`}>❌ {profileUser.duelsLost} Défaites</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-50 text-purple-600'}`}>{duelGrade.icon} {duelGrade.name}</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-emerald-500/20 text-emerald-300', 'bg-emerald-50 text-emerald-600')}`}>🏆 {profileUser.duelsWon} Victoires</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-red-500/20 text-red-300', 'bg-red-50 text-red-600')}`}>❌ {profileUser.duelsLost} Défaites</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${quickBadge('bg-purple-500/20 text-purple-300', 'bg-purple-50 text-purple-600')}`}>{duelGrade.icon} {duelGrade.name}</span>
             </div>
             <ChallengeDuelButton
               targetId={profileUser.id}
@@ -144,17 +158,16 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             />
           </div>
 
-          {/* Affichage des Badges */}
-          <div className={`mt-8 text-left border-t pt-6 ${profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
+          <div className={`mt-8 text-left border-t pt-6 ${themeDef || profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">Trophées de {profileUser.prenom} 🏆</h3>
             {profileUser.badges.length === 0 ? (
-              <p className={`text-sm text-center py-4 rounded-2xl ${profileUser.isPremium ? 'bg-white/5 text-white/50' : 'bg-gray-50 text-gray-400'}`}>Aucun badge débloqué pour le moment.</p>
+              <p className={`text-sm text-center py-4 rounded-2xl ${themeDef || profileUser.isPremium ? 'bg-white/5 text-white/50' : 'bg-gray-50 text-gray-400'}`}>Aucun badge débloqué pour le moment.</p>
             ) : (
               <div className="flex flex-wrap gap-4">
                 {profileUser.badges.map((ub) => (
                   <div key={ub.badgeId} className={`flex flex-col items-center justify-center w-24 p-3 ${badgeBoxStyle}`}>
                     <span className="text-4xl mb-1">{ub.badge.icon}</span>
-                    <span className={`text-xs font-bold text-center ${profileUser.isPremium ? 'text-yellow-200' : 'text-yellow-800'}`}>{ub.badge.name}</span>
+                    <span className={`text-xs font-bold text-center ${themeDef || profileUser.isPremium ? 'text-yellow-200' : 'text-yellow-800'}`}>{ub.badge.name}</span>
                   </div>
                 ))}
               </div>

@@ -1,14 +1,10 @@
 // ===== BOUTIQUE MONÉTISÉE — Dr. Stone Arena =====
-// Catalogue, seed automatique (pattern getOrCreate du projet) et coffres.
-// Règle fondamentale (validée) : ACHAT ≠ ACTIVATION. Un objet acheté est STOCKÉ
-// dans l'inventaire ; il n'est consommé que lorsque le joueur l'utilise lui-même.
 
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { GEL_FLAMME_UA, RESTAURE_FLAMME_UA, ASSURANCE_FLAMME_UA } from '@/lib/monetise';
 
-// --- Prix Rush (les prix Flamme viennent de lib/monetise.ts, source unique) ---
-export const TICKET_RUSH_UA = 15000;      // = RETRY_RUSH_UA : même valeur, mécanismes distincts (objet vs paiement direct)
+export const TICKET_RUSH_UA = 15000;
 export const BOUCLIER_UA = 25000;
 export const SECONDE_CHANCE_UA = 35000;
 export const TEMPS_BONUS_UA = 20000;
@@ -17,25 +13,20 @@ export const COFFRE_SILVER_UA = 70000;
 export const COFFRE_GOLD_UA = 150000;
 export const COFFRE_DIAMOND_UA = 300000;
 
-// --- Catalogue V1 : FLAMME + RUSH + COFFRES (personnalisation exclue, phase séparée) ---
 const CATALOG: { name: string; category: string; priceUA: number; icon: string; effectKey: string; description: string }[] = [
-  // 🔥 Flamme
   { name: 'Gel de Flamme', category: 'FLAMME', priceUA: GEL_FLAMME_UA, icon: '🧊', effectKey: 'GEL_FLAMME', description: 'Gèle ta Flamme pour la protéger temporairement. À activer quand TU le décides.' },
   { name: 'Restaure-Flamme', category: 'FLAMME', priceUA: RESTAURE_FLAMME_UA, icon: '🔥', effectKey: 'RESTAURE_FLAMME', description: 'Restaure une Flamme perdue. À activer quand TU le décides.' },
   { name: 'Assurance Flamme', category: 'FLAMME', priceUA: ASSURANCE_FLAMME_UA, icon: '☂️', effectKey: 'ASSURANCE_FLAMME', description: 'Protection préventive de ta Flamme avant une période à risque.' },
-  // ⚡ Rush
   { name: 'Ticket Rush', category: 'RUSH', priceUA: TICKET_RUSH_UA, icon: '🎫', effectKey: 'TICKET_RUSH', description: 'Une tentative de Rush supplémentaire. Distinct du retry direct (paiement immédiat).' },
   { name: 'Bouclier', category: 'RUSH', priceUA: BOUCLIER_UA, icon: '🛡️', effectKey: 'BOUCLIER', description: 'Absorbe une erreur pendant un Rush. Utilisable en pleine tentative.' },
   { name: 'Seconde Chance', category: 'RUSH', priceUA: SECONDE_CHANCE_UA, icon: '🔄', effectKey: 'SECONDE_CHANCE', description: 'Continue ton Rush après une fin brutale, dans les limites prévues.' },
   { name: 'Temps Bonus', category: 'RUSH', priceUA: TEMPS_BONUS_UA, icon: '⏱️', effectKey: 'TEMPS_BONUS', description: 'Ajoute du temps à ton chronomètre de Rush.' },
-  // 🎁 Coffres — JAMAIS d'UA retirable (règle validée)
   { name: 'Coffre Bronze', category: 'COFFRE', priceUA: COFFRE_BRONZE_UA, icon: '🥉', effectKey: 'COFFRE_BRONZE', description: '1 objet courant. Uniquement des objets — jamais d\'UA retirable.' },
   { name: 'Coffre Silver', category: 'COFFRE', priceUA: COFFRE_SILVER_UA, icon: '🥈', effectKey: 'COFFRE_SILVER', description: '1 objet moyen + 1 objet courant. Jamais d\'UA retirable.' },
   { name: 'Coffre Gold', category: 'COFFRE', priceUA: COFFRE_GOLD_UA, icon: '🥇', effectKey: 'COFFRE_GOLD', description: '1 objet rare + 1 objet moyen (+ bonus possible). Jamais d\'UA retirable.' },
-  { name: 'Coffre Diamond', category: 'COFFRE', priceUA: COFFRE_DIAMOND_UA, icon: '💎', effectKey: 'COFFRE_DIAMOND', description: 'Le coffre ultime : objets premium garantis. Jamais d\'UA retirable.' },
+  { name: 'Coffre Diamond', category: 'COFFRE', priceUA: COFFRE_DIAMOND_UA, icon: '💎', effectKey: 'COFFRE_DIAMOND', description: 'Le coffre ultime : objets premium garantis + titre exclusif possible. Jamais d\'UA retirable.' },
 ];
 
-// --- Tables de butin (ajustables en une ligne) ---
 const POOL_COURANT = ['Gel de Flamme', 'Ticket Rush', 'Temps Bonus'];
 const POOL_MOYEN = ['Bouclier', 'Restaure-Flamme', 'Seconde Chance'];
 const POOL_RARE = ['Assurance Flamme'];
@@ -48,17 +39,19 @@ const CHEST_LOOT: Record<string, () => string[]> = {
   'Coffre Gold': () => (Math.random() < 0.5
     ? [pick(POOL_RARE), pick(POOL_MOYEN), pick(POOL_COURANT)]
     : [pick(POOL_RARE), pick(POOL_MOYEN)]),
-  'Coffre Diamond': () => [pick(POOL_RARE), 'Seconde Chance', pick(POOL_MOYEN), pick(POOL_COURANT)],
+  // 👑 Titre EXCLUSIF « Légende de l'Arène » — uniquement ici (50 % de chance, ajustable en une ligne)
+  'Coffre Diamond': () => [
+    pick(POOL_RARE), 'Seconde Chance', pick(POOL_MOYEN), pick(POOL_COURANT),
+    ...(Math.random() < 0.5 ? ["Légende de l'Arène"] : []),
+  ],
 };
 
-// Seed automatique idempotent — compatible avec les objets déjà créés par le coffre du palier 3
 export async function getOrCreateShopCatalog() {
   for (const item of CATALOG) {
     const existing = await prisma.shopItem.findFirst({ where: { name: item.name, category: item.category } });
     if (!existing) {
       await prisma.shopItem.create({ data: item });
     } else if (!existing.effectKey) {
-      // Rattrapage des objets créés sans effectKey (par le coffre du palier 3)
       await prisma.shopItem.update({ where: { id: existing.id }, data: { effectKey: item.effectKey } });
     }
   }
@@ -68,7 +61,6 @@ export async function getOrCreateShopCatalog() {
   });
 }
 
-// Ouverture d'un coffre : attribution atomique du butin (à appeler DANS la transaction d'achat)
 export async function openChest(tx: Prisma.TransactionClient, userId: string, chestName: string) {
   const lootNames = (CHEST_LOOT[chestName] ?? CHEST_LOOT['Coffre Bronze'])();
   const granted: { itemId: string; name: string; icon: string | null; description: string | null }[] = [];

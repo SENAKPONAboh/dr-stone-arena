@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { TITLES, FRAMES, THEMES, RARITY_STYLES, type Rarity } from '@/lib/personnalisation-data';
 
 type ShopItem = {
-  id: string; name: string; category: string;
-  priceUA: number; icon: string | null; description: string | null;
+  id: string; name: string; category: string; priceUA: number;
+  icon: string | null; description: string | null; effectKey: string | null;
 };
 
 type InventoryItem = {
@@ -26,7 +27,12 @@ const CATEGORIES = [
   { key: 'FLAMME', label: 'Flamme', icon: '🔥' },
   { key: 'RUSH', label: 'Rush', icon: '⚡' },
   { key: 'COFFRE', label: 'Coffres', icon: '🎁' },
+  { key: 'TITRE', label: 'Titres', icon: '🏷️' },
+  { key: 'CADRE', label: 'Cadres', icon: '🖼️' },
+  { key: 'THEME', label: 'Thèmes', icon: '🎨' },
 ];
+
+const PERSO_CATEGORIES = ['TITRE', 'CADRE', 'THEME'];
 
 const cardVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
@@ -39,11 +45,19 @@ const cardVariants: Variants = {
 const fmt = (iso: string) =>
   new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+const rarityOf = (item: { category: string; effectKey: string | null }): Rarity | undefined => {
+  if (item.category === 'TITRE') return TITLES.find(t => t.key === item.effectKey)?.rarity;
+  if (item.category === 'CADRE') return FRAMES.find(f => f.key === item.effectKey)?.rarity;
+  if (item.category === 'THEME') return THEMES.find(t => t.key === item.effectKey)?.rarity;
+  return undefined;
+};
+
 export default function BoutiqueClient({
-  items, inventory, uaBalance, flameProtectedUntil, flameLostAt, lostStreak,
+  items, inventory, uaBalance, flameProtectedUntil, flameLostAt, lostStreak, equipped,
 }: {
   items: ShopItem[]; inventory: InventoryItem[]; uaBalance: number;
   flameProtectedUntil?: string | null; flameLostAt?: string | null; lostStreak?: number;
+  equipped?: { title: string | null; frame: string | null; theme: string | null };
 }) {
   const [balance, setBalance] = useState(uaBalance);
   const [stock, setStock] = useState<InventoryItem[]>(inventory);
@@ -52,10 +66,10 @@ export default function BoutiqueClient({
   const [flash, setFlash] = useState('');
   const [reveal, setReveal] = useState<PurchaseResult | null>(null);
 
-  // État Flamme (mis à jour après chaque activation)
   const [protectionUntil, setProtectionUntil] = useState(flameProtectedUntil ?? null);
   const [lostFlameAt, setLostFlameAt] = useState(flameLostAt ?? null);
   const [lostStreakValue, setLostStreakValue] = useState(lostStreak ?? 0);
+  const [equippedState, setEquippedState] = useState(equipped ?? { title: null, frame: null, theme: null });
 
   const protectionActive = !!protectionUntil && new Date(protectionUntil) > new Date();
   const restorable = !!lostFlameAt && lostStreakValue > 0 &&
@@ -116,7 +130,6 @@ export default function BoutiqueClient({
     }
   };
 
-  // ===== ACTIVATION (règle : achat ≠ activation — le joueur choisit le moment) =====
   const useItem = async (item: InventoryItem) => {
     if (!confirm(`Utiliser « ${item.name} » maintenant ?`)) return;
     setLoadingId(item.itemId);
@@ -143,16 +156,48 @@ export default function BoutiqueClient({
     }
   };
 
+  // ===== ÉQUIPER / RETIRER (personnalisation — permanent, jamais consommé) =====
+  const toggleEquip = async (item: InventoryItem, equip: boolean) => {
+    if (!confirm(equip ? `Équiper « ${item.name} » ?` : `Retirer « ${item.name} » ?`)) return;
+    setLoadingId(item.itemId);
+    setError('');
+    setFlash('');
+    try {
+      const res = await fetch('/api/monetise/personnalisation/equip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itemId: item.itemId, action: equip ? 'EQUIP' : 'UNEQUIP' }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data?.error || 'Erreur serveur'); return; }
+      const field = item.category === 'TITRE' ? 'title' : item.category === 'CADRE' ? 'frame' : 'theme';
+      setEquippedState(prev => ({ ...prev, [field]: data.equipped }));
+      setFlash(equip ? `✨ ${item.name} équipé !` : `${item.name} retiré.`);
+      if (equip) confetti({ particleCount: 30, spread: 55, origin: { y: 0.7 }, colors: GOLD_CONFETTI });
+      setTimeout(() => setFlash(''), 3500);
+    } catch {
+      setError('Impossible de joindre le serveur. Réessaie.');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const equippedKeyOf = (item: InventoryItem): string | null => {
+    if (item.category === 'TITRE') return equippedState.title;
+    if (item.category === 'CADRE') return equippedState.frame;
+    if (item.category === 'THEME') return equippedState.theme;
+    return null;
+  };
+
   let cardIndex = 0;
 
   return (
     <div className="space-y-6">
 
-      {/* En-tête + solde */}
       <div className="flex justify-between items-center gap-3">
         <div>
           <h1 className="text-2xl font-extrabold text-white">🏪 Boutique de l'Arène</h1>
-          <p className="text-xs text-white/40 mt-1">Objets Flamme · Rush · Coffres — jamais d'UA retirable dans les coffres</p>
+          <p className="text-xs text-white/40 mt-1">Objets · Coffres · Personnalisation — jamais d'UA retirable dans les coffres</p>
         </div>
         <div className="px-4 py-2 rounded-2xl bg-white/5 border-2 border-yellow-500/30 text-yellow-300 font-extrabold animate-glow-gold whitespace-nowrap">
           🪙 {balance.toLocaleString('fr-FR')} UA
@@ -166,7 +211,6 @@ export default function BoutiqueClient({
         <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="bg-green-400/10 border-2 border-green-400/30 text-green-300 px-4 py-3 rounded-2xl text-sm font-bold text-center">{flash}</motion.div>
       )}
 
-      {/* Sections par catégorie */}
       {CATEGORIES.map(cat => {
         const catItems = items.filter(i => i.category === cat.key);
         if (catItems.length === 0) return null;
@@ -178,12 +222,16 @@ export default function BoutiqueClient({
                 const i = cardIndex++;
                 const affordable = balance >= item.priceUA;
                 const isChest = item.category === 'COFFRE';
+                const rarity = rarityOf(item);
                 return (
                   <motion.div key={item.id} custom={i} variants={cardVariants} initial="hidden" animate="visible"
                     className="bg-white/5 border border-yellow-500/20 rounded-3xl p-5 flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-3">
                       <span className="text-4xl animate-float">{item.icon ?? '📦'}</span>
-                      {stockOf(item.id) > 0 && !isChest && (
+                      {rarity && (
+                        <span className={`text-[10px] font-extrabold px-2 py-1 rounded-full ${RARITY_STYLES[rarity].cls}`}>{RARITY_STYLES[rarity].label}</span>
+                      )}
+                      {stockOf(item.id) > 0 && !isChest && !rarity && (
                         <span className="text-[10px] font-extrabold bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full">×{stockOf(item.id)}</span>
                       )}
                     </div>
@@ -215,11 +263,12 @@ export default function BoutiqueClient({
         );
       })}
 
-      {/* Inventaire + activation */}
+      {/* Inventaire */}
       <div className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
         <h2 className="font-extrabold text-white mb-2">🎒 Ton inventaire</h2>
         <p className="text-xs text-white/40 mb-4">
-          Règle de l'Arène : <span className="text-yellow-300/70 font-bold">achat ≠ activation</span> — tes objets ne sont consommés que quand TU choisis de les utiliser.
+          <span className="text-yellow-300/70 font-bold">Objets</span> : achat ≠ activation, consommés quand TU le décides ·
+          <span className="text-yellow-300/70 font-bold"> Personnalisation</span> : permanente, équipe à volonté.
         </p>
 
         {protectionActive && protectionUntil && (
@@ -244,6 +293,8 @@ export default function BoutiqueClient({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {stock.map((s, i) => {
               const isFlame = s.category === 'FLAMME';
+              const isPerso = PERSO_CATEGORIES.includes(s.category);
+              const isEquipped = isPerso && equippedKeyOf(s) === s.effectKey;
               const blockedByProtection =
                 (s.effectKey === 'GEL_FLAMME' || s.effectKey === 'ASSURANCE_FLAMME') && protectionActive;
               const restaureBlocked = s.effectKey === 'RESTAURE_FLAMME' && !restorable;
@@ -255,10 +306,13 @@ export default function BoutiqueClient({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-white/80 truncate">{s.name}</p>
                     {s.category === 'RUSH' && (
-                      <p className="text-[10px] text-white/30">⚔️ S'utilise dans le Rush (prochaine mise à jour)</p>
+                      <p className="text-[10px] text-white/30">⚔️ S'utilise dans le Rush</p>
+                    )}
+                    {isEquipped && (
+                      <p className="text-[10px] text-green-300 font-bold">✓ Équipé</p>
                     )}
                   </div>
-                  <span className="text-xs font-extrabold text-yellow-300">×{s.quantity}</span>
+                  {!isPerso && <span className="text-xs font-extrabold text-yellow-300">×{s.quantity}</span>}
                   {isFlame && (
                     <button
                       onClick={() => useItem(s)}
@@ -269,6 +323,17 @@ export default function BoutiqueClient({
                         : 'bg-yellow-500 text-[#1a1308] hover:bg-yellow-400'}`}
                     >
                       {loadingId === s.itemId ? '⏳' : 'Utiliser'}
+                    </button>
+                  )}
+                  {isPerso && (
+                    <button
+                      onClick={() => toggleEquip(s, !isEquipped)}
+                      disabled={loadingId === s.itemId}
+                      className={`py-1.5 px-3 rounded-xl text-[11px] font-extrabold uppercase whitespace-nowrap ${isEquipped
+                        ? 'bg-green-500/20 text-green-300 border border-green-400/40'
+                        : 'bg-yellow-500 text-[#1a1308] hover:bg-yellow-400'} disabled:opacity-40`}
+                    >
+                      {loadingId === s.itemId ? '⏳' : isEquipped ? 'Retirer' : 'Équiper'}
                     </button>
                   )}
                 </motion.div>

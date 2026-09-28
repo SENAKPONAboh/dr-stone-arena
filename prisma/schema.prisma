@@ -49,7 +49,9 @@ model User {
   streakBeforeReset  Int       @default(0)  // valeur exacte de la Flamme avant la perte (Restaure-Flamme)
   flameProtectedUntil DateTime?             // protection active (Gel 48 h OU Assurance 7 jours — une seule à la fois)
   flameLostAt        DateTime?              // date de la dernière perte (fenêtre Restaure : 48 h)
-  activeThemeId      String?
+  activeTitleId      String?                // 🏷️ TITRE équipé (clé d'effet, ex : TITRE_CHAMPION)
+  activeFrameId      String?                // 🖼️ CADRE équipé (clé d'effet — remplace visuellement l'Anneau d'Or)
+  activeThemeId      String?                // 🎨 THÈME équipé (clé d'effet — transforme l'apparence du profil)
   uaTransactions     UaTransaction[]
   passRequests       PassRequest[]
   monetiseSelections MonetiseSelection[]
