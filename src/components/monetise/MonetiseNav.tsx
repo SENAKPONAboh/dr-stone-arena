@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 
-const ITEMS = [
+// ⚠️ Typage explicite : `phase` est OPTIONNEL — tous les éléments sont disponibles à présent,
+// mais le champ reste prêt pour les futures entrées verrouillées (ex. Personnalisation).
+const ITEMS: { href: string; label: string; icon: string; available: boolean; phase?: string }[] = [
   { href: '/etudiant/monetise', label: 'Dashboard', icon: '📊', available: true },
   { href: '/etudiant/monetise/jouer', label: 'Jouer', icon: '▶️', available: true },
   { href: '/etudiant/monetise/pass', label: 'Pass', icon: '🪙', available: true },
   { href: '/etudiant/monetise/rush', label: 'Rush', icon: '⚔️', available: true },
   { href: '/etudiant/monetise/boutique', label: 'Boutique', icon: '🏪', available: true },
-  { href: '/etudiant/monetise/cagnotte', label: 'Cagnotte', icon: '💰', available: false, phase: 'U5' },
+  { href: '/etudiant/monetise/cagnotte', label: 'Cagnotte', icon: '💰', available: true },
 ];
 
 export default function MonetiseNav({ passActive }: { passActive: boolean }) {
@@ -27,7 +29,8 @@ export default function MonetiseNav({ passActive }: { passActive: boolean }) {
         const active = item.href === '/etudiant/monetise' ? pathname === item.href : pathname.startsWith(item.href);
         if (!item.available) {
           return (
-            <span key={item.href} className="py-2 px-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-wide bg-white/5 text-white/20 cursor-not-allowed" title={`Disponible à la phase ${item.phase}`}>
+            <span key={item.href} className="py-2 px-4 rounded-2xl text-xs sm:text-sm font-bold uppercase tracking-wide bg-white/5 text-white/20 cursor-not-allowed"
+              title={item.phase ? `Disponible à la phase ${item.phase}` : 'Bientôt disponible'}>
               {item.icon} {item.label} 🔒
             </span>
           );

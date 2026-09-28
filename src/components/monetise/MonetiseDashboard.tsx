@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 
-// Compteur animé (la cagnotte qui monte chiffre par chiffre)
 function AnimatedCounter({ target }: { target: number }) {
   const [value, setValue] = useState(0);
   useEffect(() => {
@@ -125,7 +124,7 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
           <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U2 — Achat du Pass<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
           <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U3 — Gain des UA<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
           <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U4 — Mode Rush<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
-          <p className="bg-white/5 p-3 rounded-xl text-center text-white/40">U5 — Cagnotne & Retrait<br /><span className="text-yellow-500/50">🔜 prochaine</span></p>
+          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U5 — Cagnotne & Retrait<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
           <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U6 — Boutique<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
         </div>
       </motion.div>
