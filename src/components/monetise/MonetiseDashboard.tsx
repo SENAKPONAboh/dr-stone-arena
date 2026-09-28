@@ -63,6 +63,20 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
         </a>
       </motion.div>
 
+      {/* CTA Rush */}
+      <a href="/etudiant/monetise/rush" className="block rounded-3xl p-5 bg-gradient-to-r from-red-600/20 to-orange-500/20 border-2 border-red-500/30 hover:border-red-400/50 transition-all">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl animate-flame">⚔️</span>
+            <div>
+              <p className="font-extrabold text-white/90">Mode Rush</p>
+              <p className="text-xs text-white/40 mt-0.5">Week-end · 3 erreurs max · jusqu'à +50 000 UA</p>
+            </div>
+        </div>
+          <span className="text-xs font-extrabold text-yellow-300 uppercase tracking-wide">→</span>
+        </div>
+      </a>
+
       {/* Cartes en cascade */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 

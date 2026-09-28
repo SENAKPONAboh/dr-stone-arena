@@ -1,0 +1,88 @@
+import prisma from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+import { RUSH_FLAME_REQUIRED, getWeekendId } from '@/lib/monetise';
+
+export function isRushWeekend(date = new Date()): boolean {
+  const day = date.getDay();
+  return day === 0 || day === 6;
+}
+
+function getWeekendMonday(date = new Date()): Date {
+  const day = date.getDay();
+  const daysFromMonday = day === 0 ? 6 : day - 1;
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - daysFromMonday);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+export function getWeekendSaturday(date = new Date()): Date {
+  const saturday = getWeekendMonday(date);
+  saturday.setDate(saturday.getDate() + 5);
+  return saturday;
+}
+
+export async function getActiveDaysThisWeek(userId: string): Promise<number> {
+  const monday = getWeekendMonday();
+  const saturday = getWeekendSaturday();
+  const [attempts, monetiseAttempts] = await Promise.all([
+    prisma.attempt.findMany({
+      where: { userId: userId, createdAt: { gte: monday, lt: saturday } },
+      select: { createdAt: true },
+    }),
+    prisma.monetiseAttempt.findMany({
+      where: { userId: userId, createdAt: { gte: monday, lt: saturday } },
+      select: { createdAt: true },
+    }),
+  ]);
+  const days = new Set<string>();
+  [...attempts, ...monetiseAttempts].forEach(a => {
+    const d = new Date(a.createdAt);
+    days.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+  });
+  return days.size;
+}
+
+export async function getRushWeekendTotal(userId: string): Promise<number> {
+  const saturday = getWeekendSaturday();
+  const agg = await prisma.uaTransaction.aggregate({
+    where: {
+      userId: userId,
+      type: { in: ['RUSH_P1', 'RUSH_P2', 'RUSH_P3'] },
+      createdAt: { gte: saturday },
+    },
+    _sum: { amount: true },
+  });
+  return agg._sum.amount ?? 0;
+}
+
+// C8 : clôture automatique des sessions EN_COURS appartenant à un week-end PASSÉ
+// (joueur parti en pleine tentative : la session ne doit plus ni s'afficher, ni bloquer, ni être jouable)
+export async function closeStaleRushSessions(userId: string, client: Prisma.TransactionClient = prisma) {
+  await client.rushSession.updateMany({
+    where: { userId: userId, status: 'EN_COURS', weekend: { not: getWeekendId() } },
+    data: { status: 'TERMINE_ABANDON', finishedAt: new Date() },
+  });
+}
+
+export async function getRushState(userId: string) {
+  const weekendId = getWeekendId();
+
+  // Nettoyage des sessions périmées avant lecture (même logique que côté API)
+  await closeStaleRushSessions(userId);
+
+  const [activeDays, totalWeekend, sessionsCount, currentSession] = await Promise.all([
+    getActiveDaysThisWeek(userId),
+    getRushWeekendTotal(userId),
+    prisma.rushSession.count({ where: { userId: userId, weekend: weekendId } }),
+    prisma.rushSession.findFirst({ where: { userId: userId, status: 'EN_COURS', weekend: weekendId } }),
+  ]);
+  return {
+    isWeekend: isRushWeekend(),
+    activeDays: activeDays,
+    flameOk: activeDays >= RUSH_FLAME_REQUIRED,
+    totalWeekend: totalWeekend,
+    sessionsCount: sessionsCount,
+    currentSession: currentSession,
+  };
+}

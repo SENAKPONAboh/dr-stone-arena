@@ -300,6 +300,7 @@ model RushSession {
   wasFree       Boolean
   errors        Int       @default(0)
   currentStreak Int       @default(0)
+  playedCaseIds String[] @default([])
   palier1       Boolean   @default(false)
   palier2       Boolean   @default(false)
   palier3       Boolean   @default(false)

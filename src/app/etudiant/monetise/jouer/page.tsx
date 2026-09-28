@@ -58,8 +58,6 @@ export default async function MonetisePlayPage() {
         title: clinicalCase.title,
         statement: clinicalCase.statement,
         options: clinicalCase.options,
-        correctAnswer: clinicalCase.correctAnswer,
-        explanation: clinicalCase.explanation,
         durationMax: clinicalCase.durationMax,
         difficulty: clinicalCase.difficulty,
         subject: clinicalCase.chapter.subject.name,

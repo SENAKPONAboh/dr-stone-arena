@@ -1,21 +1,36 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { UA_PER_CASE } from '@/lib/monetise';
 
+// ⚠️ correctAnswer et explanation ne sont PLUS transmis au navigateur avant la réponse.
+// Ils arrivent uniquement dans la réponse du serveur APRÈS soumission (sécurité économique).
 type ClinicalCaseProps = {
   progressLabel: string;
   clinicalCase: {
     id: string; title: string; statement: string; options: string[];
-    correctAnswer: string; explanation: string; durationMax: number;
+    durationMax: number;
     difficulty: string; subject: string; chapter: string;
   };
+};
+
+type SubmitResult = {
+  isCorrect: boolean;
+  correctAnswer: string;
+  explanation: string;
+  uaEarned: number;
+  balanceAfter: number;
+  streak: number;
+  chestUnlocked?: boolean;
+  newBadges?: { name: string; icon: string }[];
 };
 
 export default function MonetisePlayClient({ clinicalCase, progressLabel }: ClinicalCaseProps) {
   const [timeLeft, setTimeLeft] = useState(clinicalCase.durationMax);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [result, setResult] = useState<{ isCorrect: boolean; uaEarned: number; balanceAfter: number; streak: number } | null>(null);
+  const [result, setResult] = useState<SubmitResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -62,7 +77,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
       <div className="max-w-3xl mx-auto">
 
         {/* En-tête */}
-        <div className="flex justify-between items-center mb-6">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center mb-6">
           <div>
             <span className="text-xs font-bold text-yellow-200/50 uppercase tracking-wider">{clinicalCase.subject} • {clinicalCase.chapter}</span>
             <h1 className="text-2xl font-extrabold text-white mt-1">{clinicalCase.title}</h1>
@@ -71,22 +86,22 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
           <div className={`px-4 py-2 rounded-xl font-extrabold text-lg ${timeLeft <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-white/5 border-2 border-yellow-500/30 text-yellow-300'}`}>
             ⏱️ {timeLeft}s
           </div>
-        </div>
+        </motion.div>
 
         <div className="bg-white/5 backdrop-blur rounded-3xl border border-yellow-500/20 p-6 md:p-8">
           <div className="flex gap-2 mb-6">
             <span className={`text-xs font-bold px-3 py-1 rounded-full ${difficultyColors[clinicalCase.difficulty]}`}>{clinicalCase.difficulty}</span>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-300">🪙 +1 000 UA</span>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-300">🪙 +{UA_PER_CASE.toLocaleString('fr-FR')} UA</span>
           </div>
 
           <p className="text-white/90 text-lg mb-8 leading-relaxed">{clinicalCase.statement}</p>
 
-          {/* Options */}
+          {/* Options — coloriage de la bonne réponse depuis la RÉPONSE serveur (plus jamais depuis les props) */}
           <div className="space-y-3">
             {clinicalCase.options.map((option, index) => {
               let buttonClass = "w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ";
-              if (isSubmitted) {
-                if (option === clinicalCase.correctAnswer) buttonClass += "border-green-400 bg-green-400/10 text-green-300 font-bold";
+              if (isSubmitted && result) {
+                if (option === result.correctAnswer) buttonClass += "border-green-400 bg-green-400/10 text-green-300 font-bold";
                 else if (option === selectedAnswer) buttonClass += "border-red-400 bg-red-400/10 text-red-300";
                 else buttonClass += "border-white/10 text-white/30 opacity-70";
               } else {
@@ -110,15 +125,31 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
             </button>
           ) : (
             <div className="mt-8">
-              {result && (
-                <div className={`p-6 rounded-2xl mb-4 ${result.isCorrect ? 'bg-green-400/10 border-2 border-green-400/30' : 'bg-red-400/10 border-2 border-red-400/30'}`}>
-                  <h3 className={`font-extrabold text-xl mb-2 ${result.isCorrect ? 'text-green-300' : 'text-red-300'}`}>
-                    {result.isCorrect ? `🎉 Bonne réponse ! +${result.uaEarned} UA` : "❌ Mauvaise réponse"}
-                  </h3>
-                  <p className="text-yellow-300 text-sm mb-2">🪙 Cagnotte : {result.balanceAfter.toLocaleString('fr-FR')} UA · 🔥 Flamme : {result.streak} jours</p>
-                  <p className="text-white/60 font-semibold mb-2">💡 Explication :</p>
-                  <p className="text-white/50 leading-relaxed">{clinicalCase.explanation}</p>
+              {result && result.isCorrect && (
+                <div className="h-9 mb-1 flex items-center justify-center overflow-hidden">
+                  <span className="text-xl font-extrabold text-yellow-300 animate-coin">🪙 +{result.uaEarned.toLocaleString('fr-FR')} UA</span>
                 </div>
+              )}
+              {result && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.92, y: 12 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                  className={`p-6 rounded-2xl mb-4 ${result.isCorrect ? 'bg-green-400/10 border-2 border-green-400/30' : 'bg-red-400/10 border-2 border-red-400/30'}`}
+                >
+                  <h3 className={`font-extrabold text-xl mb-2 ${result.isCorrect ? 'text-green-300' : 'text-red-300'}`}>
+                    {result.isCorrect ? `🎉 Bonne réponse ! +${result.uaEarned.toLocaleString('fr-FR')} UA` : "❌ Mauvaise réponse"}
+                  </h3>
+                  <p className="text-yellow-300 text-sm mb-2">🪙 Cagnotte : {result.balanceAfter.toLocaleString('fr-FR')} UA · <span className="inline-block animate-flame">🔥</span> Flamme : {result.streak} jours</p>
+                  {result.chestUnlocked && (
+                    <p className="text-amber-300 text-sm mb-2 font-bold">🎁 Coffre des 7 jours débloqué !</p>
+                  )}
+                  {result.newBadges && result.newBadges.length > 0 && (
+                    <p className="text-yellow-200/80 text-sm mb-2 font-bold">🏅 {result.newBadges.map(b => `${b.icon} ${b.name}`).join(' · ')}</p>
+                  )}
+                  <p className="text-white/60 font-semibold mb-2">💡 Explication :</p>
+                  <p className="text-white/50 leading-relaxed">{result.explanation}</p>
+                </motion.div>
               )}
               <div className="flex flex-col gap-3">
                 <a href="/etudiant/monetise/jouer" className="block w-full py-4 bg-yellow-500 hover:bg-yellow-400 text-[#1a1308] font-extrabold rounded-2xl shadow-lg uppercase tracking-wide text-center transition-all">
