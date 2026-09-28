@@ -25,6 +25,13 @@ export default async function CagnottePage() {
     orderBy: { createdAt: 'desc' },
   });
 
+  // ⚡ Recharge en attente de validation
+  const pendingRecharge = await prisma.rechargeRequest.findFirst({
+    where: { userId: user.id, status: 'EN_ATTENTE' },
+    orderBy: { createdAt: 'desc' },
+    include: { paymentMethod: { select: { name: true, icon: true } } },
+  });
+
   const history = await prisma.uaTransaction.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: 'desc' },
@@ -47,6 +54,14 @@ export default async function CagnottePage() {
             accountName: pendingRequest.accountName,
             status: pendingRequest.status,
             createdAt: pendingRequest.createdAt.toISOString(),
+          } : null}
+          pendingRecharge={pendingRecharge ? {
+            id: pendingRecharge.id,
+            amountUA: pendingRecharge.amountUA,
+            amountFCFA: pendingRecharge.amountFCFA,
+            methodName: pendingRecharge.paymentMethod?.name ?? null,
+            methodIcon: pendingRecharge.paymentMethod?.icon ?? null,
+            createdAt: pendingRecharge.createdAt.toISOString(),
           } : null}
           history={history.map(t => ({
             id: t.id, type: t.type, amount: t.amount,

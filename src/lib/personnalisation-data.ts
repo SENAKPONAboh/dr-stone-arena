@@ -1,4 +1,6 @@
 // ===== PERSONNALISATION — DONNÉES (module PUR : aucun import serveur) =====
+// ⚠️ Les thèmes utilisent du CSS INLINE (pas de classes Tailwind) :
+// rendu garanti identique sur PC, mobile et tous les navigateurs.
 
 export type Rarity = 'COMMUN' | 'RARE' | 'EPIC' | 'LEGENDAIRE' | 'EXCLUSIF';
 
@@ -30,7 +32,7 @@ export const TITLES: { key: string; name: string; icon: string; rarity: Rarity; 
   { key: 'TITRE_LEGENDE_ARENE', name: "Légende de l'Arène", icon: '👑', rarity: 'EXCLUSIF', priceUA: 0 },
 ];
 
-// 🖼️ CADRES 2.0 — chaque cadre a maintenant un EFFET dédié
+// 🖼️ CADRES (déjà en CSS inline — inchangés)
 export type FrameEffect = 'fire' | 'ice' | 'neon' | 'galaxy' | 'rainbow' | 'orbit';
 
 export type FrameDef = {
@@ -77,44 +79,49 @@ export const FRAMES: FrameDef[] = [
     glow: ['0 0 10px rgba(139,92,246,0.55)', '0 0 26px rgba(139,92,246,0.95)', '0 0 10px rgba(139,92,246,0.55)'], duration: 5.5 },
 ];
 
-// 🎨 THÈMES 2.0 — fond animé + particules flottantes + halo qui respire
+// 🎨 THÈMES — VALEURS CSS INLINE (fix mobile)
 export type ThemeDef = {
   key: string; name: string; icon: string; rarity: Rarity; priceUA: number;
-  bg: string; card: string; accent: string; badge: string;
+  bg: string;          // gradient CSS (style inline)
+  cardBg: string;      // rgba (style inline)
+  borderColor: string; // rgba
+  accent: string;      // hex
+  badgeBg: string;     // rgba
+  badgeText: string;   // hex
   particleColor: string;
   aura: string;
 };
 
 export const THEMES: ThemeDef[] = [
   { key: 'THEME_OCEAN', name: 'Thème Océan', icon: '🌊', rarity: 'RARE', priceUA: 50000,
-    bg: 'bg-gradient-to-br from-slate-950 via-blue-950 to-cyan-950',
-    card: 'bg-blue-950/60 backdrop-blur-xl border-2 border-cyan-400/40 text-white',
-    accent: 'text-cyan-300', badge: 'bg-cyan-500/20 text-cyan-300',
+    bg: 'linear-gradient(135deg, #020617 0%, #172554 45%, #083344 100%)',
+    cardBg: 'rgba(2,6,23,0.82)', borderColor: 'rgba(34,211,238,0.45)',
+    accent: '#67e8f9', badgeBg: 'rgba(34,211,238,0.18)', badgeText: '#67e8f9',
     particleColor: '#22d3ee', aura: 'rgba(34,211,238,0.4)' },
   { key: 'THEME_BRAISE', name: 'Thème Braise', icon: '🌋', rarity: 'RARE', priceUA: 50000,
-    bg: 'bg-gradient-to-br from-[#1a0505] via-red-950 to-orange-950',
-    card: 'bg-red-950/60 backdrop-blur-xl border-2 border-orange-400/40 text-white',
-    accent: 'text-orange-300', badge: 'bg-orange-500/20 text-orange-300',
+    bg: 'linear-gradient(135deg, #1a0505 0%, #450a0a 45%, #431407 100%)',
+    cardBg: 'rgba(20,5,5,0.82)', borderColor: 'rgba(251,146,60,0.45)',
+    accent: '#fdba74', badgeBg: 'rgba(251,146,60,0.18)', badgeText: '#fdba74',
     particleColor: '#fb923c', aura: 'rgba(251,146,60,0.4)' },
   { key: 'THEME_SYLVESTRE', name: 'Thème Sylvestre', icon: '🌲', rarity: 'RARE', priceUA: 50000,
-    bg: 'bg-gradient-to-br from-[#04120a] via-emerald-950 to-green-950',
-    card: 'bg-emerald-950/60 backdrop-blur-xl border-2 border-emerald-400/40 text-white',
-    accent: 'text-emerald-300', badge: 'bg-emerald-500/20 text-emerald-300',
+    bg: 'linear-gradient(135deg, #04120a 0%, #022c22 45%, #052e16 100%)',
+    cardBg: 'rgba(4,18,10,0.82)', borderColor: 'rgba(52,211,153,0.45)',
+    accent: '#6ee7b7', badgeBg: 'rgba(52,211,153,0.18)', badgeText: '#6ee7b7',
     particleColor: '#34d399', aura: 'rgba(52,211,153,0.4)' },
   { key: 'THEME_NEON', name: 'Thème Néon', icon: '🌃', rarity: 'EPIC', priceUA: 100000,
-    bg: 'bg-gradient-to-br from-black via-[#12002b] to-[#001a1a]',
-    card: 'bg-[#0d0020]/70 backdrop-blur-xl border-2 border-fuchsia-400/50 text-white',
-    accent: 'text-fuchsia-300', badge: 'bg-fuchsia-500/20 text-fuchsia-300',
+    bg: 'linear-gradient(135deg, #000000 0%, #12002b 50%, #001a1a 100%)',
+    cardBg: 'rgba(13,0,32,0.85)', borderColor: 'rgba(232,121,249,0.55)',
+    accent: '#f0abfc', badgeBg: 'rgba(232,121,249,0.2)', badgeText: '#f0abfc',
     particleColor: '#e879f9', aura: 'rgba(232,121,249,0.45)' },
   { key: 'THEME_ROYAL', name: 'Thème Royal', icon: '👑', rarity: 'EPIC', priceUA: 100000,
-    bg: 'bg-gradient-to-br from-[#12061f] via-purple-950 to-[#1a1000]',
-    card: 'bg-purple-950/60 backdrop-blur-xl border-2 border-yellow-400/50 text-white',
-    accent: 'text-yellow-300', badge: 'bg-purple-500/20 text-purple-300',
+    bg: 'linear-gradient(135deg, #12061f 0%, #3b0764 50%, #1a1000 100%)',
+    cardBg: 'rgba(18,6,31,0.82)', borderColor: 'rgba(250,204,21,0.5)',
+    accent: '#fde047', badgeBg: 'rgba(168,85,247,0.2)', badgeText: '#d8b4fe',
     particleColor: '#facc15', aura: 'rgba(250,204,21,0.4)' },
   { key: 'THEME_COSMOS', name: 'Thème Cosmos', icon: '✨', rarity: 'LEGENDAIRE', priceUA: 150000,
-    bg: 'bg-gradient-to-br from-black via-indigo-950 to-violet-950',
-    card: 'bg-indigo-950/60 backdrop-blur-xl border-2 border-violet-400/50 text-white',
-    accent: 'text-violet-300', badge: 'bg-violet-500/20 text-violet-300',
+    bg: 'linear-gradient(135deg, #000000 0%, #1e1b4b 45%, #2e1065 100%)',
+    cardBg: 'rgba(10,10,30,0.85)', borderColor: 'rgba(167,139,250,0.55)',
+    accent: '#c4b5fd', badgeBg: 'rgba(167,139,250,0.2)', badgeText: '#c4b5fd',
     particleColor: '#a78bfa', aura: 'rgba(167,139,250,0.5)' },
 ];
 

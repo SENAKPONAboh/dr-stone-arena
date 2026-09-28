@@ -25,12 +25,12 @@ model User {
   onboardingCompleted Boolean @default(false)
   xp         Int      @default(0)
   streak     Int      @default(0)
-  lives      Int      @default(5) // <-- AJOUT DES VIES
+  lives      Int      @default(5)
   chestAvailable Boolean @default(false)
   lastLifeLostAt DateTime?
   lastDailyRewardClaimedAt DateTime?
   isPremium Boolean   @default(false)
-  premiumTier Int? // 1 = Premium I, 2 = Premium II, 3 = Premium III, null = non premium
+  premiumTier Int?
   premiumExpiresAt DateTime?
   lastActive DateTime?
   createdAt  DateTime @default(now())
@@ -46,18 +46,19 @@ model User {
   uaLocked           Int       @default(0)
   passActive         Boolean   @default(false)
   passExpiresAt      DateTime?
-  streakBeforeReset  Int       @default(0)  // valeur exacte de la Flamme avant la perte (Restaure-Flamme)
-  flameProtectedUntil DateTime?             // protection active (Gel 48 h OU Assurance 7 jours — une seule à la fois)
-  flameLostAt        DateTime?              // date de la dernière perte (fenêtre Restaure : 48 h)
-  activeTitleId      String?                // 🏷️ TITRE équipé (clé d'effet, ex : TITRE_CHAMPION)
-  activeFrameId      String?                // 🖼️ CADRE équipé (clé d'effet — remplace visuellement l'Anneau d'Or)
-  activeThemeId      String?                // 🎨 THÈME équipé (clé d'effet — transforme l'apparence du profil)
+  streakBeforeReset  Int       @default(0)
+  flameProtectedUntil DateTime?
+  flameLostAt        DateTime?
+  activeTitleId      String?
+  activeFrameId      String?
+  activeThemeId      String?
   uaTransactions     UaTransaction[]
   passRequests       PassRequest[]
   monetiseSelections MonetiseSelection[]
   monetiseAttempts   MonetiseAttempt[]
   rushSessions       RushSession[]
   withdrawals        WithdrawalRequest[]
+  rechargeRequests   RechargeRequest[]
   inventory          UserInventory[]
   pushSubscription Json?
   duelsWon    Int @default(0)
@@ -71,7 +72,6 @@ model User {
   ambassadorProfile Ambassador? @relation("AmbassadorUser")
 
 }
-
 
 model Subject {
   id         String   @id @default(cuid())
@@ -213,9 +213,11 @@ model PaymentMethod {
   provider          String?
   premiumRequests   PremiumRequest[]
   passRequests      PassRequest[]
+  rechargeRequests  RechargeRequest[]
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
 model Expense {
   id          String   @id @default(cuid())
   amount      Int      // en FCFA
@@ -383,4 +385,18 @@ model MonetiseAttempt {
   isCorrect      Boolean
   timeSpent      Int
   createdAt      DateTime @default(now())
+}
+model RechargeRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amountUA        Int
+  amountFCFA      Int
+  paymentMethodId String?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  receiptUrl      String
+  status          String    @default("EN_ATTENTE") // EN_ATTENTE | VALIDE | REJETE
+  note            String?
+  validatedAt     DateTime?
+  createdAt       DateTime  @default(now())
 }
