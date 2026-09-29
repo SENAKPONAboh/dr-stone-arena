@@ -121,6 +121,7 @@ export default async function AdminDashboard() {
             {actionCard('/admin/payment-methods', '💳', 'Moyens de paiement', 'Wave, Nita, Amanata, MTN MoMo — numéros et instructions', 'bg-purple-50')}
             {actionCard('/admin/monetise', '🪙', 'Pass Monétisé', 'Validation des demandes de Pass Arène (2 000 FCFA/mois)', 'bg-yellow-50')}
             {actionCard('/admin/ua', '🏦', 'Trésorerie UA', 'Retraits mobile money · validation des recharges · correction des soldes', 'bg-amber-50')}
+            {actionCard('/admin/suspects', '🔍', 'Journal des suspects', 'Réponses ultra-rapides, précision anormale, cas annulés — détection triche IA', 'bg-rose-50')}
           </div>
         </section>
 
