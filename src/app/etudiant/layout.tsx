@@ -12,14 +12,15 @@ export default async function EtudiantLayout({ children }: { children: React.Rea
   // Première connexion : onboarding obligatoire (une seule fois)
   if (!user.onboardingCompleted) redirect('/onboarding');
 
-  const [avatar, notifications, ambassadorProfile] = await Promise.all([
+  const [avatar, notifications, ambassadorProfile, unreadMessages] = await Promise.all([
     prisma.user.findUnique({ where: { id: user.id }, select: { imageUrl: true } }),
     prisma.notification.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 10
     }),
-    prisma.ambassador.findUnique({ where: { userId: user.id }, select: { status: true } })
+    prisma.ambassador.findUnique({ where: { userId: user.id }, select: { status: true } }),
+    prisma.directMessage.count({ where: { recipientId: user.id, isRead: false } })
   ]);
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const isAmbassador = ambassadorProfile?.status === 'ACTIF';
@@ -33,6 +34,7 @@ export default async function EtudiantLayout({ children }: { children: React.Rea
       }}
       notifications={notifications}
       unreadCount={unreadCount}
+      unreadMessages={unreadMessages}
       isAmbassador={isAmbassador}
     >
       {children}
