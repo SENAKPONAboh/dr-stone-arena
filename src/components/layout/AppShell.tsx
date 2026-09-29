@@ -23,18 +23,18 @@ const NAV_ITEMS_BASE = [
 ];
 
 export default function AppShell({
-  user, notifications, unreadCount, isAmbassador, children
+  user, notifications, unreadCount, unreadMessages, isAmbassador, children
 }: {
   user: AppShellUser;
   notifications: { id: string; message: string; icon: string; isRead: boolean; createdAt: Date }[];
   unreadCount: number;
+  unreadMessages: number;
   isAmbassador?: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const premium = user.isPremium;
 
-  // Navigation dynamique : l'onglet Ambassadeur n'apparaît que pour les ambassadeurs actifs
   const NAV_ITEMS = [
     ...NAV_ITEMS_BASE,
     ...(isAmbassador ? [{ href: '/ambassadeur', label: 'Ambassadeur', icon: '🤝' }] : []),
@@ -103,6 +103,15 @@ export default function AppShell({
 
             <div className="flex items-center gap-2">
               <ThemeToggle />
+              {/* 💬 Messages privés — badge de non-lus */}
+              <Link href="/etudiant/messages" className="relative ml-1 flex-shrink-0" title="Messages">
+                <span className="text-xl">💬</span>
+                {unreadMessages > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-emerald-500 text-white text-[9px] font-extrabold rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                  </span>
+                )}
+              </Link>
               <NotificationBell initialNotifications={notifications as any} unreadCount={unreadCount} />
               <Link href="/etudiant/profil" className="ml-1">
                 {user.imageUrl ? (

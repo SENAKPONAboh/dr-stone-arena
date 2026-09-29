@@ -6,14 +6,16 @@ import { getCurrentUserCore } from '@/lib/auth';
 const ADMIN_ROLE = 'ADMIN';
 
 // ===== IMPORTATEUR DE QCM STRUCTURÉS — Dr. Stone Arena =====
+// Optimisé gros volume : 70-500 cas d'un coup (cache matières/chapitres,
+// anti-doublon en une requête, insertion groupée createMany).
 
 const MEDECIN_ANNEE = 7; // ⚠️ valeur du niveau Médecin (une ligne à changer si votre base utilise autre chose)
 
-// Le format QCM ne contient ni XP ni durée → valeurs par défaut AJUSTABLES :
+// Valeurs VALIDÉES : XP 10/20/30 — durées 60/90/120 secondes
 const DEFAULTS: Record<string, { xp: number; durationMax: number }> = {
-  FACILE: { xp: 10, durationMax: 45 },
-  MOYEN: { xp: 20, durationMax: 60 },
-  DIFFICILE: { xp: 30, durationMax: 90 },
+  FACILE: { xp: 10, durationMax: 60 },
+  MOYEN: { xp: 20, durationMax: 90 },
+  DIFFICILE: { xp: 30, durationMax: 120 },
 };
 
 type ParsedProp = { letter: string; text: string };
@@ -38,13 +40,11 @@ const flatKey = (s: string) =>
 function detectHeader(line: string): { key: string; inline: string } | null {
   const raw = line.trim();
   if (!raw || raw.length > 60) return null;
-  // Forme « Label : valeur »
   const m = raw.match(/^([^:：]{1,45})[:：]\s*(.*)$/);
   if (m) {
     const key = LABELS[flatKey(m[1])];
     if (key) return { key, inline: m[2].trim() };
   }
-  // Forme « Label » seul (valeur sur les lignes suivantes)
   const key2 = LABELS[flatKey(raw)];
   if (key2) return { key: key2, inline: '' };
   return null;
@@ -69,11 +69,11 @@ function parseAll(text: string): ParsedCase[] {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    if (/^-{3,}$/.test(trimmed)) continue; // ligne séparatrice (tirets)
+    if (/^-{3,}$/.test(trimmed)) continue;
 
     const header = detectHeader(trimmed);
     if (header) {
-      if (header.key === 'titre') pushCase(); // nouveau QCM
+      if (header.key === 'titre') pushCase();
       started = true;
       currentKey = header.key;
       if (!data[header.key]) data[header.key] = [];
@@ -87,7 +87,6 @@ function parseAll(text: string): ParsedCase[] {
       continue;
     }
 
-    // Ligne de continuation
     if (currentKey === 'propositions' && props.length > 0) {
       props[props.length - 1].text += ' ' + trimmed;
     } else if (currentKey) {
@@ -159,78 +158,111 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Aucun QCM détecté — chaque cas doit commencer par « Titre »." }, { status: 400 });
     }
 
-    const results: { index: number; titre: string; status: 'CRÉÉ' | 'DOUBLON' | 'ERREUR'; message: string }[] = [];
-    let created = 0, duplicates = 0, errors = 0;
+    // ===== PHASE 1 : validation de tous les cas =====
+    const rows: { index: number; titre: string; status: 'CRÉÉ' | 'DOUBLON' | 'ERREUR'; message: string }[] = [];
+    const prepared: { pc: ParsedCase; anneeEtude: number; index: number }[] = [];
 
     for (let i = 0; i < parsed.length; i++) {
       const pc = parsed[i];
       const err = validate(pc);
-      if (err) {
-        errors++;
-        results.push({ index: i + 1, titre: pc.titre || '(sans titre)', status: 'ERREUR', message: err });
+      if (err || pc.anneeEtude === null) {
+        rows.push({ index: i + 1, titre: pc.titre || '(sans titre)', status: 'ERREUR', message: err ?? "Année invalide." });
         continue;
       }
-
-      // 🔧 PREUVE DE TYPE POUR TYPESCRIPT : la validation ci-dessus garantit qu'une année
-      // valide existe — cette garde (théoriquement inatteignable) permet au compilateur
-      // de traiter anneeEtude comme un nombre non-nul par la suite.
-      const anneeEtude = pc.anneeEtude;
-      if (anneeEtude === null) {
-        errors++;
-        results.push({ index: i + 1, titre: pc.titre || '(sans titre)', status: 'ERREUR', message: "Année invalide." });
-        continue;
-      }
-
-      // Matière — auto-créée si absente (insensible à la casse, liée à l'année)
-      let subject = await prisma.subject.findFirst({
-        where: { name: { equals: pc.matiere, mode: 'insensitive' }, anneeEtude },
-      });
-      if (!subject) {
-        subject = await prisma.subject.create({ data: { name: pc.matiere, anneeEtude } });
-      }
-
-      // Chapitre — auto-créé si absent
-      let chapter = await prisma.chapter.findFirst({
-        where: { name: { equals: pc.chapitre, mode: 'insensitive' }, subjectId: subject.id },
-      });
-      if (!chapter) {
-        chapter = await prisma.chapter.create({ data: { name: pc.chapitre, subjectId: subject.id } });
-      }
-
-      // Anti-doublon (même titre dans le même chapitre)
-      const dup = await prisma.clinicalCase.findFirst({
-        where: { title: { equals: pc.titre, mode: 'insensitive' }, chapterId: chapter.id },
-      });
-      if (dup) {
-        duplicates++;
-        results.push({ index: i + 1, titre: pc.titre, status: 'DOUBLON', message: "Ce titre existe déjà dans ce chapitre — ignoré." });
-        continue;
-      }
-
-      const idx = pc.reponseLettre.charCodeAt(0) - 65;
-      const defaults = DEFAULTS[pc.difficulte] ?? DEFAULTS.MOYEN;
-
-      await prisma.clinicalCase.create({
-        data: {
-          title: pc.titre,
-          difficulty: pc.difficulte,
-          xp: defaults.xp,
-          statement: [pc.enonce, pc.question].filter(Boolean).join('\n\n'),
-          options: pc.props.map(p => p.text),
-          correctAnswer: pc.props[idx].text, // ⚠️ conversion lettre → TEXTE complet de l'option
-          explanation: [pc.justification, pc.objectif ? `🎯 Objectif pédagogique : ${pc.objectif}` : null].filter(Boolean).join('\n\n') || '—',
-          durationMax: defaults.durationMax,
-          anneeEtude,
-          chapterId: chapter.id,
-        },
-      });
-
-      created++;
-      results.push({ index: i + 1, titre: pc.titre, status: 'CRÉÉ', message: `${pc.matiere} · ${pc.chapitre} · ${pc.difficulte}` });
+      prepared.push({ pc, anneeEtude: pc.anneeEtude, index: i + 1 });
     }
 
+    let created = 0, duplicates = 0;
+
+    if (prepared.length > 0) {
+
+      // ===== PHASE 2 : matières (avec CACHE — une requête par matière distincte) =====
+      const subjectCache = new Map<string, { id: string }>();
+      for (const p of prepared) {
+        const key = `${p.anneeEtude}|${p.pc.matiere.toLowerCase()}`;
+        if (subjectCache.has(key)) continue;
+        let subject = await prisma.subject.findFirst({
+          where: { name: { equals: p.pc.matiere, mode: 'insensitive' }, anneeEtude: p.anneeEtude },
+        });
+        if (!subject) {
+          subject = await prisma.subject.create({ data: { name: p.pc.matiere, anneeEtude: p.anneeEtude } });
+        }
+        subjectCache.set(key, { id: subject.id });
+      }
+
+      // ===== PHASE 3 : chapitres (avec CACHE) =====
+      const chapterCache = new Map<string, { id: string }>();
+      for (const p of prepared) {
+        const subject = subjectCache.get(`${p.anneeEtude}|${p.pc.matiere.toLowerCase()}`)!;
+        const key = `${subject.id}|${p.pc.chapitre.toLowerCase()}`;
+        if (chapterCache.has(key)) continue;
+        let chapter = await prisma.chapter.findFirst({
+          where: { name: { equals: p.pc.chapitre, mode: 'insensitive' }, subjectId: subject.id },
+        });
+        if (!chapter) {
+          chapter = await prisma.chapter.create({ data: { name: p.pc.chapitre, subjectId: subject.id } });
+        }
+        chapterCache.set(key, { id: chapter.id });
+      }
+
+      // ===== PHASE 4 : anti-doublon en UNE SEULE requête =====
+      const allTitles = [...new Set(prepared.map(p => p.pc.titre))];
+      const existing = await prisma.clinicalCase.findMany({
+        where: { title: { in: allTitles, mode: 'insensitive' } },
+        select: { title: true, chapterId: true },
+      });
+      const existingKeys = new Set(existing.map(e => `${e.title.toLowerCase()}|${e.chapterId}`));
+
+      // ===== PHASE 5 : construction + insertion groupée =====
+      const toCreate: {
+        title: string; difficulty: string; xp: number; statement: string;
+        options: string[]; correctAnswer: string; explanation: string;
+        durationMax: number; anneeEtude: number; chapterId: string;
+      }[] = [];
+      const localKeys = new Set<string>();
+
+      for (const p of prepared) {
+        const subject = subjectCache.get(`${p.anneeEtude}|${p.pc.matiere.toLowerCase()}`)!;
+        const chapter = chapterCache.get(`${subject.id}|${p.pc.chapitre.toLowerCase()}`)!;
+        const dupKey = `${p.pc.titre.toLowerCase()}|${chapter.id}`;
+
+        if (existingKeys.has(dupKey) || localKeys.has(dupKey)) {
+          duplicates++;
+          rows.push({ index: p.index, titre: p.pc.titre, status: 'DOUBLON', message: "Ce titre existe déjà dans ce chapitre — ignoré." });
+          continue;
+        }
+        localKeys.add(dupKey);
+
+        const idx = p.pc.reponseLettre.charCodeAt(0) - 65;
+        const defaults = DEFAULTS[p.pc.difficulte] ?? DEFAULTS.MOYEN;
+
+        toCreate.push({
+          title: p.pc.titre,
+          difficulty: p.pc.difficulte,
+          xp: defaults.xp,
+          statement: [p.pc.enonce, p.pc.question].filter(Boolean).join('\n\n'),
+          options: p.pc.props.map(prop => prop.text),
+          correctAnswer: p.pc.props[idx].text,
+          explanation: [p.pc.justification, p.pc.objectif ? `🎯 Objectif pédagogique : ${p.pc.objectif}` : null].filter(Boolean).join('\n\n') || '—',
+          durationMax: defaults.durationMax,
+          anneeEtude: p.anneeEtude,
+          chapterId: chapter.id,
+        });
+
+        rows.push({ index: p.index, titre: p.pc.titre, status: 'CRÉÉ', message: `${p.pc.matiere} · ${p.pc.chapitre} · ${p.pc.difficulte}` });
+      }
+
+      if (toCreate.length > 0) {
+        const res = await prisma.clinicalCase.createMany({ data: toCreate });
+        created = res.count;
+      }
+    }
+
+    rows.sort((a, b) => a.index - b.index);
+    const errors = rows.filter(r => r.status === 'ERREUR').length;
+
     return NextResponse.json({
-      total: parsed.length, created, duplicates, errors, results,
+      total: parsed.length, created, duplicates, errors, results: rows,
       defaultsUsed: DEFAULTS, medecinAnnee: MEDECIN_ANNEE,
     });
   } catch (e: any) {

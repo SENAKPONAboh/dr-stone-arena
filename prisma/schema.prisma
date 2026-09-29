@@ -70,7 +70,35 @@ model User {
   referredById   String?
   referredBy     Ambassador? @relation("ReferredBy", fields: [referredById], references: [id], onDelete: SetNull)
   ambassadorProfile Ambassador? @relation("AmbassadorUser")
+  // ===== Amitiés & messagerie privée =====
+  friendshipsRequested  Friendship[] @relation("FriendRequester")
+  friendshipsReceived   Friendship[] @relation("FriendAddressee")
+  messagesSent          DirectMessage[] @relation("MessageSender")
+  messagesReceived      DirectMessage[] @relation("MessageRecipient")
+}
 
+model Friendship {
+  id           String    @id @default(cuid())
+  requesterId  String
+  requester    User      @relation("FriendRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  addresseeId  String
+  addressee    User      @relation("FriendAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+  status       String    @default("EN_ATTENTE") // EN_ATTENTE | ACCEPTE | REFUSE
+  createdAt    DateTime  @default(now())
+  respondedAt  DateTime?
+
+  @@unique([requesterId, addresseeId])
+}
+
+model DirectMessage {
+  id          String   @id @default(cuid())
+  senderId    String
+  sender      User     @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User     @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model Subject {
