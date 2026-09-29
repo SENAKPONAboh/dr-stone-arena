@@ -107,6 +107,7 @@ export default async function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {actionCard('/admin/cases', '📝', 'Créer un cas clinique', 'Rédiger et publier un cas individuel (QCM A/B/C/D)', 'bg-blue-50')}
             {actionCard('/admin/cases/bulk', '📥', 'Importer des cas en masse', "Coller 10, 50 ou 200 cas d'un coup (format CAS N°, EM1-EM6, Médecin)", 'bg-cyan-50')}
+            {actionCard('/admin/cases-structured', '🧬', 'Import QCM structurés', 'Format détaillé : Titre, Année, Matière, Chapitre, Énoncé, Question, Propositions, Réponse, Justification', 'bg-violet-50')}
             {actionCard('/admin/content', '📚', 'Matières et chapitres', 'Gérer le programme : matières, chapitres, niveaux', 'bg-emerald-50')}
           </div>
         </section>
