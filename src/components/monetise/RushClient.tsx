@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -325,7 +326,7 @@ export default function RushClient({
                 <span className="inline-block animate-flame">🔥</span> Série : <span className="text-yellow-300">{streak}</span>
               </p>
               <p className="text-sm font-extrabold text-yellow-300 rounded-xl px-3 py-1 animate-glow-gold whitespace-nowrap">
-                🪙 {balance.toLocaleString('fr-FR')} UA
+                <Coin /> {balance.toLocaleString('fr-FR')} UA
               </p>
             </div>
             <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
@@ -444,7 +445,7 @@ export default function RushClient({
                           className="bg-gradient-to-r from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/50 rounded-2xl p-5 text-center overflow-hidden"
                         >
                           <div className="h-9 flex items-center justify-center overflow-hidden">
-                            <span className="text-2xl font-black text-yellow-300 animate-coin">🪙 +{result.uaEarned.toLocaleString('fr-FR')} UA</span>
+                            <span className="text-2xl font-black text-yellow-300 animate-coin"><Coin /> +{result.uaEarned.toLocaleString('fr-FR')} UA</span>
                           </div>
                           <p className="font-extrabold text-yellow-200 mt-1">🎉 PALIER {palierReached} ATTEINT !</p>
                         </motion.div>
@@ -570,7 +571,7 @@ export default function RushClient({
                 )}
 
                 <div className="bg-white/5 rounded-2xl p-4 mb-6 text-sm">
-                  <p className="text-yellow-300 font-extrabold">🪙 Trésor Élite : {balance.toLocaleString('fr-FR')} UA</p>
+                  <p className="text-yellow-300 font-extrabold"><Coin /> Trésor Élite : {balance.toLocaleString('fr-FR')} UA</p>
                   {earnedTotal > 0 && <p className="text-white/50 mt-1">+{earnedTotal.toLocaleString('fr-FR')} points de mérite obtenus sur cette tentative</p>}
                   <p className="text-white/40 mt-1">Série finale : {streak} · Erreurs : {errors}</p>
                 </div>

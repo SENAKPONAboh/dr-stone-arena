@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import PassPurchaseForm from '@/components/monetise/PassPurchaseForm';
@@ -32,7 +33,7 @@ export default function PassPresentation({
         className="relative overflow-hidden rounded-3xl bg-gold p-10 text-center text-stone shadow-[0_6px_0_#9a6a12]"
       >
         <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-white/25 animate-shimmer" />
-        <div className="relative animate-float text-6xl mb-3">🪙</div>
+        <div className="relative animate-float text-6xl mb-3"><Coin /></div>
         <h1 className="relative font-display text-3xl font-extrabold">Pass Élite</h1>
         <p className="relative text-lg font-bold mt-2 opacity-70">Ton accès à l'Espace Élite de Dr. Stone Arena</p>
         <p className="relative text-3xl font-extrabold mt-6">2 000 FCFA <span className="text-base opacity-60">/ mois</span></p>

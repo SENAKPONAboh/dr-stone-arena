@@ -1,3 +1,4 @@
+import Coin from '@/components/ui/Coin';
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -33,7 +34,7 @@ export default async function MonetiseLayout({ children }: { children: React.Rea
           </Link>
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="bg-yellow-400/10 border border-yellow-500/30 px-3 py-1.5 rounded-full text-xs sm:text-sm font-extrabold text-yellow-400 flex items-center gap-1 whitespace-nowrap">
-              🪙 {user.uaBalance.toLocaleString("fr-FR")} UA
+              <Coin /> {user.uaBalance.toLocaleString("fr-FR")} UA
             </span>
             <span className="bg-orange-400/10 border border-orange-500/30 px-2 sm:px-3 py-1.5 rounded-full text-xs sm:text-sm font-extrabold text-orange-400 flex items-center gap-1 whitespace-nowrap">
               <span className={user.streak >= 15 ? "animate-flame-intense inline-block" : "animate-flame inline-block"}>🔥</span> {user.streak}

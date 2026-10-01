@@ -1,3 +1,4 @@
+import Coin from '@/components/ui/Coin';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
@@ -93,7 +94,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(profileUser.premiumTier)}</span>
             )}
             {profileUser.passActive && (
-              <span className="bg-gradient-to-r from-yellow-500 to-amber-400 text-[#1a1308] text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">🪙 Pass Arène</span>
+              <span className="bg-gradient-to-r from-yellow-500 to-amber-400 text-[#1a1308] text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider"><Coin /> Pass Arène</span>
             )}
           </div>
         </div>

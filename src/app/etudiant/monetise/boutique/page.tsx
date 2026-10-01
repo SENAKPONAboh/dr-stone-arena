@@ -34,7 +34,7 @@ export default async function BoutiquePage() {
   return (
     // 🖥️📱 Plein écran : recouvre la coquille classique
     <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain elite-bg py-8 px-4">
-      <div className="max-w-3xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <MonetiseNav passActive={true} />
         <BoutiqueClient
           items={items.map(i => ({ id: i.id, name: i.name, category: i.category, priceUA: i.priceUA, icon: i.icon, description: i.description, effectKey: i.effectKey }))}

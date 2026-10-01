@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -107,7 +108,7 @@ export default function RushStartPanel({
 
       <div className="bg-white/5 rounded-2xl p-4 text-xs text-white/40 space-y-1">
         <p>⚔️ Série continue · 3 erreurs maximum · paliers 10 / 15 / 25 cas</p>
-        <p>🪙 Palier 1 : +10 000 UA · Palier 2 : +20 000 UA · Palier 3 : +20 000 UA</p>
+        <p><Coin /> Palier 1 : +10 000 UA · Palier 2 : +20 000 UA · Palier 3 : +20 000 UA</p>
         <p>🎁 Palier 3 = Coffre d'Élite du Major (Gel + Restaure gratuits)</p>
         <p>🎫 Ticket Rush = tentative sans payer en UA · 🛡️ Bouclier absorbe 1 erreur · 🔄 Seconde Chance reprend après défaite · ⏱️ Temps Bonus +30 s</p>
       </div>

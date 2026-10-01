@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { WITHDRAWAL_MIN_UA, RECHARGE_MIN_UA, RECHARGE_STEP_UA, uaToFCFA } from '@/lib/monetise';
@@ -23,12 +24,12 @@ type PaymentMethodUI = {
 
 const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   CAS_REUSSI: { label: 'Cas réussi', icon: '✅' },
-  RUSH_P1: { label: 'Rush — Palier 1', icon: '🪙' },
-  RUSH_P2: { label: 'Rush — Palier 2', icon: '🪙' },
-  RUSH_P3: { label: 'Rush — Palier 3', icon: '🪙' },
+  RUSH_P1: { label: 'Rush — Palier 1', icon: '💰' },
+  RUSH_P2: { label: 'Rush — Palier 2', icon: '💰' },
+  RUSH_P3: { label: 'Rush — Palier 3', icon: '💰' },
   RUSH_COFFRE: { label: 'Coffre du Rush', icon: '🎁' },
   RECHARGE: { label: 'Crédits de recharge ajoutés', icon: '⚡' },
-  PASS_RENOUVELLEMENT: { label: 'Renouvellement du Pass', icon: '🪙' },
+  PASS_RENOUVELLEMENT: { label: 'Renouvellement du Pass', icon: '💰' },
   ACHAT_BOUTIQUE: { label: 'Achat boutique', icon: '🏪' },
   TICKET_RUSH: { label: 'Ticket Rush utilisé', icon: '🎫' },
   RETRY_RUSH: { label: 'Retry direct', icon: '⚔️' },
@@ -176,7 +177,7 @@ export default function CagnotteClient({
         className="animate-gold-flow bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 rounded-3xl p-8 text-center text-[#1a1308] shadow-2xl shadow-yellow-900/30"
       >
         <p className="text-sm font-bold uppercase tracking-widest opacity-70">Mon trésor Élite</p>
-        <p className="text-5xl font-extrabold mt-2 tabular-nums">🪙 <AnimatedCounter target={uaBalance} /></p>
+        <p className="text-5xl font-extrabold mt-2 tabular-nums"><Coin /> <AnimatedCounter target={uaBalance} /></p>
         <div className="relative mt-3 flex flex-wrap justify-center gap-2 text-xs font-bold">
           <span className="rounded-full bg-stone/15 px-3 py-1">⭐ Points de mérite : {merit.toLocaleString('fr-FR')}</span>
           {credits > 0 && <span className="rounded-full bg-stone/15 px-3 py-1">⚡ Crédits de recharge : {credits.toLocaleString('fr-FR')}</span>}

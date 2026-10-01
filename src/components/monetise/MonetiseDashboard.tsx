@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
@@ -52,7 +53,7 @@ export default function MonetiseDashboard({ uaBalance, uaRecharged, streak, pass
         <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-white/25 animate-shimmer" />
         <p className="relative text-sm font-bold uppercase tracking-widest opacity-70">Mon trésor Élite</p>
         <p className="relative mt-2 font-display text-5xl font-extrabold tabular-nums">
-          🪙 <AnimatedCounter target={uaBalance} />
+          <Coin /> <AnimatedCounter target={uaBalance} />
         </p>
         <div className="relative mt-3 flex flex-wrap justify-center gap-2 text-xs font-bold">
           <span className="rounded-full bg-stone/15 px-3 py-1">⭐ Points de mérite : {merit.toLocaleString('fr-FR')}</span>

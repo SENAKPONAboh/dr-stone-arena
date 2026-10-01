@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -107,7 +108,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
       rules={
         <>
           <p>🔒 Si tu quittes cette page (changement d'application, d'onglet, écran d'accueil) pendant le cas → <b>le cas est immédiatement annulé</b>.</p>
-          <p>🪙 Cas annulé = réponse fausse : <b>0 point de mérite</b>.</p>
+          <p><Coin /> Cas annulé = réponse fausse : <b>0 point de mérite</b>.</p>
         </>
       }
     >
@@ -131,7 +132,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white/5 backdrop-blur rounded-3xl border border-yellow-500/20 p-6 md:p-8">
             <div className="flex gap-2 mb-6">
               <span className={`text-xs font-bold px-3 py-1 rounded-full ${difficultyColors[clinicalCase.difficulty]}`}>{clinicalCase.difficulty}</span>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-300">🪙 +{UA_PER_CASE.toLocaleString('fr-FR')} UA</span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-300"><Coin /> +{UA_PER_CASE.toLocaleString('fr-FR')} UA</span>
             </div>
 
             <p className="text-white/90 text-lg mb-8 leading-relaxed">{clinicalCase.statement}</p>
@@ -198,13 +199,13 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
                   >
                     {result.isCorrect && (
                       <div className="h-9 mb-1 flex items-center justify-center overflow-hidden">
-                        <span className="text-xl font-extrabold text-yellow-300 animate-coin">🪙 +{result.uaEarned.toLocaleString('fr-FR')} UA</span>
+                        <span className="text-xl font-extrabold text-yellow-300 animate-coin"><Coin /> +{result.uaEarned.toLocaleString('fr-FR')} UA</span>
                       </div>
                     )}
                     <h3 className={`font-extrabold text-xl mb-2 ${result.isCorrect ? 'text-green-300' : 'text-red-300'}`}>
                       {wasViolation ? "🚫 Cas annulé — sortie de l'application" : result.isCorrect ? `🎉 Bonne réponse ! +${result.uaEarned.toLocaleString('fr-FR')} UA` : "❌ Mauvaise réponse"}
                     </h3>
-                    <p className="text-yellow-300 text-sm mb-2">🪙 Trésor Élite : {result.balanceAfter.toLocaleString('fr-FR')} UA · <span className="inline-block animate-flame">🔥</span> Flamme : {result.streak} jours</p>
+                    <p className="text-yellow-300 text-sm mb-2"><Coin /> Trésor Élite : {result.balanceAfter.toLocaleString('fr-FR')} UA · <span className="inline-block animate-flame">🔥</span> Flamme : {result.streak} jours</p>
                     {result.chestUnlocked && (
                       <p className="text-amber-300 text-sm mb-2 font-bold">🎁 Coffre des 7 jours débloqué !</p>
                     )}

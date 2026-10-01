@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 const ITEMS: { href: string; label: string; icon: string; available: boolean; phase?: string }[] = [
   { href: '/etudiant/monetise', label: 'Dashboard', icon: '📊', available: true },
   { href: '/etudiant/monetise/jouer', label: 'Jouer', icon: '▶️', available: true },
-  { href: '/etudiant/monetise/pass', label: 'Pass', icon: '🪙', available: true },
+  { href: '/etudiant/monetise/pass', label: 'Pass', icon: '💰', available: true },
   { href: '/etudiant/monetise/rush', label: 'Rush', icon: '⚔️', available: true },
   { href: '/etudiant/monetise/boutique', label: 'Boutique', icon: '🏪', available: true },
   { href: '/etudiant/monetise/cagnotte', label: 'Trésor', icon: '💰', available: true },

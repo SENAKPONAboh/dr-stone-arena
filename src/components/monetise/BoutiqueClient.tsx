@@ -1,5 +1,6 @@
 'use client';
 
+import Coin from '@/components/ui/Coin';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -270,7 +271,10 @@ export default function BoutiqueClient({
   const tryItem = (item: ShopItem) => {
     const field = item.category === 'TITRE' ? 'title' : item.category === 'CADRE' ? 'frame' : 'theme';
     setTryOn(prev => ({ ...prev, [field]: item.effectKey }));
-    document.getElementById('apercu-profil')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Sur mobile l'aperçu est au-dessus du catalogue : on y remonte. Sur PC il reste visible à côté.
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      document.getElementById('apercu-profil')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   const shownFrame = tryOn.frame ?? equippedState.frame;
@@ -291,15 +295,18 @@ export default function BoutiqueClient({
           <p className="text-xs text-white/40 mt-1">Objets · Coffres · Personnalisation — jamais d'UA retirable dans les coffres</p>
         </div>
         <div className="px-4 py-2 rounded-2xl bg-white/5 border-2 border-yellow-500/30 text-yellow-300 font-extrabold animate-glow-gold whitespace-nowrap">
-          🪙 {balance.toLocaleString('fr-FR')} UA
+          <Coin /> {balance.toLocaleString('fr-FR')} UA
         </div>
       </div>
 
+      {/* Sur PC : aperçu fixe à gauche, catalogue à droite. Sur mobile : l'un sous l'autre. */}
+      <div className="space-y-6 lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-6 lg:space-y-0">
+      <aside className="lg:sticky lg:top-4">
       {/* ===== APERÇU EN DIRECT DE TON PROFIL ===== */}
       <div id="apercu-profil" className="relative overflow-hidden rounded-3xl border-2 border-yellow-500/30"
         style={{ backgroundImage: themeShown ? getThemeDef(shownTheme)!.bg : 'linear-gradient(135deg,#1a1308,#0f0a05)' }}>
         {themeShown && <ThemeBackdrop key={themeShown.key} themeKey={themeShown.key} compact />}
-        <div className="relative z-10 flex flex-col items-center gap-3 px-4 py-7 text-center">
+        <div className="relative z-10 flex flex-col items-center gap-3 px-4 py-7 text-center lg:py-10">
           <p className="text-[11px] font-extrabold uppercase tracking-widest text-yellow-300/80">
             {isTrying ? '👀 Essai en cours — rien n\'est acheté' : 'Ton profil en direct'}
           </p>
@@ -314,6 +321,9 @@ export default function BoutiqueClient({
         </div>
       </div>
 
+      </aside>
+
+      <div className="min-w-0 space-y-6">
       {error && (
         <div className="bg-red-400/10 border-2 border-red-400/30 text-red-300 px-4 py-3 rounded-2xl text-sm font-bold text-center">{error}</div>
       )}
@@ -361,7 +371,7 @@ export default function BoutiqueClient({
                     </div>
                     <p className="relative z-10 -mt-1 text-xs text-white/40 leading-relaxed">{item.description}</p>
                     <div className="relative z-10 mt-auto flex items-center justify-between gap-2">
-                      <p className="text-sm font-extrabold text-yellow-300">🪙 {item.priceUA.toLocaleString('fr-FR')}</p>
+                      <p className="text-sm font-extrabold text-yellow-300"><Coin /> {item.priceUA.toLocaleString('fr-FR')}</p>
                       <div className="flex items-center gap-2">
                         {perso && (
                           <button onClick={() => tryItem(item)}
@@ -393,6 +403,9 @@ export default function BoutiqueClient({
           </div>
         );
       })}
+
+      </div>
+      </div>
 
       {/* Inventaire */}
       <div className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">

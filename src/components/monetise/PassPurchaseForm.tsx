@@ -65,7 +65,7 @@ export default function PassPurchaseForm({ activeMethods, passActive }: {
     <div className="space-y-4">
 
       <h2 className="font-extrabold text-yellow-300 text-lg">
-        {passActive ? "🔄 Renouveler mon Pass (2 000 FCFA)" : "🪙 Activer mon Pass (2 000 FCFA)"}
+        {passActive ? "🔄 Renouveler mon Pass (2 000 FCFA)" : "💰 Activer mon Pass (2 000 FCFA)"}
       </h2>
 
       {error && <div className="bg-red-400/10 border-2 border-red-400/30 text-red-400 px-4 py-3 rounded-2xl text-sm font-medium text-center">{error}</div>}
