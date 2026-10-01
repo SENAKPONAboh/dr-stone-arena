@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Unbounded, Figtree } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from '@/components/ThemeProvider';
 import PwaRegistrar from '@/components/PwaRegistrar';
 import NextTopLoader from 'nextjs-toploader';
 
 const inter = Inter({ subsets: ["latin"] });
+const unbounded = Unbounded({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--font-unbounded", display: "swap" });
+const figtree = Figtree({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-figtree", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Dr. Stone Arena",
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#10b981",
+  themeColor: "#0d1311",
 };
 
 export default function RootLayout({
@@ -33,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${unbounded.variable} ${figtree.variable}`}>
         <NextTopLoader
           color="#10b981"
           height={4}

@@ -6,3 +6,28 @@ html, body {
   max-width: 100%;
   overflow-x: hidden;
 }
+/* ===== Charte Arena Malachite : variables ===== */
+:root {
+  --stone: #0d1311;
+  --slab: #151d1a;
+  --slab-2: #1c2723;
+  --line: #26332e;
+  --ink: #e9f1ed;
+  --mute: #8fa39a;
+  --mala: #2fd28a;
+  --mala-deep: #0f7a4f;
+  --gold: #f2c14e;
+  --gold-deep: #9a6a12;
+  --flame: #ff8a3d;
+  --heart: #ff5470;
+  --sky: #5cc8ff;
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+
+/* Mouvement réduit : on garde tout, mais sans boucles */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ecg-scroll, .animate-heartbeat, .animate-heartbeat-fast, .animate-flame-flicker,
+  .animate-cell-drift, .animate-node-breathe, .animate-logo-pulse, .animate-shimmer,
+  .animate-gold-dust { animation: none !important; }
+}
