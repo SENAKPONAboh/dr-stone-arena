@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sendPushToUser } from '@/lib/push';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { PLAY_DEADLINE_HOURS, getDailyDuelQuota } from '@/lib/duel';
@@ -55,6 +56,12 @@ export async function POST(request: Request) {
           message: `${user.pseudo || `${user.prenom} ${user.nom}`} a accepté ton duel ! ⚔️`,
           icon: '⚔️'
         }
+      });
+
+      await sendPushToUser(duel.requesterId, {
+        title: '⚔️ Duel accepté !',
+        body: `${user.pseudo || `${user.prenom} ${user.nom}`} a accepté ton duel. À toi de jouer !`,
+        url: `/etudiant/duel/${duel.id}`,
       });
 
       return NextResponse.json({ success: true, status: 'ACCEPTE' });

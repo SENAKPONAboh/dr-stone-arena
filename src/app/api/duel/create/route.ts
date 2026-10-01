@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { sendPushToUser } from '@/lib/push';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { CASES_PER_DUEL, INVITE_EXPIRY_HOURS, getDailyDuelQuota } from '@/lib/duel';
@@ -91,6 +92,13 @@ export async function POST(request: Request) {
         message: `${user.pseudo || `${user.prenom} ${user.nom}`} te défie en duel ! ⚔️`,
         icon: '⚔️'
       }
+    });
+
+    // Alerte sur le téléphone de l'adversaire (si il a activé les notifications) — jamais bloquant
+    await sendPushToUser(opponentId, {
+      title: '⚔️ Défi de duel !',
+      body: `${user.pseudo || `${user.prenom} ${user.nom}`} te défie en duel. Réponds avant l'expiration !`,
+      url: '/etudiant',
     });
 
     return NextResponse.json({ success: true, duelId: duel.id }, { status: 201 });

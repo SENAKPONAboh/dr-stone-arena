@@ -1,7 +1,7 @@
-const CACHE_NAME = 'dr-stone-arena-v2';
+const CACHE_NAME = 'dr-stone-arena-v3';
+// Uniquement des fichiers statiques (les pages dépendent de la connexion de l'utilisateur)
 const urlsToCache = [
-  '/',
-  '/login',
+  '/offline.html',
   '/icon-192.png',
   '/icon-512.png'
 ];
@@ -38,8 +38,12 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      // Hors connexion sur une page : écran de secours au lieu de l'erreur du navigateur
+      if (event.request.mode === 'navigate') return caches.match('/offline.html');
+      return Response.error();
     })
   );
 });
@@ -66,7 +70,17 @@ self.addEventListener('push', (event) => {
 // Ouvrir l'app quand on clique sur la notif
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || '/etudiant';
+  // Si l'app est déjà ouverte, on la ramène devant au lieu d'ouvrir une deuxième fenêtre
   event.waitUntil(
-    clients.openWindow(event.notification.data.url)
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) {
+        if ('focus' in c) {
+          if ('navigate' in c) c.navigate(url);
+          return c.focus();
+        }
+      }
+      return clients.openWindow(url);
+    })
   );
 });
