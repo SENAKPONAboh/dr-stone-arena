@@ -43,11 +43,11 @@ export default function PassPresentation({
         <h2 className="mb-3 font-display text-sm font-extrabold text-gold">Ce que le Pass Élite t'apporte</h2>
         <ul className="grid grid-cols-1 gap-2 text-sm text-ink sm:grid-cols-2">
           {[
-            ['Cas Élite', '10 cas par jour, réservés à l'Espace Élite'],
+            ['Cas Élite', "10 cas par jour, réservés à l'Espace Élite"],
             ['Rush du week-end', 'Une série de cas avec des paliers de mérite'],
             ['Boutique', 'Objets Flamme, tentatives Rush et coffres'],
             ['Personnalisation', 'Cadres, thèmes et titres pour ton profil'],
-            ['Classement Élite', 'Mesure-toi aux autres membres de l'Espace Élite'],
+            ['Classement Élite', "Mesure-toi aux autres membres de l'Espace Élite"],
             ['Prime Arena', 'Une bourse de mérite qui récompense la performance'],
           ].map(([t, d]) => (
             <li key={t} className="rounded-2xl bg-white/5 p-3">
