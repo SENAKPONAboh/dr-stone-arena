@@ -87,3 +87,17 @@ html, body {
 /* Pages étudiant plein écran (couche fixed) : fond stone de la charte */
 .arena-skin .fixed.inset-0.bg-gray-50, .arena-skin .fixed.inset-0.bg-white, .arena-skin .fixed.inset-0.bg-slate-900 { background-color: var(--stone); }
 .arena-skin header.bg-white { background-color: var(--stone); }
+
+/* Variantes hover / focus des classes claires */
+.arena-skin .hover\:bg-white:hover, .arena-skin .hover\:bg-gray-50:hover, .arena-skin .hover\:bg-gray-100:hover,
+.arena-skin .hover\:bg-gray-200:hover, .arena-skin .hover\:bg-gray-300:hover, .arena-skin .focus\:bg-white:focus { background-color: var(--line); }
+.arena-skin .hover\:bg-blue-600:hover, .arena-skin .hover\:bg-emerald-600:hover { background-color: #25b57a; color: var(--stone); }
+.arena-skin .hover\:bg-red-600:hover, .arena-skin .hover\:bg-red-700:hover { background-color: #e0455f; }
+.arena-skin .hover\:bg-red-100:hover { background-color: rgba(255,84,112,0.22); }
+.arena-skin .hover\:bg-blue-100:hover { background-color: rgba(92,200,255,0.22); }
+.arena-skin .hover\:bg-emerald-100:hover { background-color: rgba(47,210,138,0.22); }
+.arena-skin .hover\:text-gray-800:hover, .arena-skin .hover\:text-gray-600:hover { color: var(--ink); }
+.arena-skin .hover\:text-blue-600:hover { color: var(--sky); }
+.arena-skin .focus\:border-blue-500:focus, .arena-skin .focus\:border-blue-400:focus, .arena-skin .focus\:border-emerald-500:focus { border-color: var(--mala); }
+.arena-skin .placeholder\:text-gray-300::placeholder { color: var(--mute); }
+.arena-skin .min-h-screen.bg-gray-50 { background-color: var(--stone); }
