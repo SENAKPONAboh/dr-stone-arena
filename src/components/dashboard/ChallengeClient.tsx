@@ -1,18 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import confetti from 'canvas-confetti';
 import CaseGuard from '@/components/ui/CaseGuard';
+import AnswerOption, { type AnswerState } from '@/components/ui/AnswerOption';
+import ArenaButton from '@/components/ui/ArenaButton';
+import TimerRing from '@/components/ui/TimerRing';
+import ResultSheet from '@/components/ui/ResultSheet';
+import EcgLine from '@/components/ui/EcgLine';
+import Icon from '@/components/ui/Icon';
 
+// ⚠️ correctAnswer et explanation ne sont JAMAIS transmis au navigateur avant la réponse :
+// le serveur les renvoie dans la réponse de /api/challenge/submit.
 type ClinicalCaseProps = {
-  progressLabel?: string;
+  caseNumber?: number;
+  total?: number;
   clinicalCase: {
     id: string;
     title: string;
     statement: string;
     options: string[];
-    correctAnswer: string;
-    explanation: string;
     durationMax: number;
     xp: number;
     difficulty: string;
@@ -20,12 +28,20 @@ type ClinicalCaseProps = {
   };
 };
 
-export default function ChallengeClient({ clinicalCase, progressLabel }: ClinicalCaseProps) {
-  const router = useRouter();
+type SubmitResult = {
+  isCorrect: boolean;
+  xpEarned: number;
+  livesLeft?: number;
+  correctAnswer: string;
+  explanation: string;
+};
+
+export default function ChallengeClient({ clinicalCase, caseNumber, total }: ClinicalCaseProps) {
   const [timeLeft, setTimeLeft] = useState(clinicalCase.durationMax);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [result, setResult] = useState<{ isCorrect: boolean; xpEarned: number } | null>(null);
+  const [result, setResult] = useState<SubmitResult | null>(null);
+  const [serverError, setServerError] = useState('');
   const [loading, setLoading] = useState(false);
   const [guardReady, setGuardReady] = useState(false);
   const [wasViolation, setWasViolation] = useState(false);
@@ -61,21 +77,37 @@ export default function ChallengeClient({ clinicalCase, progressLabel }: Clinica
       });
 
       const data = await res.json();
-      setResult(data);
+      if (res.ok) {
+        setResult(data);
+        if (data.isCorrect) {
+          confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#2fd28a', '#e9f1ed', '#5cc8ff'], disableForReducedMotion: true });
+        }
+      } else {
+        setServerError(data?.error || 'Erreur serveur');
+      }
     } catch (e) {
       console.error(e);
+      setServerError("Impossible de joindre le serveur. Vérifie ta connexion puis réessaie.");
     } finally {
       setLoading(false);
     }
   };
 
   const difficultyColors: Record<string, string> = {
-    FACILE: 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300',
-    MOYEN: 'bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300',
-    DIFFICILE: 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300'
+    FACILE: 'bg-mala/15 text-mala',
+    MOYEN: 'bg-flame/15 text-flame',
+    DIFFICILE: 'bg-heart/15 text-heart',
   };
 
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+  const stateOf = (option: string): AnswerState => {
+    if (!isSubmitted) return selectedAnswer === option ? 'selected' : 'idle';
+    if (!result) return selectedAnswer === option ? 'selected' : 'dimmed';
+    if (option === result.correctAnswer) return 'correct';
+    if (option === selectedAnswer) return 'wrong';
+    return 'dimmed';
+  };
 
   return (
     <CaseGuard
@@ -89,106 +121,104 @@ export default function ChallengeClient({ clinicalCase, progressLabel }: Clinica
         </>
       }
     >
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 py-8 px-4 transition-colors duration-300">
-        <div className="max-w-3xl mx-auto">
+      <div className="relative min-h-[80vh] pb-40">
+        <div className="mx-auto max-w-2xl">
 
           {/* En-tête du défi */}
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{clinicalCase.chapter.subject.name} • {clinicalCase.chapter.name}</span>
-              <h1 className="text-2xl font-extrabold text-gray-800 dark:text-white mt-1">{clinicalCase.title}</h1>
-              {progressLabel && (
-                <span className="inline-block mt-2 text-xs font-extrabold bg-emerald-100 text-emerald-600 px-3 py-1 rounded-full">{progressLabel}</span>
-              )}
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-mute">{clinicalCase.chapter.subject.name} • {clinicalCase.chapter.name}</span>
+              <h1 className="mt-1 font-display text-lg font-extrabold leading-snug text-ink">{clinicalCase.title}</h1>
             </div>
-            <div className={`px-4 py-2 rounded-xl font-extrabold text-lg ${timeLeft <= 10 ? 'bg-red-500 text-white animate-pulse' : 'bg-white dark:bg-slate-800 border-2 border-gray-100 dark:border-slate-700 text-gray-800 dark:text-white'}`}>
-              ⏱️ {timeLeft}s
-            </div>
+            <TimerRing remaining={timeLeft} total={clinicalCase.durationMax} />
           </div>
 
-          {/* Carte principale */}
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 md:p-8 transition-colors duration-300">
-            <div className="flex gap-2 mb-6">
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${difficultyColors[clinicalCase.difficulty]}`}>{clinicalCase.difficulty}</span>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300">⭐ +{clinicalCase.xp} XP</span>
-            </div>
-
-            <p className="text-gray-700 dark:text-gray-200 text-lg mb-8 leading-relaxed">{clinicalCase.statement}</p>
-
-            {/* Options de réponse */}
-            <div className="space-y-3">
-              {clinicalCase.options.map((option, index) => {
-                let buttonClass = "w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ";
-
-                if (isSubmitted) {
-                  if (option === clinicalCase.correctAnswer) {
-                    buttonClass += "border-green-500 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold";
-                  } else if (option === selectedAnswer) {
-                    buttonClass += "border-red-500 bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300";
-                  } else {
-                    buttonClass += "border-gray-200 dark:border-slate-600 text-gray-400 dark:text-gray-500 opacity-70";
-                  }
-                } else {
-                  buttonClass += selectedAnswer === option
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-bold shadow-md"
-                    : "border-gray-200 dark:border-slate-600 text-gray-800 dark:text-gray-100 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-gray-50 dark:hover:bg-slate-700/50";
-                }
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => !isSubmitted && setSelectedAnswer(option)}
-                    disabled={isSubmitted}
-                    className={buttonClass}
-                  >
-                    <span className={`w-8 h-8 flex items-center justify-center rounded-full font-extrabold text-sm flex-shrink-0 ${selectedAnswer === option && !isSubmitted ? 'bg-blue-500 text-white' : isSubmitted && option === clinicalCase.correctAnswer ? 'bg-green-500 text-white' : isSubmitted && option === selectedAnswer ? 'bg-red-500 text-white' : 'bg-gray-100 dark:bg-slate-600 text-gray-500 dark:text-gray-300'}`}>
-                      {letters[index]}
-                    </span>
-                    <span className="flex-1">{option}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Bouton de validation ou Correction */}
-            {!isSubmitted ? (
-              <button
-                onClick={() => handleSubmit(false)}
-                disabled={!selectedAnswer || loading}
-                className="w-full mt-8 py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-              >
-                Valider ma réponse
-              </button>
-            ) : (
-              <div className="mt-8">
-                {result && (
-                  <div className={`p-6 rounded-2xl mb-4 ${result.isCorrect ? 'bg-green-50 dark:bg-green-900/30 border-2 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800'}`}>
-                    <h3 className={`font-extrabold text-xl mb-2 ${result.isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {wasViolation ? "🚫 Cas annulé — sortie de l'application" : result.isCorrect ? `🎉 Bonne réponse ! +${result.xpEarned} XP` : "❌ Mauvaise réponse"}
-                    </h3>
-                    <p className="text-gray-700 dark:text-gray-200 font-semibold mb-2">💡 Explication :</p>
-                    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{clinicalCase.explanation}</p>
-                  </div>
-                )}
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => window.location.href = '/etudiant/challenge'}
-                    className="w-full py-4 bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide transition-all"
-                  >
-                    Continuer le défi
-                  </button>
-                  <button
-                    onClick={() => window.location.href = '/etudiant'}
-                    className="w-full py-2 text-gray-500 dark:text-gray-400 text-sm font-bold hover:text-blue-600 transition-all"
-                  >
-                    Retour au tableau de bord
-                  </button>
-                </div>
+          {/* Progression des 10 cas */}
+          {caseNumber && total ? (
+            <div className="mb-4">
+              <div className="flex gap-1">
+                {Array.from({ length: total }, (_, i) => (
+                  <span key={i} className={`h-1.5 flex-1 rounded-full ${i < caseNumber - 1 ? 'bg-mala' : i === caseNumber - 1 ? 'bg-sky' : 'bg-slab-2'}`} />
+                ))}
               </div>
-            )}
+              <p className="mt-1.5 text-xs font-bold text-mute">Cas {caseNumber}/{total} du jour</p>
+            </div>
+          ) : null}
+
+          {/* Énoncé */}
+          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}
+            className="rounded-3xl border border-line bg-slab p-5">
+            <div className="mb-4 flex gap-2">
+              <span className={`rounded-full px-3 py-1 text-xs font-bold ${difficultyColors[clinicalCase.difficulty] ?? 'bg-slab-2 text-mute'}`}>{clinicalCase.difficulty}</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-mala/15 px-3 py-1 text-xs font-bold text-mala"><Icon name="star" size={12} /> +{clinicalCase.xp} XP</span>
+            </div>
+            <p className="whitespace-pre-line font-body text-[16px] leading-relaxed text-ink">{clinicalCase.statement}</p>
+          </motion.div>
+
+          {/* Options de réponse (en cascade) */}
+          <div className="mt-5 space-y-3">
+            {clinicalCase.options.map((option, index) => (
+              <motion.div key={index} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + index * 0.07 }}>
+                <AnswerOption
+                  letter={letters[index]}
+                  state={stateOf(option)}
+                  disabled={isSubmitted}
+                  onClick={() => setSelectedAnswer(option)}
+                >
+                  {option}
+                </AnswerOption>
+              </motion.div>
+            ))}
           </div>
+
+          {!isSubmitted && (
+            <ArenaButton full className="mt-6" onClick={() => handleSubmit(false)} disabled={!selectedAnswer || loading}>
+              Valider ma réponse
+            </ArenaButton>
+          )}
+
+          {serverError && (
+            <div className="mt-6 rounded-2xl border border-heart/40 bg-heart/10 p-4 text-sm text-ink">
+              <p className="font-bold text-heart">{serverError}</p>
+              <ArenaButton full variant="ghost" className="mt-3" onClick={() => { window.location.href = '/etudiant'; }}>
+                Retour à l'accueil
+              </ArenaButton>
+            </div>
+          )}
+
+          {isSubmitted && !result && !serverError && (
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <EcgLine className="h-8 w-40" />
+              <p className="text-xs font-bold text-mute">Analyse de ta réponse…</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* +XP qui s'envole */}
+      {result?.isCorrect && (
+        <motion.div initial={{ opacity: 1, y: 0, scale: 0.8 }} animate={{ opacity: 0, y: -160, scale: 1.3 }} transition={{ duration: 1.2, ease: 'easeOut' }}
+          className="pointer-events-none fixed inset-x-0 top-1/2 z-[95] text-center font-display text-3xl font-extrabold text-mala">
+          +{result.xpEarned} XP
+        </motion.div>
+      )}
+
+      <ResultSheet
+        open={!!result}
+        correct={!!result?.isCorrect}
+        title={wasViolation ? "Cas annulé — sortie de l'application" : result?.isCorrect ? `Diagnostic posé ! +${result.xpEarned} XP` : 'Pas grave, voici le raisonnement'}
+        action={
+          <div className="space-y-2">
+            <ArenaButton full onClick={() => { window.location.href = '/etudiant/challenge'; }}>Continuer le défi</ArenaButton>
+            <button onClick={() => { window.location.href = '/etudiant'; }} className="w-full py-2 text-sm font-bold text-mute">
+              Retour à l'accueil
+            </button>
+          </div>
+        }
+      >
+        <p className="mb-1 font-bold">💡 Explication</p>
+        {result?.explanation}
+      </ResultSheet>
     </CaseGuard>
   );
 }

@@ -9,6 +9,10 @@ import { getTodaySelection } from '@/lib/daily-cases';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
+import Icon from '@/components/ui/Icon';
+import EcgLine from '@/components/ui/EcgLine';
+import ProgressPath from '@/components/ui/ProgressPath';
+import HomeStagger from '@/components/dashboard/HomeStagger';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUserCore();
@@ -120,14 +124,16 @@ export default async function EtudiantDashboard() {
     }
   }
 
-  // === PRÉSENTATION (refonte hub) ===
-  const cardClass = premium
-    ? 'bg-slate-800/60 backdrop-blur-xl border border-yellow-400/20 text-white'
-    : 'bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 text-gray-800 dark:text-white';
-  const labelClass = premium ? 'text-white/50' : 'text-gray-400 dark:text-gray-500';
+  // === PRÉSENTATION (charte Arena Malachite) ===
+  const doneToday = Math.min(attemptsToday, dailyTotal);
+  const gradeSteps = [0, 1000, 3000, 6000];
+  const gradeIdx = user.xp >= 6000 ? 3 : user.xp >= 3000 ? 2 : user.xp >= 1000 ? 1 : 0;
+  const nextStep = gradeSteps[gradeIdx + 1];
+  const gradePct = nextStep ? Math.round(((user.xp - gradeSteps[gradeIdx]) / (nextStep - gradeSteps[gradeIdx])) * 100) : 100;
+  const card = 'rounded-3xl border border-line bg-slab';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
 
       {/* Invitations de duel (bannière géante — uniquement si présentes) */}
       {duelInvites.length > 0 && (
@@ -139,138 +145,137 @@ export default async function EtudiantDashboard() {
         }))} />
       )}
 
-      {/* Salutation */}
-      <div>
-        <h1 className="text-2xl font-extrabold text-gray-800 dark:text-white">Bonjour {user.prenom} 👋</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-          {grade} · {getNiveauLabel(user.anneeEtude)}
-        </p>
-      </div>
-
-      {/* Stats vitales */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Link href="/etudiant/arene" className={`${cardClass} rounded-3xl shadow-sm p-4 hover:shadow-md transition-all`}>
-          <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Streak</p>
-          <p className="text-2xl font-extrabold text-orange-500 mt-1">🔥 {user.streak}</p>
-        </Link>
-        <div className={`${cardClass} rounded-3xl shadow-sm p-4`}>
-          <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Expérience</p>
-          <p className="text-2xl font-extrabold text-emerald-500 mt-1">⭐ {user.xp}</p>
+      <HomeStagger>
+        {/* Salutation + grade */}
+        <div className={`${card} p-5`}>
+          <h1 className="font-display text-xl font-extrabold text-ink">Bonjour {user.prenom}</h1>
+          <p className="mt-1 text-sm text-mute">{grade} · {getNiveauLabel(user.anneeEtude)}</p>
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slab-2">
+            <div className="h-full origin-left rounded-full bg-mala" style={{ transform: `scaleX(${gradePct / 100})`, transition: 'transform 1s ease-out' }} />
+          </div>
+          <p className="mt-1.5 text-[11px] font-bold text-mute">
+            {nextStep ? `${nextStep - user.xp} XP avant le prochain grade` : 'Grade maximum atteint'}
+          </p>
+          <EcgLine className="mt-3 h-5 opacity-70" />
         </div>
-        <div className={`${cardClass} rounded-3xl shadow-sm p-4`}>
-          <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Vies</p>
-          <p className="text-2xl font-extrabold text-red-500 mt-1">❤️ {user.lives}/10</p>
-          {nextLifeAt && (
-            <p className={`text-[10px] ${labelClass} mt-1 font-bold`}>
-              ⏳ {premium ? (user.premiumTier === 3 ? "1/h" : user.premiumTier === 2 ? "1/6h" : "1/12h") : "1/24h"} · dans {formatDelay(nextLifeAt)}
+
+        {/* Vies + rang */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className={`${card} p-4`}>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-mute">Vies</p>
+            <p className="mt-1 flex items-center gap-2 font-display text-2xl font-extrabold text-heart">
+              <span className={`inline-flex ${user.lives <= 2 ? 'animate-heartbeat-fast' : 'animate-heartbeat'}`}><Icon name="heart" size={24} /></span>
+              {user.lives}<span className="text-sm text-mute">/10</span>
             </p>
-          )}
-        </div>
-        <Link href="/etudiant/leaderboard?scope=niveau" className={`${cardClass} rounded-3xl shadow-sm p-4 hover:shadow-md transition-all`}>
-          <p className={`text-xs font-bold uppercase tracking-wider ${labelClass}`}>Rang {userRankLevel ? `(${getNiveauLabel(user.anneeEtude)})` : ""}</p>
-          <p className="text-2xl font-extrabold text-blue-500 mt-1">#{userRankLevel ?? userRank}</p>
-          <p className={`text-[10px] ${labelClass}`}>Global #{userRank}</p>
-        </Link>
-      </div>
-
-      {/* CTA principal */}
-      {user.lives > 0 ? (
-        <Link href="/etudiant/challenge"
-          className={`block rounded-3xl shadow-lg p-8 text-center transition-all hover:shadow-xl hover:scale-[1.01] ${premium
-            ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-900'
-            : 'bg-gradient-to-r from-emerald-500 to-blue-500 text-white'}`}>
-          <p className="text-4xl mb-2">🚀</p>
-          <p className="text-xl font-extrabold uppercase tracking-wide">Commencer le défi</p>
-          <p className={`text-sm mt-1 ${premium ? 'text-slate-900/70' : 'text-white/80'}`}>Un cas clinique de ton niveau t'attend</p>
-        </Link>
-      ) : (
-        <div className="bg-gray-200 dark:bg-slate-700 rounded-3xl p-8 text-center">
-          <p className="text-4xl mb-2">❌</p>
-          <p className="text-xl font-extrabold uppercase tracking-wide text-gray-500 dark:text-gray-400">Plus de vies</p>
-          <p className="text-sm text-gray-400 mt-1">Régénération en cours — {premium ? "1 vie/heure" : "1 vie/24h"}</p>
-          {nextLifeAt && (
-            <p className="text-sm text-red-500 font-bold mt-2">⏳ Prochaine vie dans {formatDelay(nextLifeAt)}</p>
-          )}
-        </div>
-      )}
-
-      {/* Aperçus Arène */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/etudiant/arene" className={`${cardClass} rounded-3xl shadow-sm p-5 hover:shadow-md transition-all`}>
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-blue-500">🎯 Défi du jour</p>
-            <span className="text-xs font-bold text-gray-400">{Math.min(attemptsToday, dailyTotal)}/{dailyTotal}</span>
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Termine tes cas du jour → +20 XP</p>
-        </Link>
-        <Link href="/etudiant/duel" className={`${cardClass} rounded-3xl shadow-sm p-5 hover:shadow-md transition-all`}>
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-xs font-bold uppercase tracking-wider text-red-500">⚔️ Duels</p>
-            {activeDuels > 0 && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">{activeDuels} en cours</span>}
-          </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{duelGrade.icon} {duelGrade.name} · {user.duelsWon}V / {user.duelsLost}D</p>
-        </Link>
-        <Link href="/etudiant/stats" className={`${cardClass} rounded-3xl shadow-sm p-5 hover:shadow-md transition-all`}>
-          <p className="text-xs font-bold uppercase tracking-wider text-purple-500 mb-2">📊 Progression</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{attemptsCount} cas résolus</p>
-        </Link>
-      </div>
-
-      {/* Top 3 du niveau */}
-      <div className={`${cardClass} rounded-3xl shadow-sm p-6`}>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="font-extrabold">🏆 Top 3 — {getNiveauLabel(user.anneeEtude)}</h2>
-          <Link href="/etudiant/leaderboard?scope=niveau" className="text-xs font-bold text-blue-500 hover:underline">Voir tout →</Link>
-        </div>
-        {topUsers.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-3">Pas encore de classement dans ton niveau.</p>
-        ) : (
-          <div className="space-y-2">
-            {topUsers.map((u, i) => (
-              <Link key={u.id} href={`/etudiant/profil/${u.id}`}
-                className={`flex items-center gap-3 p-2 rounded-xl transition-colors ${u.id === user.id ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-gray-50 dark:hover:bg-slate-700/50'}`}>
-                <span className={`font-extrabold w-6 text-sm ${i === 0 ? 'text-yellow-500' : i === 1 ? 'text-gray-400' : 'text-orange-400'}`}>{i + 1}</span>
-                <GoldAvatar
-                  imageUrl={u.imageUrl}
-                  initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`}
-                  passActive={u.passActive}
-                  size={32}
-                />
-                <p className="flex-1 text-sm font-bold truncate">{nameOf(u)} {u.isPremium && '👑'}</p>
-                <span className="text-sm font-extrabold text-gray-500">⭐ {u.xp}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* WhatsApp discret */}
-      <a href="https://chat.whatsapp.com/I1LXEVHIA9d0YFRCzw2umk?s=cl&p=a&ilr=4" target="_blank" rel="noopener noreferrer"
-        className={`flex items-center justify-center gap-2 py-2 rounded-2xl text-xs font-bold transition-all ${premium
-          ? 'bg-white/5 text-white/60 hover:bg-white/10'
-          : 'bg-gray-100 dark:bg-slate-800 text-gray-400 hover:text-emerald-600'}`}>
-        <span>💬</span> Rejoins la communauté WhatsApp
-      </a>
-
-      {/* Pass Arène Monétisé — découverte */}
-      <Link href="/etudiant/monetise/pass" className={`block rounded-3xl p-6 transition-all hover:scale-[1.01] hover:shadow-xl ${user.passActive
-        ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-[#1a1308]"
-        : "bg-white dark:bg-slate-800 border-2 border-yellow-400/40"}`}>
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl animate-float">🪙</span>
-            <div>
-              <p className="font-extrabold">{user.passActive ? "⚔️ Arène Monétisée" : "Pass Arène Monétisé"}</p>
-              <p className={`text-xs mt-0.5 ${user.passActive ? "opacity-70" : "text-gray-400"}`}>
-                {user.passActive
-                  ? `Cagnotte : ${user.uaBalance.toLocaleString('fr-FR')} UA — entre dans ton espace`
-                  : "+1 000 UA par cas, Rush du week-end, Boutique, retraits réels"}
+            {nextLifeAt && (
+              <p className="mt-1 text-[10px] font-bold text-mute">
+                {premium ? (user.premiumTier === 3 ? "1/h" : user.premiumTier === 2 ? "1/6h" : "1/12h") : "1/24h"} · dans {formatDelay(nextLifeAt)}
               </p>
-            </div>
+            )}
           </div>
-          <span className="text-xs font-extrabold uppercase tracking-wide whitespace-nowrap">→</span>
+          <Link href="/etudiant/leaderboard?scope=niveau" className={`${card} p-4 transition-transform active:scale-[0.98]`}>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-mute">Rang {userRankLevel ? `(${getNiveauLabel(user.anneeEtude)})` : ''}</p>
+            <p className="mt-1 font-display text-2xl font-extrabold text-sky">#{userRankLevel ?? userRank}</p>
+            <p className="text-[10px] font-bold text-mute">Global #{userRank}</p>
+          </Link>
         </div>
-      </Link>
+
+        {/* Parcours du jour */}
+        <div className={`${card} p-5`}>
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="font-display text-sm font-bold text-ink">Garde du jour</h2>
+            <span className="font-display text-xs font-bold tabular-nums text-mala">{doneToday}/{dailyTotal}</span>
+          </div>
+          <ProgressPath total={dailyTotal} done={doneToday} />
+          {user.lives > 0 ? (
+            doneToday >= dailyTotal ? (
+              <Link href="/etudiant/challenge" className="mt-3 block rounded-2xl bg-slab-2 px-5 py-3.5 text-center font-display text-sm font-bold uppercase tracking-wide text-mala">
+                Garde terminée — voir le bilan
+              </Link>
+            ) : (
+              <Link href="/etudiant/challenge"
+                className="mt-3 block rounded-2xl bg-mala px-5 py-3.5 text-center font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
+                {doneToday === 0 ? 'Commencer le défi' : 'Continuer le défi'}
+              </Link>
+            )
+          ) : (
+            <div className="mt-3 rounded-2xl bg-heart/10 p-4 text-center">
+              <p className="font-display text-sm font-bold text-heart">Plus de vies</p>
+              <p className="mt-1 text-xs text-mute">Régénération en cours — {premium ? '1 vie/heure' : '1 vie/24h'}</p>
+              {nextLifeAt && <p className="mt-1 text-xs font-bold text-heart">Prochaine vie dans {formatDelay(nextLifeAt)}</p>}
+            </div>
+          )}
+        </div>
+
+        {/* Aperçus */}
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <Link href="/etudiant/duel" className={`${card} p-5 transition-transform active:scale-[0.98]`}>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-heart"><Icon name="swords" size={18} /> Duels</p>
+              {activeDuels > 0 && <span className="rounded-full bg-heart px-2 py-0.5 text-[10px] font-bold text-white">{activeDuels} en cours</span>}
+            </div>
+            <p className="text-sm text-mute">{duelGrade.icon} {duelGrade.name} · {user.duelsWon}V / {user.duelsLost}D</p>
+          </Link>
+          <Link href="/etudiant/stats" className={`${card} p-5 transition-transform active:scale-[0.98]`}>
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sky"><Icon name="ecg" size={18} /> Progression</p>
+            <p className="text-sm text-mute">{attemptsCount} cas résolus</p>
+          </Link>
+          <Link href="/etudiant/arene" className={`${card} p-5 transition-transform active:scale-[0.98]`}>
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-mala"><Icon name="stethoscope" size={18} /> Arène</p>
+            <p className="text-sm text-mute">Défis, duels et séries</p>
+          </Link>
+        </div>
+
+        {/* Top 3 du niveau */}
+        <div className={`${card} p-5`}>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-display text-sm font-bold text-ink"><Icon name="trophy" size={18} className="text-gold" /> Top 3 — {getNiveauLabel(user.anneeEtude)}</h2>
+            <Link href="/etudiant/leaderboard?scope=niveau" className="text-xs font-bold text-mala">Voir tout →</Link>
+          </div>
+          {topUsers.length === 0 ? (
+            <p className="py-3 text-center text-sm text-mute">Pas encore de classement dans ton niveau.</p>
+          ) : (
+            <div className="space-y-2">
+              {topUsers.map((u, i) => (
+                <Link key={u.id} href={`/etudiant/profil/${u.id}`}
+                  className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${u.id === user.id ? 'bg-mala/10' : 'hover:bg-slab-2'}`}>
+                  <span className={`w-6 font-display text-sm font-extrabold ${i === 0 ? 'text-gold' : i === 1 ? 'text-mute' : 'text-flame'}`}>{i + 1}</span>
+                  <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} size={32} />
+                  <p className="flex-1 truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'}</p>
+                  <span className="flex items-center gap-1 font-display text-sm font-bold tabular-nums text-mala"><Icon name="star" size={14} /> {u.xp}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Espace Élite — découverte */}
+        <Link href="/etudiant/monetise/pass" className={`relative block overflow-hidden rounded-3xl p-5 transition-transform active:scale-[0.98] ${user.passActive
+          ? 'bg-gold text-stone shadow-[0_5px_0_#9a6a12]'
+          : 'border-2 border-gold/40 bg-slab'}`}>
+          <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-white/10 animate-shimmer" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${user.passActive ? 'bg-stone/15' : 'bg-gold/15 text-gold'}`}><Icon name="shield" size={26} /></span>
+              <div>
+                <p className={`font-display text-sm font-extrabold ${user.passActive ? '' : 'text-gold'}`}>{user.passActive ? 'Espace Élite' : 'Pass Élite'}</p>
+                <p className={`mt-0.5 text-xs ${user.passActive ? 'opacity-70' : 'text-mute'}`}>
+                  {user.passActive
+                    ? `Points de mérite : ${user.uaBalance.toLocaleString('fr-FR')} — entre dans ton espace`
+                    : "Cas Élite, Rush du week-end, boutique et personnalisation"}
+                </p>
+              </div>
+            </div>
+            <span className="font-display text-lg font-extrabold">→</span>
+          </div>
+        </Link>
+
+        {/* WhatsApp discret */}
+        <a href="https://chat.whatsapp.com/I1LXEVHIA9d0YFRCzw2umk?s=cl&p=a&ilr=4" target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 rounded-2xl bg-slab py-2.5 text-xs font-bold text-mute transition-colors hover:text-mala">
+          <Icon name="chat" size={16} /> Rejoins la communauté WhatsApp
+        </a>
+      </HomeStagger>
     </div>
   );
 }

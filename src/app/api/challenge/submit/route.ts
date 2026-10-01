@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { MAX_LIVES } from '@/lib/lives';
+import { getTodaySelection } from '@/lib/daily-cases';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -18,6 +19,24 @@ export async function POST(request: Request) {
 
     if (!clinicalCase) {
       return NextResponse.json({ error: "Cas introuvable" }, { status: 404 });
+    }
+
+    // --- Contrôles serveur : cas de la sélection du jour, pas déjà joué, vies > 0 ---
+    const selection = await getTodaySelection(user.id);
+    if (!selection || !selection.includes(clinicalCase.id)) {
+      return NextResponse.json({ error: "Ce cas ne fait pas partie de ton défi du jour." }, { status: 403 });
+    }
+    if (user.lives <= 0) {
+      return NextResponse.json({ error: "Tu n'as plus de vies." }, { status: 403 });
+    }
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const alreadyPlayed = await prisma.attempt.findFirst({
+      where: { userId: user.id, clinicalCaseId: clinicalCase.id, createdAt: { gte: startOfDay } },
+      select: { id: true },
+    });
+    if (alreadyPlayed) {
+      return NextResponse.json({ error: "Tu as déjà joué ce cas aujourd'hui." }, { status: 409 });
     }
 
     // On nettoie le texte : on enlève les espaces au début/à la fin et on met tout en minuscules
@@ -148,7 +167,12 @@ export async function POST(request: Request) {
       newBadges.push(badge);
     }
 
-    return NextResponse.json({ isCorrect, xpEarned, streakBonus, livesLeft: newLives, newBadges, chestUnlocked });
+    return NextResponse.json({
+      isCorrect, xpEarned, streakBonus, livesLeft: newLives, newBadges, chestUnlocked,
+      // Révélés seulement APRÈS la réponse
+      correctAnswer: clinicalCase.correctAnswer,
+      explanation: clinicalCase.explanation,
+    });
 
   } catch (error) {
     console.error(error);

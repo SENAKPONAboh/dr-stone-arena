@@ -2,7 +2,34 @@ import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import ChallengeClient from '@/components/dashboard/ChallengeClient';
+import DayRecap from '@/components/dashboard/DayRecap';
 import { getOrCreateDailySelection } from '@/lib/daily-cases';
+import Link from 'next/link';
+import BackgroundCells from '@/components/ui/BackgroundCells';
+import Icon, { type IconName } from '@/components/ui/Icon';
+
+const CASES_PER_DAY_TEXT = '10';
+
+function InfoScreen({ icon, color, title, text, buttonText = 'Retour au tableau de bord' }: {
+  icon: IconName; color: string; title: string; text: string; buttonText?: string;
+}) {
+  return (
+    <div className="relative flex min-h-[70vh] items-center justify-center p-2">
+      <BackgroundCells />
+      <div className="relative w-full max-w-md rounded-3xl border border-line bg-slab p-8 text-center">
+        <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slab-2 ${color}`}>
+          <Icon name={icon} size={34} />
+        </div>
+        <h2 className="mb-2 font-display text-xl font-extrabold text-ink">{title}</h2>
+        <p className="mb-6 text-sm leading-relaxed text-mute">{text}</p>
+        <Link href="/etudiant"
+          className="inline-block rounded-2xl bg-mala px-6 py-3.5 font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
+          {buttonText}
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export default async function ChallengePage() {
   const user = await getCurrentUserCore();
@@ -18,35 +45,34 @@ export default async function ChallengePage() {
   today.setHours(0, 0, 0, 0);
   const attemptsToday = await prisma.attempt.findMany({
     where: { userId: user.id, clinicalCaseId: { in: caseIds }, createdAt: { gte: today } },
-    select: { clinicalCaseId: true },
+    select: { clinicalCaseId: true, isCorrect: true, xpEarned: true },
   });
   const attemptedTodayIds = new Set(attemptsToday.map(a => a.clinicalCaseId));
   const remaining = caseIds.filter(id => !attemptedTodayIds.has(id));
 
-  const infoScreen = (emoji: string, title: string, text: string, buttonText: string = 'Retour au tableau de bord') => (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="text-center bg-white p-8 rounded-3xl shadow-sm border border-gray-100 max-w-md w-full">
-        <div className="text-6xl mb-4">{emoji}</div>
-        <h2 className="text-2xl font-extrabold text-gray-800 mb-2">{title}</h2>
-        <p className="text-gray-500 mb-6">{text}</p>
-        <a href="/etudiant" className="inline-block py-3 px-6 bg-emerald-500 text-white font-bold rounded-2xl">{buttonText}</a>
-      </div>
-    </div>
-  );
-
   // 3. Plus de vies → le frein (le Premium régénère plus vite)
   if (user.lives <= 0) {
-    return infoScreen('❌', 'Plus de vies', `Tes vies se régénèrent lentement (${user.isPremium ? '1/heure en Premium' : '1/24h en gratuit'}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`);
+    return <InfoScreen icon="heart" color="text-heart" title="Plus de vies"
+      text={`Tes vies se régénèrent lentement (${user.isPremium ? '1/heure en Premium' : '1/24h en gratuit'}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`} />;
   }
 
   // 4. Banque vide pour ce niveau
   if (caseIds.length === 0) {
-    return infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau. Reviens bientôt !', 'Revenir plus tard');
+    return <InfoScreen icon="stethoscope" color="text-sky" title="Pas encore de cas pour ton niveau"
+      text="De nouveaux cas cliniques seront bientôt publiés pour ton niveau. Reviens bientôt !" buttonText="Revenir plus tard" />;
   }
 
-  // 5. Journée terminée : les 10 cas du jour ont été joués
+  // 5. Journée terminée : écran récapitulatif animé
   if (remaining.length === 0) {
-    return infoScreen('🌙', 'Journée terminée !', `Tu as joué tes ${caseIds.length} cas du jour. Reviens demain pour ${CASES_PER_DAY_TEXT} nouveaux cas tirés au hasard dans la banque.`, 'Revenir demain');
+    return (
+      <DayRecap
+        total={caseIds.length}
+        correct={attemptsToday.filter(a => a.isCorrect).length}
+        xp={attemptsToday.reduce((s, a) => s + a.xpEarned, 0)}
+        streak={user.streak}
+        nextBatch={CASES_PER_DAY_TEXT}
+      />
+    );
   }
 
   // 6. Servir le prochain cas du jour
@@ -55,17 +81,28 @@ export default async function ChallengePage() {
     include: { chapter: { include: { subject: true } } },
   });
   if (!clinicalCase) {
-    return infoScreen('⚠️', 'Cas introuvable', 'Une erreur est survenue, réessaie dans un instant.');
+    return <InfoScreen icon="close" color="text-heart" title="Cas introuvable" text="Une erreur est survenue, réessaie dans un instant." />;
   }
 
   const caseNumber = caseIds.length - remaining.length + 1;
 
+  // ⚠️ correctAnswer et explanation ne sont JAMAIS envoyés au navigateur :
+  // le serveur les renvoie seulement après la réponse (/api/challenge/submit).
   return (
     <ChallengeClient
-      clinicalCase={clinicalCase}
-      progressLabel={`Cas ${caseNumber}/${caseIds.length} du jour`}
+      key={clinicalCase.id}
+      clinicalCase={{
+        id: clinicalCase.id,
+        title: clinicalCase.title,
+        statement: clinicalCase.statement,
+        options: clinicalCase.options,
+        durationMax: clinicalCase.durationMax,
+        xp: clinicalCase.xp,
+        difficulty: clinicalCase.difficulty,
+        chapter: { name: clinicalCase.chapter.name, subject: { name: clinicalCase.chapter.subject.name } },
+      }}
+      caseNumber={caseNumber}
+      total={caseIds.length}
     />
   );
 }
-
-const CASES_PER_DAY_TEXT = '10';
