@@ -10,6 +10,7 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
+import { getTitleDef } from '@/lib/personnalisation-data';
 import EcgLine from '@/components/ui/EcgLine';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
@@ -88,7 +89,7 @@ export default async function EtudiantDashboard() {
           where: { role: 'ETUDIANT', statut: 'VALIDE', anneeEtude: user.anneeEtude },
           orderBy: { xp: 'desc' },
           take: 3,
-          select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true }
+          select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, activeFrameId: true, activeTitleId: true }
         })
       : Promise.resolve([]),
     getTodaySelection(user.id),
@@ -240,8 +241,11 @@ export default async function EtudiantDashboard() {
                 <Link key={u.id} href={`/etudiant/profil/${u.id}`}
                   className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${u.id === user.id ? 'bg-mala/10' : 'hover:bg-slab-2'}`}>
                   <span className={`w-6 font-display text-sm font-extrabold ${i === 0 ? 'text-gold' : i === 1 ? 'text-mute' : 'text-flame'}`}>{i + 1}</span>
-                  <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} size={32} />
-                  <p className="flex-1 truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'}</p>
+                  <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} frameKey={u.activeFrameId} size={32} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'}</p>
+                    {getTitleDef(u.activeTitleId) && <p className="truncate text-[11px] text-gold">{getTitleDef(u.activeTitleId)!.icon} {getTitleDef(u.activeTitleId)!.name}</p>}
+                  </div>
                   <span className="flex items-center gap-1 font-display text-sm font-bold tabular-nums text-mala"><Icon name="star" size={14} /> {u.xp}</span>
                 </Link>
               ))}

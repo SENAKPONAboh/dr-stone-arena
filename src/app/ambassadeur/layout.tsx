@@ -21,7 +21,7 @@ export default async function AmbassadorLayout({ children }: { children: React.R
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="arena-skin min-h-screen bg-stone pb-10">
       <header className="bg-white border-b-2 border-gray-100">
         <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center gap-3">
           <div>

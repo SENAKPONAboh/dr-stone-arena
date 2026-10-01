@@ -83,3 +83,7 @@ html, body {
 .arena-skin input::placeholder, .arena-skin textarea::placeholder { color: var(--mute); opacity: 0.7; }
 .arena-skin option { background-color: var(--slab); color: var(--ink); }
 .arena-skin .shadow-sm, .arena-skin .shadow, .arena-skin .shadow-md, .arena-skin .shadow-lg { box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
+
+/* Pages étudiant plein écran (couche fixed) : fond stone de la charte */
+.arena-skin .fixed.inset-0.bg-gray-50, .arena-skin .fixed.inset-0.bg-white, .arena-skin .fixed.inset-0.bg-slate-900 { background-color: var(--stone); }
+.arena-skin header.bg-white { background-color: var(--stone); }

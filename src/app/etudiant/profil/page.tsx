@@ -25,32 +25,32 @@ export default async function ProfilPage() {
     : 100;
 
   // Styles conditionnels selon l'abonnement
-  const cardStyle = user.isPremium 
-    ? "bg-slate-900/80 backdrop-blur-xl border-2 border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] text-white"
-    : "bg-white border border-gray-100 shadow-sm text-gray-800";
+  const cardStyle = user.isPremium
+    ? "bg-slab border-2 border-gold/50 text-ink"
+    : "bg-slab border border-line text-ink";
 
   const gradeStyle = user.isPremium
-    ? "text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 animate-pulse font-extrabold"
-    : "font-extrabold text-gray-800";
+    ? "font-display font-extrabold text-gold"
+    : "font-display font-extrabold text-ink";
 
   const badgeBoxStyle = user.isPremium
-    ? "bg-yellow-500/10 border-2 border-yellow-400/30 rounded-2xl"
-    : "bg-yellow-50 border-2 border-yellow-100 rounded-2xl";
+    ? "bg-gold/10 border-2 border-gold/30 rounded-2xl"
+    : "bg-slab-2 border-2 border-line rounded-2xl";
 
   return (
     // 🖥️📱 PLEIN ÉCRAN : recouvre la coquille classique — la flèche retour sert de sortie
-    <div className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 ${user.isPremium ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800' : 'bg-gray-50'}`}>
+    <div className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 bg-stone font-body text-ink`}>
 
-      <header className={`border-b-2 ${user.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}>
+      <header className={`border-b border-line bg-stone`}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <a href="/etudiant" className={`flex items-center gap-2 ${user.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
+          <a href="/etudiant" className={`flex items-center gap-2 text-mute hover:text-ink`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <h1 className="font-extrabold text-xl">Mon Profil</h1>
           </a>
           {user.isPremium && (
-            <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(user.premiumTier)}</span>
+            <span className="bg-gold text-stone text-xs font-display font-bold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(user.premiumTier)}</span>
           )}
         </div>
       </header>

@@ -58,8 +58,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const cardClass = themeDef
     ? 'rounded-3xl p-8 text-center'
     : profileUser.isPremium
-      ? 'rounded-3xl p-8 text-center transition-all bg-slate-900/80 backdrop-blur-xl border-2 border-yellow-400/50 shadow-[0_0_30px_rgba(250,204,21,0.3)] text-white'
-      : 'rounded-3xl p-8 text-center transition-all bg-white border border-gray-100 shadow-sm text-gray-800';
+      ? 'rounded-3xl p-8 text-center transition-all bg-slab border-2 border-gold/50 text-ink'
+      : 'rounded-3xl p-8 text-center transition-all bg-slab border border-line text-ink';
 
   return (
     // 🖥️📱 COUCHE PLEIN ÉCRAN : recouvre totalement la coquille de l'app
@@ -68,9 +68,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     <div
       className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 ${themeDef
         ? 'theme-bg-anim'
-        : profileUser.isPremium
-          ? 'bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800'
-          : 'bg-gray-50'}`}
+        : 'bg-stone'}`}
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
 
@@ -138,11 +136,11 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       )}
 
       <header
-        className={`relative z-10 border-b-2 ${themeDef ? 'border-white/10' : profileUser.isPremium ? 'border-white/10 bg-slate-900/50' : 'bg-white border-gray-100'}`}
+        className={`relative z-10 border-b ${themeDef ? 'border-white/10' : 'border-line bg-stone'}`}
         style={themeDef ? { background: 'rgba(0,0,0,0.4)' } : undefined}
       >
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/etudiant" className={`flex items-center gap-2 ${themeDef || profileUser.isPremium ? 'text-white/80 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
+          <Link href="/etudiant" className={`flex items-center gap-2 ${themeDef ? 'text-white/80 hover:text-white' : 'text-mute hover:text-ink'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -206,7 +204,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             <span {...badgeProps('bg-orange-500/20 text-orange-300', 'bg-orange-50 text-orange-600')}>🔥 {profileUser.streak} Jours</span>
           </div>
 
-          <div className={`mt-6 p-4 rounded-2xl ${themeDef || profileUser.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
+          <div className={`mt-6 p-4 rounded-2xl ${themeDef ? 'bg-white/5' : 'bg-slab-2'}`}>
             <p className="text-xs font-bold uppercase tracking-wider text-white/50" style={themeDef ? undefined : (profileUser.isPremium ? undefined : { color: '#9ca3af' })}>Grade Actuel</p>
             <p className={`text-xl mt-1 ${themeDef ? 'font-extrabold' : profileUser.isPremium
               ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 animate-pulse font-extrabold'
