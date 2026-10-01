@@ -181,3 +181,32 @@
     animation: none;
   }
 }
+/* ===== Charte Élite : fond #100d07 + halo or + poussière d'or ===== */
+.elite-bg {
+  background-color: #100d07;
+  background-image:
+    radial-gradient(ellipse at 50% -10%, rgba(242, 193, 78, 0.18), transparent 60%),
+    radial-gradient(ellipse at 95% 105%, rgba(154, 106, 18, 0.14), transparent 55%);
+}
+.elite-bg::before {
+  content: '';
+  position: fixed;
+  left: 0; right: 0; top: -160px;
+  height: calc(100% + 160px);
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image:
+    radial-gradient(circle, rgba(242, 193, 78, 0.9) 1px, transparent 1.6px),
+    radial-gradient(circle, rgba(242, 193, 78, 0.6) 1px, transparent 1.4px);
+  background-size: 160px 160px, 110px 110px;
+  background-position: 20px 30px, 80px 90px;
+  animation: elite-dust 22s linear infinite;
+}
+@keyframes elite-dust {
+  from { transform: translateY(0); }
+  to { transform: translateY(160px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .elite-bg::before { animation: none; }
+}

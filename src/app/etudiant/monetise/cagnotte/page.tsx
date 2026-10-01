@@ -38,7 +38,7 @@ export default async function CagnottePage() {
 
   return (
     // 🖥️📱 Plein écran : recouvre la coquille classique
-    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] py-8 px-4">
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain elite-bg py-8 px-4">
       <div className="max-w-3xl mx-auto space-y-6">
         <MonetiseNav passActive={true} />
         <CagnotteClient

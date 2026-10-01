@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import MonetiseNav from '@/components/monetise/MonetiseNav';
+import GoldSweep from '@/components/monetise/GoldSweep';
 import '@/styles/monetise.css';
 
 export default async function MonetiseLayout({ children }: { children: React.ReactNode }) {
@@ -22,7 +23,8 @@ export default async function MonetiseLayout({ children }: { children: React.Rea
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] pb-24 md:pb-10">
+    <div className="min-h-screen elite-bg pb-24 md:pb-10">
+      <GoldSweep />
       {/* Header — gradient or animé */}
       <header className="sticky top-0 z-40 bg-[#1a1308]/95 backdrop-blur border-b-2 border-yellow-600/30">
         <div className="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center gap-2">

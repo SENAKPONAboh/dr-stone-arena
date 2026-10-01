@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
+import Icon from '@/components/ui/Icon';
 
 function AnimatedCounter({ target }: { target: number }) {
   const [value, setValue] = useState(0);
@@ -39,52 +40,53 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
   return (
     <div className="space-y-6">
 
-      {/* Hero cagnotte */}
+      {/* Hero : points de mérite */}
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="animate-gold-flow bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 rounded-3xl p-8 text-center text-[#1a1308] shadow-2xl shadow-yellow-900/30"
+        className="relative overflow-hidden rounded-3xl bg-gold p-8 text-center text-stone shadow-[0_6px_0_#9a6a12]"
       >
-        <p className="text-sm font-bold uppercase tracking-widest opacity-70">Ta cagnotte</p>
-        <p className="text-5xl font-extrabold mt-2 tabular-nums">
+        <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-white/25 animate-shimmer" />
+        <p className="relative text-sm font-bold uppercase tracking-widest opacity-70">Points de mérite</p>
+        <p className="relative mt-2 font-display text-5xl font-extrabold tabular-nums">
           🪙 <AnimatedCounter target={uaBalance} />
         </p>
-        <p className="text-sm font-bold mt-2 opacity-60">Unités Arena disponibles</p>
+        <p className="relative mt-2 text-sm font-bold opacity-60">Mon trésor Élite</p>
         {uaBalance >= 200000 && (
-          <Link href="/etudiant/monetise/cagnotte" className="inline-block mt-4 py-2 px-6 bg-[#1a1308] text-yellow-400 font-extrabold rounded-2xl text-sm uppercase tracking-wide">
-            💰 Retrait disponible
+          <Link href="/etudiant/monetise/cagnotte" className="relative mt-4 inline-block rounded-2xl bg-stone px-6 py-2.5 font-display text-xs font-bold uppercase tracking-wide text-gold">
+            Prime Arena disponible
           </Link>
         )}
-        <a href="/etudiant/monetise/jouer" className="inline-block mt-4 py-2 px-6 bg-[#1a1308] text-yellow-400 font-extrabold rounded-2xl text-sm uppercase tracking-wide">
-          ▶️ Jouer mes 10 cas du jour
+        <a href="/etudiant/monetise/jouer" className="relative mt-4 inline-block rounded-2xl bg-stone px-6 py-2.5 font-display text-xs font-bold uppercase tracking-wide text-gold">
+          ▶ Jouer mes 10 cas du jour
         </a>
       </motion.div>
 
       {/* CTA Rush + Boutique */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <a href="/etudiant/monetise/rush" className="block rounded-3xl p-5 bg-gradient-to-r from-red-600/20 to-orange-500/20 border-2 border-red-500/30 hover:border-red-400/50 transition-all">
+        <a href="/etudiant/monetise/rush" className="block rounded-3xl border-2 border-heart/30 bg-heart/10 p-5 transition-colors hover:border-heart/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-3xl animate-flame">⚔️</span>
+              <span className="text-heart animate-flame-flicker inline-flex"><Icon name="swords" size={34} /></span>
               <div>
-                <p className="font-extrabold text-white/90">Mode Rush</p>
-                <p className="text-xs text-white/40 mt-0.5">Week-end · 3 erreurs max · jusqu'à +50 000 UA</p>
+                <p className="font-display text-sm font-extrabold text-ink">Mode Rush</p>
+                <p className="mt-0.5 text-xs text-mute">Week-end · 3 erreurs max · paliers de mérite</p>
               </div>
             </div>
-            <span className="text-xs font-extrabold text-yellow-300 uppercase tracking-wide">→</span>
+            <span className="font-display text-lg font-extrabold text-gold">→</span>
           </div>
         </a>
-        <a href="/etudiant/monetise/boutique" className="block rounded-3xl p-5 bg-gradient-to-r from-yellow-500/20 to-amber-400/20 border-2 border-yellow-500/30 hover:border-yellow-400/60 transition-all">
+        <a href="/etudiant/monetise/boutique" className="block rounded-3xl border-2 border-gold/30 bg-gold/10 p-5 transition-colors hover:border-gold/60">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-3xl animate-float">🏪</span>
+              <span className="text-gold inline-flex"><Icon name="chest" size={34} /></span>
               <div>
-                <p className="font-extrabold text-white/90">Boutique</p>
-                <p className="text-xs text-white/40 mt-0.5">Objets Flamme · Rush · Coffres</p>
+                <p className="font-display text-sm font-extrabold text-ink">Boutique</p>
+                <p className="mt-0.5 text-xs text-mute">Objets Flamme · Rush · Coffres · Personnalisation</p>
               </div>
             </div>
-            <span className="text-xs font-extrabold text-yellow-300 uppercase tracking-wide">→</span>
+            <span className="font-display text-lg font-extrabold text-gold">→</span>
           </div>
         </a>
       </div>
@@ -93,41 +95,28 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         <motion.div custom={0} variants={cardVariants} initial="hidden" animate="visible"
-          className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">🔥 Ta Flamme</p>
-          <p className="text-4xl font-extrabold text-orange-400">{streak} <span className="text-xl">jours</span></p>
-          <p className="text-xs text-white/40 mt-2">Condition Rush : ≥ 5 jours cette semaine</p>
+          className="rounded-3xl border border-gold/20 bg-white/5 p-6">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-mute">Ta Flamme</p>
+          <p className="flex items-center gap-2 font-display text-3xl font-extrabold text-flame">
+            <span className="inline-flex animate-flame-flicker"><Icon name="flame" size={30} /></span>{streak} <span className="text-base">jours</span>
+          </p>
+          <p className="mt-2 text-xs text-mute">Condition Rush : ≥ 5 jours cette semaine</p>
         </motion.div>
 
         <motion.div custom={1} variants={cardVariants} initial="hidden" animate="visible"
-          className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">🪙 Ton Pass</p>
-          <p className="text-2xl font-extrabold text-yellow-400">✅ Actif</p>
-          <p className="text-xs text-white/40 mt-2">{daysLeft} jour{daysLeft > 1 ? "s" : ""} restant{daysLeft > 1 ? "s" : ""}</p>
+          className="rounded-3xl border border-gold/20 bg-white/5 p-6">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-mute">Ton Pass Élite</p>
+          <p className="font-display text-xl font-extrabold text-gold">Actif</p>
+          <p className="mt-2 text-xs text-mute">{daysLeft} jour{daysLeft > 1 ? "s" : ""} restant{daysLeft > 1 ? "s" : ""}</p>
         </motion.div>
 
         <motion.div custom={2} variants={cardVariants} initial="hidden" animate="visible"
-          className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
-          <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-2">📈 Rythme quotidien</p>
-          <p className="text-2xl font-extrabold text-emerald-400">+1 000 UA / cas</p>
-          <p className="text-xs text-white/40 mt-2">10 cas par jour, lundi → vendredi</p>
+          className="rounded-3xl border border-gold/20 bg-white/5 p-6">
+          <p className="mb-2 text-xs font-bold uppercase tracking-wider text-mute">Rythme quotidien</p>
+          <p className="font-display text-base font-extrabold text-mala">Chaque cas réussi compte pour ta Prime</p>
+          <p className="mt-2 text-xs text-mute">10 cas par jour, lundi → vendredi</p>
         </motion.div>
       </div>
-
-      {/* État des phases */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-        className="bg-white/5 border border-white/10 rounded-3xl p-6"
-      >
-        <h2 className="font-extrabold text-white/60 text-sm uppercase tracking-wider mb-3">🚀 État de l'Arène Monétisée</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
-          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U2 — Achat du Pass<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
-          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U3 — Gain des UA<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
-          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U4 — Mode Rush<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
-          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U5 — Cagnotne & Retrait<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
-          <p className="bg-emerald-500/10 p-3 rounded-xl text-center text-emerald-300">U6 — Boutique<br /><span className="text-emerald-400/60">✅ en ligne</span></p>
-        </div>
-      </motion.div>
     </div>
   );
 }

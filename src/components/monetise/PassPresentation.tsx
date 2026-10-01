@@ -29,13 +29,35 @@ export default function PassPresentation({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="animate-gold-flow bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 rounded-3xl p-10 text-center text-[#1a1308] shadow-2xl"
+        className="relative overflow-hidden rounded-3xl bg-gold p-10 text-center text-stone shadow-[0_6px_0_#9a6a12]"
       >
-        <div className="animate-float text-6xl mb-3">🪙</div>
-        <h1 className="text-4xl font-extrabold">Pass Arène Monétisé</h1>
-        <p className="text-lg font-bold mt-2 opacity-70">La nouvelle dimension de Dr. Stone Arena</p>
-        <p className="text-3xl font-extrabold mt-6">2 000 FCFA <span className="text-base opacity-60">/ mois</span></p>
+        <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-white/25 animate-shimmer" />
+        <div className="relative animate-float text-6xl mb-3">🪙</div>
+        <h1 className="relative font-display text-3xl font-extrabold">Pass Élite</h1>
+        <p className="relative text-lg font-bold mt-2 opacity-70">Ton accès à l'Espace Élite de Dr. Stone Arena</p>
+        <p className="relative text-3xl font-extrabold mt-6">2 000 FCFA <span className="text-base opacity-60">/ mois</span></p>
       </motion.div>
+
+      {/* Ce que le Pass apporte (avant la Prime) */}
+      <div className="rounded-3xl border border-gold/20 bg-white/5 p-6">
+        <h2 className="mb-3 font-display text-sm font-extrabold text-gold">Ce que le Pass Élite t'apporte</h2>
+        <ul className="grid grid-cols-1 gap-2 text-sm text-ink sm:grid-cols-2">
+          {[
+            ['Cas Élite', '10 cas par jour, réservés à l'Espace Élite'],
+            ['Rush du week-end', 'Une série de cas avec des paliers de mérite'],
+            ['Boutique', 'Objets Flamme, tentatives Rush et coffres'],
+            ['Personnalisation', 'Cadres, thèmes et titres pour ton profil'],
+            ['Classement Élite', 'Mesure-toi aux autres membres de l'Espace Élite'],
+            ['Prime Arena', 'Une bourse de mérite qui récompense la performance'],
+          ].map(([t, d]) => (
+            <li key={t} className="rounded-2xl bg-white/5 p-3">
+              <p className="font-bold text-gold">{t}</p>
+              <p className="text-xs text-mute">{d}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-4 text-xs leading-relaxed text-mute">Le Pass Élite donne accès à l'Espace Élite. La Prime Arena récompense la performance et n'est pas garantie.</p>
+      </div>
 
       {/* État 1 : en attente de validation */}
       {pendingRequest && (
@@ -72,7 +94,7 @@ export default function PassPresentation({
 
       <p className="text-xs text-white/30 text-center leading-relaxed">
         Ton compte classique reste inchangé et jouable en parallèle. La Flamme est partagée entre les deux plateformes.
-        Le système monétisé ne touche ni l'XP, ni les vies, ni les classements du mode classique.
+        L'Espace Élite ne touche ni l'XP, ni les vies, ni les classements du mode classique.
       </p>
     </div>
   );

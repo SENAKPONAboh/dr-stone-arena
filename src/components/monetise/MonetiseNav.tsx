@@ -12,7 +12,7 @@ const ITEMS: { href: string; label: string; icon: string; available: boolean; ph
   { href: '/etudiant/monetise/pass', label: 'Pass', icon: '🪙', available: true },
   { href: '/etudiant/monetise/rush', label: 'Rush', icon: '⚔️', available: true },
   { href: '/etudiant/monetise/boutique', label: 'Boutique', icon: '🏪', available: true },
-  { href: '/etudiant/monetise/cagnotte', label: 'Cagnotte', icon: '💰', available: true },
+  { href: '/etudiant/monetise/cagnotte', label: 'Trésor', icon: '💰', available: true },
 ];
 
 export default function MonetiseNav({ passActive }: { passActive: boolean }) {

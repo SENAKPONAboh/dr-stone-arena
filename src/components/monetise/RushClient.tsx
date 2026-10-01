@@ -282,7 +282,7 @@ export default function RushClient({
         </>
       }
     >
-      <div className="min-h-screen bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] py-6 px-4 relative">
+      <div className="min-h-screen elite-bg py-6 px-4 relative">
         {errors >= RUSH_MAX_ERRORS && phase === 'question' && (
           <div className="fixed inset-0 pointer-events-none border-4 border-red-500/50 animate-pulse z-10" />
         )}
@@ -570,7 +570,7 @@ export default function RushClient({
                 )}
 
                 <div className="bg-white/5 rounded-2xl p-4 mb-6 text-sm">
-                  <p className="text-yellow-300 font-extrabold">🪙 Cagnotte : {balance.toLocaleString('fr-FR')} UA</p>
+                  <p className="text-yellow-300 font-extrabold">🪙 Trésor Élite : {balance.toLocaleString('fr-FR')} UA</p>
                   {earnedTotal > 0 && <p className="text-white/50 mt-1">+{earnedTotal.toLocaleString('fr-FR')} UA gagnés sur cette tentative</p>}
                   <p className="text-white/40 mt-1">Série finale : {streak} · Erreurs : {errors}</p>
                 </div>

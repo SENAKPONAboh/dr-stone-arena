@@ -111,7 +111,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
         </>
       }
     >
-      <div className="min-h-screen bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05] py-8 px-4">
+      <div className="min-h-screen elite-bg py-8 px-4">
         <div className="max-w-3xl mx-auto">
 
           {/* En-tête */}
@@ -204,7 +204,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
                     <h3 className={`font-extrabold text-xl mb-2 ${result.isCorrect ? 'text-green-300' : 'text-red-300'}`}>
                       {wasViolation ? "🚫 Cas annulé — sortie de l'application" : result.isCorrect ? `🎉 Bonne réponse ! +${result.uaEarned.toLocaleString('fr-FR')} UA` : "❌ Mauvaise réponse"}
                     </h3>
-                    <p className="text-yellow-300 text-sm mb-2">🪙 Cagnotte : {result.balanceAfter.toLocaleString('fr-FR')} UA · <span className="inline-block animate-flame">🔥</span> Flamme : {result.streak} jours</p>
+                    <p className="text-yellow-300 text-sm mb-2">🪙 Trésor Élite : {result.balanceAfter.toLocaleString('fr-FR')} UA · <span className="inline-block animate-flame">🔥</span> Flamme : {result.streak} jours</p>
                     {result.chestUnlocked && (
                       <p className="text-amber-300 text-sm mb-2 font-bold">🎁 Coffre des 7 jours débloqué !</p>
                     )}

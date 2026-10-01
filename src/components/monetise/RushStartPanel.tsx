@@ -24,7 +24,7 @@ export default function RushStartPanel({
     } else if (freeEligible) {
       ok = confirm("Lancer une tentative GRATUITE ? Le Rush commence immédiatement (3 erreurs tolérées).");
     } else {
-      ok = confirm("Lancer une tentative supplémentaire ? 15 000 UA seront débitées de ta cagnotte.");
+      ok = confirm("Lancer une tentative supplémentaire ? 15 000 UA seront débitées de ton trésor Élite.");
     }
     if (!ok) return;
     setLoading(true);

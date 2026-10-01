@@ -171,7 +171,7 @@ export default function CagnotteClient({
         initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }}
         className="animate-gold-flow bg-gradient-to-r from-yellow-600 via-amber-500 to-yellow-600 rounded-3xl p-8 text-center text-[#1a1308] shadow-2xl shadow-yellow-900/30"
       >
-        <p className="text-sm font-bold uppercase tracking-widest opacity-70">Ton solde disponible</p>
+        <p className="text-sm font-bold uppercase tracking-widest opacity-70">Mon trésor Élite</p>
         <p className="text-5xl font-extrabold mt-2 tabular-nums">🪙 <AnimatedCounter target={uaBalance} /></p>
         <p className="text-sm font-bold mt-2 opacity-70">≈ {uaToFCFA(uaBalance).toLocaleString('fr-FR')} FCFA</p>
         {uaLocked > 0 && (
@@ -188,7 +188,7 @@ export default function CagnotteClient({
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           className="bg-white/5 border-2 border-yellow-500/30 rounded-3xl p-6">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="font-extrabold text-white">⏳ Demande de retrait en cours</h2>
+            <h2 className="font-extrabold text-white">⏳ Prime Arena — demande en cours</h2>
             <span className={`text-xs font-extrabold px-3 py-1 rounded-full ${pendingRequest.status === 'EN_ATTENTE' ? 'bg-yellow-500/20 text-yellow-300' : 'bg-blue-500/20 text-blue-300'}`}>
               {pendingRequest.status === 'EN_ATTENTE' ? 'En attente de vérification' : 'En traitement'}
             </span>
@@ -212,7 +212,7 @@ export default function CagnotteClient({
       {!pendingRequest && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
-          <h2 className="font-extrabold text-white mb-1">💰 Demander un retrait</h2>
+          <h2 className="font-extrabold text-white mb-1">💰 Prime Arena — demander mon retrait</h2>
           <p className="text-xs text-white/40 mb-5">100 UA = 1 FCFA · Minimum {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (2 000 FCFA) · Paiement manuel après vérification — tu seras notifié.</p>
 
           {uaBalance < WITHDRAWAL_MIN_UA && (
@@ -388,7 +388,7 @@ export default function CagnotteClient({
 
       {/* ===== Historique ===== */}
       <div className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
-        <h2 className="font-extrabold text-white mb-4">📜 Historique de ta cagnotte</h2>
+        <h2 className="font-extrabold text-white mb-4">📜 Historique de ton trésor Élite</h2>
         {history.length === 0 ? (
           <p className="text-sm text-white/30 text-center py-4">Aucune transaction pour le moment.</p>
         ) : (

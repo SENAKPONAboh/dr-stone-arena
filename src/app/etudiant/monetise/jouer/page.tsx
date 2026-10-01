@@ -26,7 +26,7 @@ export default async function MonetisePlayPage() {
 
   // 🖥️📱 Écran plein écran de l'espace monétisé
   const screen = (content: ReactNode) => (
-    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-gradient-to-br from-[#0f0a05] via-[#1a1308] to-[#0f0a05]">
+    <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain elite-bg">
       <div className="py-4 px-4 max-w-3xl mx-auto">
         <MonetiseNav passActive={true} />
       </div>
