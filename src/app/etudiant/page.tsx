@@ -11,6 +11,7 @@ import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
 import { getTitleDef } from '@/lib/personnalisation-data';
+import TitleBadge from '@/components/ui/TitleBadge';
 import EcgLine from '@/components/ui/EcgLine';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
@@ -244,7 +245,7 @@ export default async function EtudiantDashboard() {
                   <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} frameKey={u.activeFrameId} size={32} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'}</p>
-                    {getTitleDef(u.activeTitleId) && <p className="truncate text-[11px] text-gold">{getTitleDef(u.activeTitleId)!.icon} {getTitleDef(u.activeTitleId)!.name}</p>}
+                    {getTitleDef(u.activeTitleId) && <div className="mt-0.5"><TitleBadge title={getTitleDef(u.activeTitleId)!} size="sm" /></div>}
                   </div>
                   <span className="flex items-center gap-1 font-display text-sm font-bold tabular-nums text-mala"><Icon name="star" size={14} /> {u.xp}</span>
                 </Link>

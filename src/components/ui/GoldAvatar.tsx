@@ -163,6 +163,83 @@ export default function GoldAvatar({ imageUrl, initials, passActive = false, fra
         </motion.div>
       )}
 
+      {/* ===== ⚡ FOUDRE : éclairs qui claquent autour du cadre ===== */}
+      {frame && !reduceMotion && effect === 'lightning' && (
+        <>
+          {[0, 90, 180, 270].map((a, i) => (
+            <svg key={a} viewBox="0 0 12 18" style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: Math.max(8, size * 0.24), height: Math.max(12, size * 0.36),
+              transform: `translate(-50%, -50%) rotate(${a + 20}deg) translateY(-${orbitRadius + size * 0.12}px)`,
+              filter: 'drop-shadow(0 0 5px #fde047)', animation: `fxBolt ${2.6 + i * 0.4}s linear ${i * 0.55}s infinite`, opacity: 0,
+            }}>
+              <polygon points="7,0 0,10 5,10 3,18 12,6 7,6" fill="#fef08a" stroke="#facc15" strokeWidth="0.6" />
+            </svg>
+          ))}
+          <div className="absolute -inset-1 rounded-full" style={{ boxShadow: '0 0 14px #38bdf8, inset 0 0 8px #bae6fd', animation: 'neonFlicker 1.9s linear infinite' }} />
+        </>
+      )}
+
+      {/* ===== 🌌 AURORE : voiles de lumière qui tournent en sens inverse ===== */}
+      {frame && !reduceMotion && effect === 'aurora' && (
+        <>
+          <div className="absolute rounded-full" style={{ inset: -ring * 1.6, background: 'conic-gradient(from 0deg, transparent, #34d399aa, transparent, #a78bfaaa, transparent)', filter: 'blur(5px)', animation: 'fxAuroraSpin 5s linear infinite' }} />
+          <div className="absolute rounded-full" style={{ inset: -ring * 1.2, background: 'conic-gradient(from 90deg, transparent, #38bdf8aa, transparent, #f0abfcaa, transparent)', filter: 'blur(4px)', animation: 'fxAuroraSpin 8s linear infinite reverse, hueShift 7s linear infinite' }} />
+        </>
+      )}
+
+      {/* ===== 👑 ROYAL : couronne qui se balance + étincelles dorées ===== */}
+      {frame && !reduceMotion && effect === 'royal' && (
+        <>
+          <span style={{
+            position: 'absolute', left: '50%', top: -size * 0.42, fontSize: Math.max(14, size * 0.5), lineHeight: 1,
+            transformOrigin: '50% 100%', filter: 'drop-shadow(0 0 7px #facc15)', animation: 'fxCrown 2.2s ease-in-out infinite', zIndex: 3,
+          }}>👑</span>
+          {[0, 60, 120, 180, 240, 300].map((a, i) => (
+            <span key={a} style={{
+              position: 'absolute', top: '50%', left: '50%', fontSize: Math.max(7, size * 0.16), color: '#fef3c7', lineHeight: 1,
+              transform: `translate(-50%, -50%) rotate(${a}deg) translateY(-${orbitRadius + 3}px)`,
+              animation: `fxSpark ${1.6 + (i % 3) * 0.4}s ease-in-out ${i * 0.25}s infinite`,
+            }}>✦</span>
+          ))}
+        </>
+      )}
+
+      {/* ===== 🔥 PHÉNIX : ailes de braise + grandes flammes ===== */}
+      {frame && !reduceMotion && effect === 'phoenix' && (
+        <>
+          {['left', 'right'].map(side => (
+            <div key={side} style={{
+              position: 'absolute', top: '12%', [side]: -size * 0.62, width: size * 0.75, height: size * 0.62,
+              borderRadius: side === 'left' ? '80% 20% 60% 40%' : '20% 80% 40% 60%',
+              background: 'radial-gradient(ellipse at 100% 50%, #fde047, #f97316 45%, rgba(220,38,38,0.65) 70%, transparent 90%)',
+              transform: side === 'left' ? 'scaleX(-1)' : undefined,
+              filter: 'blur(1.5px)', transformOrigin: side === 'left' ? '100% 50%' : '0% 50%',
+              animation: 'fxWing 1.4s ease-in-out infinite',
+            }} />
+          ))}
+          {(size <= 44 ? [0, 60, 120, 180, 240, 300] : [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330]).map(angle => (
+            <div key={`ph-${angle}`} style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: Math.max(6, size * 0.22), height: Math.max(11, size * 0.44),
+              transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-${orbitRadius}px)`,
+            }}>
+              <div style={{
+                width: '100%', height: '100%', borderRadius: '50% 50% 50% 50% / 65% 65% 35% 35%',
+                background: 'radial-gradient(ellipse at 50% 100%, #fff7ed, #fde047 30%, #f97316 62%, #dc2626 82%, transparent 96%)',
+                filter: 'blur(0.8px)', animation: `flameFlicker ${0.6 + (angle % 5) * 0.12}s ease-in-out infinite`,
+              }} />
+            </div>
+          ))}
+          {[0, 1, 2, 3, 4, 5, 6].map(i => (
+            <span key={`pe-${i}`} style={{
+              position: 'absolute', borderRadius: '50%', width: 3, height: 3, background: '#fdba74', top: '25%', left: `${8 + i * 14}%`,
+              animation: `emberRise ${1 + i * 0.2}s ease-out ${i * 0.25}s infinite`,
+            }} />
+          ))}
+        </>
+      )}
+
       {/* Photo / initiales */}
       {imageUrl ? (
         <img src={imageUrl} alt="" style={{ width: size, height: size }} className="relative rounded-full object-cover border-2 border-[#0f0a05]" />

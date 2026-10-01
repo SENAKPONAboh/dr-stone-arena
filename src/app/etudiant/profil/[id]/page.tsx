@@ -8,7 +8,9 @@ import { getDuelGrade } from '@/lib/duel';
 import ChallengeDuelButton from '@/components/duel/ChallengeDuelButton';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import { getCurrentUser } from '@/lib/auth';
-import { getTitleDef, getThemeDef, RARITY_STYLES } from '@/lib/personnalisation-data';
+import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
+import TitleBadge from '@/components/ui/TitleBadge';
+import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -72,68 +74,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
 
-      {/* ✨ AMBIANCE PLEIN ÉCRAN — fixée au viewport, ne défile pas, jamais devant le contenu */}
-      {themeDef && (
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-
-          {/* 🌟 Orbes — grands halos doux qui traversent tout l'écran (tous les thèmes) */}
-          <div className="theme-orb" style={{
-            width: 440, height: 440, top: '5%', left: '2%', opacity: 0.45,
-            background: `radial-gradient(circle, ${themeDef.particleColor}66 0%, transparent 70%)`,
-            animation: 'orbA 26s ease-in-out infinite',
-          }} />
-          <div className="theme-orb" style={{
-            width: 360, height: 360, top: '40%', left: '62%', opacity: 0.4,
-            background: `radial-gradient(circle, ${themeDef.aura} 0%, transparent 70%)`,
-            animation: 'orbB 34s ease-in-out infinite',
-          }} />
-          <div className="theme-orb" style={{
-            width: 300, height: 300, top: '72%', left: '22%', opacity: 0.35,
-            background: `radial-gradient(circle, ${themeDef.particleColor}44 0%, transparent 70%)`,
-            animation: 'orbC 24s ease-in-out infinite',
-          }} />
-
-          {/* ✨ Particules — TOUT l'écran (retards négatifs : déjà remplies au chargement) */}
-          {Array.from({ length: 22 }).map((_, i) => (
-            <span key={`p-${i}`} className="theme-particle"
-              style={{
-                top: `${(i * 43) % 100}%`,
-                left: `${(i * 61 + 7) % 100}%`,
-                width: 3 + (i % 3) * 2,
-                height: 3 + (i % 3) * 2,
-                background: themeDef.particleColor,
-                animationDelay: `${(i * -1.35 % 7).toFixed(1)}s`,
-                animationDuration: `${6 + (i % 5) * 2}s`,
-              }} />
-          ))}
-
-          {/* 🌌 COSMOS — LÉGENDAIRE : nébuleuse + champ d'étoiles + étoiles filantes (WAOUH) */}
-          {themeDef.key === 'THEME_COSMOS' && (
-            <>
-              <div className="theme-orb" style={{
-                width: 520, height: 520, top: '15%', left: '55%', opacity: 0.5,
-                background: 'radial-gradient(circle, #a78bfa55 0%, transparent 70%)',
-                animation: 'orbB 40s ease-in-out infinite',
-              }} />
-              {Array.from({ length: 28 }).map((_, i) => (
-                <span key={`s-${i}`} className="theme-star"
-                  style={{
-                    top: `${(i * 37 + 11) % 100}%`,
-                    left: `${(i * 53 + 3) % 100}%`,
-                    width: i % 5 === 0 ? 4 : 2,
-                    height: i % 5 === 0 ? 4 : 2,
-                    background: '#ffffff',
-                    boxShadow: '0 0 5px rgba(255,255,255,0.9)',
-                    animationDelay: `${(i * 0.41) % 2.5}s`,
-                    animationDuration: `${1.6 + (i % 3) * 0.9}s`,
-                  }} />
-              ))}
-              <div className="theme-shooting-star" style={{ top: 0, left: 0, animation: 'shootAcross 9s linear infinite' }} />
-              <div className="theme-shooting-star" style={{ top: 0, left: 0, animation: 'shootAcrossB 14s linear 5s infinite' }} />
-            </>
-          )}
-        </div>
-      )}
+      {/* ✨ AMBIANCE PLEIN ÉCRAN — effet signature du thème équipé */}
+      {themeDef && <ThemeBackdrop themeKey={themeDef.key} />}
 
       <header
         className={`relative z-10 border-b ${themeDef ? 'border-white/10' : 'border-line bg-stone'}`}
@@ -193,9 +135,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           </h2>
 
           {titleDef && (
-            <span className={`inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-extrabold ${RARITY_STYLES[titleDef.rarity].cls}`}>
-              {titleDef.icon} {titleDef.name}
-            </span>
+            <div className="mt-2"><TitleBadge title={titleDef} /></div>
           )}
 
           <div className="flex justify-center gap-2 mt-4">

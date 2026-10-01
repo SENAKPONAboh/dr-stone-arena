@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Unbounded, Figtree } from "next/font/google";
 import "./globals.css";
+import "@/styles/monetise.css";
+import "@/styles/boutique-fx.css";
 import ThemeProvider from '@/components/ThemeProvider';
 import PwaRegistrar from '@/components/PwaRegistrar';
 import NextTopLoader from 'nextjs-toploader';

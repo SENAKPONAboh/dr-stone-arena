@@ -27,6 +27,7 @@ export default async function BoutiquePage() {
     select: {
       flameProtectedUntil: true, flameLostAt: true, streakBeforeReset: true,
       activeTitleId: true, activeFrameId: true, activeThemeId: true,
+      imageUrl: true, prenom: true, nom: true, pseudo: true,
     },
   });
 
@@ -42,6 +43,11 @@ export default async function BoutiquePage() {
             quantity: inv.quantity, category: inv.item.category, effectKey: inv.item.effectKey,
           }))}
           uaBalance={user.uaBalance}
+          previewUser={{
+            initials: `${(state?.prenom ?? 'D').charAt(0)}${(state?.nom ?? 'R').charAt(0)}`,
+            imageUrl: state?.imageUrl ?? null,
+            name: state?.pseudo || `${state?.prenom ?? ''} ${state?.nom ?? ''}`.trim() || 'Toi',
+          }}
           flameProtectedUntil={state?.flameProtectedUntil?.toISOString() ?? null}
           flameLostAt={state?.flameLostAt?.toISOString() ?? null}
           lostStreak={state?.streakBeforeReset ?? 0}

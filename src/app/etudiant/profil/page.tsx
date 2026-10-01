@@ -7,11 +7,28 @@ import ChangePasswordForm from '@/components/dashboard/ChangePasswordForm';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
+import prisma from '@/lib/prisma';
+import type { CSSProperties } from 'react';
+import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
+import GoldAvatar from '@/components/ui/GoldAvatar';
+import TitleBadge from '@/components/ui/TitleBadge';
+import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 
 export default async function ProfilPage() {
   const user = await getCurrentUser();
 
   if (!user) redirect('/login');
+
+  // Objets de la boutique équipés (cadre, titre, thème) : visibles aussi sur MON profil
+  const equipped = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { activeTitleId: true, activeFrameId: true, activeThemeId: true, passActive: true },
+  });
+  const titleDef = getTitleDef(equipped?.activeTitleId);
+  const themeDef = getThemeDef(equipped?.activeThemeId);
+  const cardInline: CSSProperties | undefined = themeDef
+    ? ({ background: themeDef.cardBg, border: `2px solid ${themeDef.borderColor}`, color: '#ffffff', '--aura-color': themeDef.aura, animation: 'auraPulse 3.5s ease-in-out infinite' } as CSSProperties)
+    : undefined;
 
   // Calcul du grade
   let grade = "🥉 Clinicien Bronze";
@@ -39,9 +56,13 @@ export default async function ProfilPage() {
 
   return (
     // 🖥️📱 PLEIN ÉCRAN : recouvre la coquille classique — la flèche retour sert de sortie
-    <div className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 bg-stone font-body text-ink`}>
+    <div
+      className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 font-body text-ink ${themeDef ? 'theme-bg-anim' : 'bg-stone'}`}
+      style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
+    >
+      {themeDef && <ThemeBackdrop themeKey={themeDef.key} />}
 
-      <header className={`border-b border-line bg-stone`}>
+      <header className={`relative z-10 border-b ${themeDef ? 'border-white/10' : 'border-line bg-stone'}`} style={themeDef ? { background: 'rgba(0,0,0,0.4)' } : undefined}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
           <a href="/etudiant" className={`flex items-center gap-2 text-mute hover:text-ink`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -55,10 +76,16 @@ export default async function ProfilPage() {
         </div>
       </header>
 
-      <main className="max-w-md mx-auto px-4 mt-6">
-        <div className={`rounded-3xl p-8 text-center transition-all ${cardStyle}`}>
+      <main className="relative z-10 max-w-md mx-auto px-4 mt-6">
+        <div className={`rounded-3xl p-8 text-center transition-all ${themeDef ? '' : cardStyle}`} style={cardInline}>
 
-          {/* Photo de profil avec cadre animé Premium */}
+          {/* Photo de profil : cadre équipé > Anneau d'Or (Pass) > simple */}
+          {equipped?.passActive || equipped?.activeFrameId ? (
+            <div className="relative mx-auto mb-4 flex justify-center">
+              <GoldAvatar imageUrl={user.imageUrl} initials={`${user.prenom.charAt(0)}${user.nom.charAt(0)}`} passActive={!!equipped?.passActive} frameKey={equipped?.activeFrameId} size={96} />
+            </div>
+          ) : (
+            <>
           <div className="relative mx-auto mb-4 w-24 h-24">
             {user.isPremium && (
               <div className="absolute inset-0 rounded-full bg-yellow-400 blur-md animate-pulse"></div>
@@ -74,9 +101,13 @@ export default async function ProfilPage() {
             </div>
           </div>
 
+            </>
+          )}
+
           <h2 className="text-2xl font-extrabold">
             {user.pseudo || `${user.prenom} ${user.nom}`}
           </h2>
+          {titleDef && <div className="mt-2"><TitleBadge title={titleDef} /></div>}
           <p className={user.isPremium ? "text-white/60" : "text-gray-500"}>{user.email}</p>
           {user.pays && (
             <p className={`text-sm mt-1 ${user.isPremium ? 'text-white/50' : 'text-gray-400'}`}>
