@@ -109,7 +109,7 @@ export default function PassPurchaseForm({ activeMethods, passActive }: {
                   className="w-full text-sm text-white/50 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-yellow-500/20 file:text-yellow-300 hover:file:bg-yellow-500/30" />
               </div>
               <p className="text-center text-xs leading-relaxed text-mute">
-                Le Pass Élite donne accès à l'Espace Élite. La Prime Arena récompense la performance et n'est pas garantie.
+                Le Pass Élite donne accès à l'Espace Élite : cas Élite, Rush, boutique, personnalisation et classement. Tu paies un accès, pas une mise. La Prime Arena récompense ton travail et ta performance : elle n'est pas garantie et ne dépend pas de ce que tu paies.
               </p>
               <button type="submit" disabled={loading}
                 className="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-[#1a1308] font-extrabold rounded-2xl uppercase tracking-wide text-sm disabled:opacity-50 transition-all">

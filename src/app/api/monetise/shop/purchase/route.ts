@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { openChest } from '@/lib/monetise-shop';
+import { spendRechargedFirst } from '@/lib/ua-split';
 
 const ALLOWED_CATEGORIES = ['FLAMME', 'RUSH', 'COFFRE', 'TITRE', 'CADRE', 'THEME'];
 const PERMANENT_CATEGORIES = ['TITRE', 'CADRE', 'THEME']; // jamais consommés, un seul exemplaire
@@ -35,18 +36,20 @@ export async function POST(request: Request) {
         if (owned) throw new Error('ALREADY_OWNED');
       }
 
-      const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true } });
+      const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true, uaRecharged: true } });
       if (!fresh) throw new Error('NO_USER');
       if (fresh.uaBalance < item.priceUA) throw new Error('INSUFFICIENT');
 
+      // Les UA rechargées sont dépensées en premier (le mérite reste intact)
+      const fromRecharged = spendRechargedFirst(fresh.uaRecharged, item.priceUA);
       const updated = await tx.user.update({
         where: { id: user.id },
-        data: { uaBalance: { decrement: item.priceUA } },
+        data: { uaBalance: { decrement: item.priceUA }, uaRecharged: { decrement: fromRecharged } },
         select: { uaBalance: true },
       });
       await tx.uaTransaction.create({
         data: {
-          userId: user.id, type: 'ACHAT_BOUTIQUE', amount: -item.priceUA,
+          userId: user.id, type: 'ACHAT_BOUTIQUE', amount: -item.priceUA, rechargedDelta: -fromRecharged,
           balanceBefore: fresh.uaBalance, balanceAfter: updated.uaBalance, reference: item.id,
         },
       });

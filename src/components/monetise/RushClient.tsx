@@ -571,7 +571,7 @@ export default function RushClient({
 
                 <div className="bg-white/5 rounded-2xl p-4 mb-6 text-sm">
                   <p className="text-yellow-300 font-extrabold">🪙 Trésor Élite : {balance.toLocaleString('fr-FR')} UA</p>
-                  {earnedTotal > 0 && <p className="text-white/50 mt-1">+{earnedTotal.toLocaleString('fr-FR')} UA gagnés sur cette tentative</p>}
+                  {earnedTotal > 0 && <p className="text-white/50 mt-1">+{earnedTotal.toLocaleString('fr-FR')} points de mérite obtenus sur cette tentative</p>}
                   <p className="text-white/40 mt-1">Série finale : {streak} · Erreurs : {errors}</p>
                 </div>
 

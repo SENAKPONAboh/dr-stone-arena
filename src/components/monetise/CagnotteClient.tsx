@@ -27,7 +27,7 @@ const TYPE_LABELS: Record<string, { label: string; icon: string }> = {
   RUSH_P2: { label: 'Rush — Palier 2', icon: '🪙' },
   RUSH_P3: { label: 'Rush — Palier 3', icon: '🪙' },
   RUSH_COFFRE: { label: 'Coffre du Rush', icon: '🎁' },
-  RECHARGE: { label: 'Recharge validée', icon: '⚡' },
+  RECHARGE: { label: 'Crédits de recharge ajoutés', icon: '⚡' },
   PASS_RENOUVELLEMENT: { label: 'Renouvellement du Pass', icon: '🪙' },
   ACHAT_BOUTIQUE: { label: 'Achat boutique', icon: '🏪' },
   TICKET_RUSH: { label: 'Ticket Rush utilisé', icon: '🎫' },
@@ -57,11 +57,15 @@ function AnimatedCounter({ target }: { target: number }) {
 }
 
 export default function CagnotteClient({
-  uaBalance, uaLocked, pendingRequest, pendingRecharge, history, paymentMethods,
+  uaBalance, uaRecharged, uaLocked, pendingRequest, pendingRecharge, history, paymentMethods,
 }: {
-  uaBalance: number; uaLocked: number; pendingRequest: PendingRequest | null;
+  uaBalance: number; uaRecharged: number; uaLocked: number; pendingRequest: PendingRequest | null;
   pendingRecharge: PendingRecharge | null; history: TxHistory[]; paymentMethods: PaymentMethodUI[];
 }) {
+  // Points de mérite = seule part convertible en Prime Arena ; crédits de recharge = boutique et tentatives
+  const merit = Math.max(0, uaBalance - Math.min(uaRecharged, uaBalance));
+  const credits = uaBalance - merit;
+
   // ===== RETRAIT =====
   const [amount, setAmount] = useState('');
   const [methodId, setMethodId] = useState(paymentMethods[0]?.id ?? '');
@@ -83,11 +87,11 @@ export default function CagnotteClient({
   const amountError = amountNum === 0 ? ''
     : amountNum % 100 !== 0 ? 'Multiple de 100 UA requis (100 UA = 1 FCFA).'
     : amountNum < WITHDRAWAL_MIN_UA ? `Minimum : ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (2 000 FCFA).`
-    : amountNum > uaBalance ? 'Montant supérieur à ton solde disponible.'
+    : amountNum > merit ? 'Montant supérieur à tes points de mérite disponibles.'
     : '';
   const phoneDigits = phone.replace(/\D/g, '');
   const phoneOk = phoneDigits.length >= 8 && phoneDigits.length <= 15;
-  const canWithdraw = !pendingRequest && uaBalance >= WITHDRAWAL_MIN_UA && paymentMethods.length > 0;
+  const canWithdraw = !pendingRequest && merit >= WITHDRAWAL_MIN_UA && paymentMethods.length > 0;
 
   // Validations recharge (règles validées : min 10 000, multiples de 10 000, pas de max)
   const rechargeAmountNum = parseInt(rechargeAmount || '0', 10) || 0;
@@ -173,11 +177,23 @@ export default function CagnotteClient({
       >
         <p className="text-sm font-bold uppercase tracking-widest opacity-70">Mon trésor Élite</p>
         <p className="text-5xl font-extrabold mt-2 tabular-nums">🪙 <AnimatedCounter target={uaBalance} /></p>
-        <p className="text-sm font-bold mt-2 opacity-70">≈ {uaToFCFA(uaBalance).toLocaleString('fr-FR')} FCFA</p>
+        <div className="relative mt-3 flex flex-wrap justify-center gap-2 text-xs font-bold">
+          <span className="rounded-full bg-stone/15 px-3 py-1">⭐ Points de mérite : {merit.toLocaleString('fr-FR')}</span>
+          {credits > 0 && <span className="rounded-full bg-stone/15 px-3 py-1">⚡ Crédits de recharge : {credits.toLocaleString('fr-FR')}</span>}
+        </div>
+        <p className="relative text-xs font-bold mt-2 opacity-70">Seuls les points de mérite comptent pour ta Prime Arena.</p>
         {uaLocked > 0 && (
           <p className="text-xs font-bold mt-3 opacity-80">🔒 {uaLocked.toLocaleString('fr-FR')} UA bloquées — retrait en cours de traitement</p>
         )}
       </motion.div>
+
+      {/* Comment ça marche : un accès, pas une mise */}
+      <div className="rounded-3xl border border-gold/20 bg-white/5 p-5 text-sm leading-relaxed text-mute">
+        <p className="mb-2 font-display text-xs font-extrabold uppercase tracking-wider text-gold">Comment ça marche</p>
+        <p>⭐ <b className="text-ink">Points de mérite</b> : tu les obtiens en réussissant tes cas et les paliers du Rush. Ils comptent pour ta Prime Arena.</p>
+        <p className="mt-1">⚡ <b className="text-ink">Crédits de recharge</b> : ils servent à la boutique et aux tentatives. Ils sont utilisés en premier et ne sont pas convertibles en Prime.</p>
+        <p className="mt-1">Ton Pass donne accès à l'Espace Élite ; la Prime récompense ton travail, elle n'est pas garantie.</p>
+      </div>
 
       {error && (
         <div className="bg-red-400/10 border-2 border-red-400/30 text-red-300 px-4 py-3 rounded-2xl text-sm font-bold text-center">{error}</div>
@@ -215,13 +231,13 @@ export default function CagnotteClient({
           <h2 className="font-extrabold text-white mb-1">💰 Prime Arena — demander mon retrait</h2>
           <p className="text-xs text-white/40 mb-5">100 UA = 1 FCFA · Minimum {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (2 000 FCFA) · Paiement manuel après vérification — tu seras notifié.</p>
 
-          {uaBalance < WITHDRAWAL_MIN_UA && (
+          {merit < WITHDRAWAL_MIN_UA && (
             <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-5 text-center text-sm text-white/50">
-              💵 Solde insuffisant pour un retrait — il te faut au moins {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (tu en as {uaBalance.toLocaleString('fr-FR')}). Tu peux aussi ⚡ recharger ci-dessous.
+              ⭐ Ta Prime Arena se construit avec tes points de mérite, gagnés en réussissant tes cas. Seuil de la Prime : {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} points de mérite (tu en as {merit.toLocaleString('fr-FR')}). Les crédits de recharge servent à la boutique et aux tentatives Rush.
             </div>
           )}
 
-          {uaBalance >= WITHDRAWAL_MIN_UA && paymentMethods.length === 0 && (
+          {merit >= WITHDRAWAL_MIN_UA && paymentMethods.length === 0 && (
             <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-5 text-center text-sm text-white/50">
               🏦 Aucun moyen de paiement disponible pour le moment — reviens bientôt.
             </div>
@@ -234,7 +250,7 @@ export default function CagnotteClient({
                 <input
                   type="number" inputMode="numeric" value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder={`Entre ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} et ${uaBalance.toLocaleString('fr-FR')}`}
+                  placeholder={`Entre ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} et ${merit.toLocaleString('fr-FR')}`}
                   className="w-full mt-2 bg-white/5 border-2 border-yellow-500/30 rounded-2xl px-4 py-3 text-white text-lg font-bold placeholder:text-white/20 focus:border-yellow-400 outline-none"
                 />
                 {amountNum >= 100 && (
@@ -313,9 +329,9 @@ export default function CagnotteClient({
       {!pendingRecharge && (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
           className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
-          <h2 className="font-extrabold text-white mb-1">⚡ Recharger mes UA</h2>
+          <h2 className="font-extrabold text-white mb-1">⚡ Crédits de recharge</h2>
           <p className="text-xs text-white/40 mb-5">
-            100 UA = 1 FCFA · Minimum {RECHARGE_MIN_UA.toLocaleString('fr-FR')} UA (100 FCFA) · par multiples de {RECHARGE_STEP_UA.toLocaleString('fr-FR')} UA · crédit après vérification du reçu
+            Les crédits servent à la boutique et aux tentatives Rush ; ils ne sont pas convertibles en Prime Arena. 100 UA = 1 FCFA · Minimum {RECHARGE_MIN_UA.toLocaleString('fr-FR')} UA (100 FCFA) · par multiples de {RECHARGE_STEP_UA.toLocaleString('fr-FR')} UA · crédités après vérification du reçu
           </p>
 
           {paymentMethods.length === 0 ? (

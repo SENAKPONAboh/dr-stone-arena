@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { WITHDRAWAL_MIN_UA, uaToFCFA } from '@/lib/monetise';
+import { withdrawableUA } from '@/lib/ua-split';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -41,9 +42,10 @@ export async function POST(request: Request) {
           console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
         }
 
-        const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true } });
+        const fresh = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true, uaRecharged: true } });
         if (!fresh) throw new Error('NO_USER');
-        if (fresh.uaBalance < amountUA) throw new Error('INSUFFICIENT');
+        // Seuls les points de mérite sont retirables (jamais les UA rechargées)
+        if (withdrawableUA(fresh.uaBalance, fresh.uaRecharged) < amountUA) throw new Error('INSUFFICIENT');
 
         const active = await tx.withdrawalRequest.findFirst({
           where: { userId: user.id, status: { in: ['EN_ATTENTE', 'EN_TRAITEMENT'] } },
@@ -118,7 +120,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: "Action inconnue." }, { status: 400 });
   } catch (e: any) {
-    if (e?.message === 'INSUFFICIENT') return NextResponse.json({ error: "Solde insuffisant pour ce montant." }, { status: 400 });
+    if (e?.message === 'INSUFFICIENT') return NextResponse.json({ error: "Montant supérieur à tes points de mérite disponibles (les crédits de recharge ne sont pas convertibles en Prime)." }, { status: 400 });
     if (e?.message === 'ALREADY_PENDING') return NextResponse.json({ error: "Tu as déjà une demande de retrait en cours." }, { status: 400 });
     if (e?.message === 'NOT_FOUND') return NextResponse.json({ error: "Demande introuvable." }, { status: 404 });
     if (e?.message === 'NOT_CANCELLABLE') return NextResponse.json({ error: "Ta demande est déjà en traitement — contacte l'équipe." }, { status: 400 });

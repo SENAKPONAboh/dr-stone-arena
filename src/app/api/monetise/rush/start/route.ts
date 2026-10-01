@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { getWeekendId, RETRY_RUSH_UA, RUSH_FREE_ATTEMPTS, RUSH_WEEKEND_CAP_UA, RUSH_FLAME_REQUIRED } from '@/lib/monetise';
 import { isRushWeekend, getActiveDaysThisWeek, getWeekendSaturday, closeStaleRushSessions } from '@/lib/monetise-rush';
+import { spendRechargedFirst } from '@/lib/ua-split';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -75,16 +76,18 @@ export async function POST(request: Request) {
         }
 
         // === Paiement direct : RETRY_RUSH −15 000 UA (comportement existant) ===
-        const u = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true } });
+        const u = await tx.user.findUnique({ where: { id: user.id }, select: { uaBalance: true, uaRecharged: true } });
         if (!u || u.uaBalance < RETRY_RUSH_UA) throw new Error('INSUFFICIENT');
+        // Les UA rechargées sont dépensées en premier (le mérite reste intact)
+        const fromRecharged = spendRechargedFirst(u.uaRecharged, RETRY_RUSH_UA);
         const updated = await tx.user.update({
           where: { id: user.id },
-          data: { uaBalance: { decrement: RETRY_RUSH_UA } },
+          data: { uaBalance: { decrement: RETRY_RUSH_UA }, uaRecharged: { decrement: fromRecharged } },
           select: { uaBalance: true },
         });
         await tx.uaTransaction.create({
           data: {
-            userId: user.id, type: 'RETRY_RUSH', amount: -RETRY_RUSH_UA,
+            userId: user.id, type: 'RETRY_RUSH', amount: -RETRY_RUSH_UA, rechargedDelta: -fromRecharged,
             balanceBefore: u.uaBalance, balanceAfter: updated.uaBalance,
           },
         });

@@ -76,7 +76,7 @@ export default function RushStartPanel({
         </div>
         <div className="text-right">
           <p className="text-xs font-bold text-white/40 uppercase">Week-end</p>
-          <p className="font-extrabold text-yellow-300">{totalWeekend.toLocaleString('fr-FR')} / 50 000 UA</p>
+          <p className="font-extrabold text-yellow-300">{totalWeekend.toLocaleString('fr-FR')} / 50 000 points de mérite</p>
           <p className="text-xs text-white/30">{sessionsCount} tentative{sessionsCount > 1 ? "s" : ""} jouée{sessionsCount > 1 ? "s" : ""}</p>
         </div>
       </div>

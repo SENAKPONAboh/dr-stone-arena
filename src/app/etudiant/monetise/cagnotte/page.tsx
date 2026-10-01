@@ -11,7 +11,7 @@ export default async function CagnottePage() {
 
   const fresh = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { uaBalance: true, uaLocked: true },
+    select: { uaBalance: true, uaRecharged: true, uaLocked: true },
   });
 
   const paymentMethods = await prisma.paymentMethod.findMany({
@@ -43,6 +43,7 @@ export default async function CagnottePage() {
         <MonetiseNav passActive={true} />
         <CagnotteClient
           uaBalance={fresh?.uaBalance ?? 0}
+          uaRecharged={fresh?.uaRecharged ?? 0}
           uaLocked={fresh?.uaLocked ?? 0}
           pendingRequest={pendingRequest ? {
             id: pendingRequest.id,

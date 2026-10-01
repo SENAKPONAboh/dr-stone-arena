@@ -107,7 +107,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
       rules={
         <>
           <p>🔒 Si tu quittes cette page (changement d'application, d'onglet, écran d'accueil) pendant le cas → <b>le cas est immédiatement annulé</b>.</p>
-          <p>🪙 Cas annulé = réponse fausse : <b>0 UA gagnée</b>.</p>
+          <p>🪙 Cas annulé = réponse fausse : <b>0 point de mérite</b>.</p>
         </>
       }
     >

@@ -59,12 +59,12 @@ export async function POST(request: Request) {
         });
         const updated = await tx.user.update({
           where: { id: rc.userId },
-          data: { uaBalance: { increment: rc.amountUA } },
+          data: { uaBalance: { increment: rc.amountUA }, uaRecharged: { increment: rc.amountUA } },
           select: { uaBalance: true },
         });
         await tx.uaTransaction.create({
           data: {
-            userId: rc.userId, type: 'RECHARGE', amount: rc.amountUA,
+            userId: rc.userId, type: 'RECHARGE', amount: rc.amountUA, rechargedDelta: rc.amountUA,
             balanceBefore: fresh.uaBalance, balanceAfter: updated.uaBalance, reference: rc.id,
           },
         });

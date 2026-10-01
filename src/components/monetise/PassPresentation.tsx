@@ -56,7 +56,7 @@ export default function PassPresentation({
             </li>
           ))}
         </ul>
-        <p className="mt-4 text-xs leading-relaxed text-mute">Le Pass Élite donne accès à l'Espace Élite. La Prime Arena récompense la performance et n'est pas garantie.</p>
+        <p className="mt-4 text-xs leading-relaxed text-mute">Le Pass Élite donne accès à l'Espace Élite : cas Élite, Rush, boutique, personnalisation et classement. Tu paies un accès, pas une mise. La Prime Arena récompense ton travail et ta performance : elle n'est pas garantie et ne dépend pas de ce que tu paies.</p>
       </div>
 
       {/* État 1 : en attente de validation */}

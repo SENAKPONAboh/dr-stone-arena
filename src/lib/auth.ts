@@ -111,6 +111,7 @@ export async function getCurrentUserCore() {
       onboardingCompleted: true,
       uaBalance: true,
       uaLocked: true,
+      uaRecharged: true,
       passActive: true,
       passExpiresAt: true,
       streakBeforeReset: true,

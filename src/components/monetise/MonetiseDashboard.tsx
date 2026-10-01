@@ -30,9 +30,11 @@ const cardVariants: Variants = {
   }),
 };
 
-export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: {
-  uaBalance: number; streak: number; passExpiresAt: string | null;
+export default function MonetiseDashboard({ uaBalance, uaRecharged, streak, passExpiresAt }: {
+  uaBalance: number; uaRecharged: number; streak: number; passExpiresAt: string | null;
 }) {
+  const merit = Math.max(0, uaBalance - Math.min(uaRecharged, uaBalance));
+  const credits = uaBalance - merit;
   const daysLeft = passExpiresAt
     ? Math.max(0, Math.ceil((new Date(passExpiresAt).getTime() - Date.now()) / 86400000))
     : 0;
@@ -48,12 +50,15 @@ export default function MonetiseDashboard({ uaBalance, streak, passExpiresAt }: 
         className="relative overflow-hidden rounded-3xl bg-gold p-8 text-center text-stone shadow-[0_6px_0_#9a6a12]"
       >
         <span className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -skew-x-12 bg-white/25 animate-shimmer" />
-        <p className="relative text-sm font-bold uppercase tracking-widest opacity-70">Points de mérite</p>
+        <p className="relative text-sm font-bold uppercase tracking-widest opacity-70">Mon trésor Élite</p>
         <p className="relative mt-2 font-display text-5xl font-extrabold tabular-nums">
           🪙 <AnimatedCounter target={uaBalance} />
         </p>
-        <p className="relative mt-2 text-sm font-bold opacity-60">Mon trésor Élite</p>
-        {uaBalance >= 200000 && (
+        <div className="relative mt-3 flex flex-wrap justify-center gap-2 text-xs font-bold">
+          <span className="rounded-full bg-stone/15 px-3 py-1">⭐ Points de mérite : {merit.toLocaleString('fr-FR')}</span>
+          {credits > 0 && <span className="rounded-full bg-stone/15 px-3 py-1">⚡ Crédits de recharge : {credits.toLocaleString('fr-FR')}</span>}
+        </div>
+        {merit >= 200000 && (
           <Link href="/etudiant/monetise/cagnotte" className="relative mt-4 inline-block rounded-2xl bg-stone px-6 py-2.5 font-display text-xs font-bold uppercase tracking-wide text-gold">
             Prime Arena disponible
           </Link>

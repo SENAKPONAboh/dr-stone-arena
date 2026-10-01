@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { takeEarnedFirst } from '@/lib/ua-split';
 import { getCurrentUserCore } from '@/lib/auth';
 
 // ===== CORRECTION DE SOLDE (ADMIN_CORRECTION) =====
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     if (Math.abs(amount) > 10_000_000) return NextResponse.json({ error: "Montant trop élevé (plafond de sécurité : 10 000 000 UA)." }, { status: 400 });
 
     const result = await prisma.$transaction(async (tx) => {
-      const target = await tx.user.findUnique({ where: { email: mail }, select: { id: true, prenom: true, nom: true, pseudo: true, uaBalance: true } });
+      const target = await tx.user.findUnique({ where: { email: mail }, select: { id: true, prenom: true, nom: true, pseudo: true, uaBalance: true, uaRecharged: true } });
       if (!target) throw new Error('USER_NOT_FOUND');
 
       // 🔒 Verrou sur le joueur concerné
@@ -37,15 +38,17 @@ export async function POST(request: Request) {
       const newBalance = Math.max(0, target.uaBalance + amount);
       const applied = newBalance - target.uaBalance;
       if (applied === 0) throw new Error('NO_EFFECT');
+      // Retrait admin : d'abord le mérite, puis les UA rechargées. Un ajout est du mérite.
+      const fromRecharged = applied < 0 ? takeEarnedFirst(target.uaBalance, target.uaRecharged, -applied) : 0;
 
       const updated = await tx.user.update({
         where: { id: target.id },
-        data: { uaBalance: newBalance },
+        data: { uaBalance: newBalance, uaRecharged: { decrement: fromRecharged } },
         select: { uaBalance: true },
       });
       await tx.uaTransaction.create({
         data: {
-          userId: target.id, type: 'ADMIN_CORRECTION', amount: applied,
+          userId: target.id, type: 'ADMIN_CORRECTION', amount: applied, rechargedDelta: -fromRecharged,
           balanceBefore: target.uaBalance, balanceAfter: updated.uaBalance,
         },
       });

@@ -18,6 +18,7 @@ export default async function MonetiseHomePage() {
         <MonetiseNav passActive={true} />
         <MonetiseDashboard
           uaBalance={user.uaBalance}
+          uaRecharged={user.uaRecharged}
           streak={user.streak}
           passExpiresAt={user.passExpiresAt ? user.passExpiresAt.toISOString() : null}
         />
