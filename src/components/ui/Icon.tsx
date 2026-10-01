@@ -2,7 +2,8 @@ import type { ReactNode, SVGProps } from 'react';
 
 export type IconName =
   | 'flame' | 'heart' | 'star' | 'trophy' | 'swords' | 'user' | 'home' | 'shield'
-  | 'chest' | 'stethoscope' | 'ecg' | 'brain' | 'cell' | 'check' | 'close' | 'lock';
+  | 'chest' | 'stethoscope' | 'ecg' | 'brain' | 'cell' | 'check' | 'close' | 'lock'
+  | 'chat' | 'bell' | 'gem' | 'crown';
 
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -24,6 +25,10 @@ const PATHS: Record<IconName, ReactNode> = {
   check: <path d="m5 12.5 4.5 4.5L19 7.5" {...stroke} strokeWidth={3} />,
   close: <path d="M6 6l12 12M18 6 6 18" {...stroke} strokeWidth={3} />,
   lock: <g><rect x="5" y="10" width="14" height="11" rx="2.5" fill="currentColor" /><path d="M8 10V7.5a4 4 0 0 1 8 0V10" {...stroke} strokeWidth={2.2} /></g>,
+  chat: <path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" fill="currentColor" />,
+  bell: <path d="M12 2.5a6 6 0 0 0-6 6v4L4 16h16l-2-3.5v-4a6 6 0 0 0-6-6ZM9.5 18.5a2.5 2.5 0 0 0 5 0h-5Z" fill="currentColor" />,
+  gem: <path d="M6 3h12l4 6-10 12L2 9l4-6Zm1 6 5 9 5-9H7Z" fill="currentColor" fillRule="evenodd" />,
+  crown: <path d="m3 8 4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z" fill="currentColor" />,
 };
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'name'> & { name: IconName; size?: number };

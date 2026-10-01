@@ -31,3 +31,55 @@ html, body {
   .animate-cell-drift, .animate-node-breathe, .animate-logo-pulse, .animate-shimmer,
   .animate-gold-dust { animation: none !important; }
 }
+
+/* ===== Habillage Arena Malachite des pages étudiant =====
+   Les pages pas encore réécrites utilisent des classes « claires » (bg-white, text-gray-800…).
+   Dans .arena-skin elles sont redirigées vers la charte sombre, sans toucher à la logique. */
+.arena-skin { color: var(--ink); font-family: var(--font-figtree), system-ui, sans-serif; }
+.arena-skin h1, .arena-skin h2 { font-family: var(--font-unbounded), system-ui, sans-serif; }
+
+.arena-skin .bg-white, .arena-skin .bg-gray-50, .arena-skin .bg-slate-50 { background-color: var(--slab); }
+.arena-skin .bg-gray-100, .arena-skin .bg-gray-200, .arena-skin .bg-slate-100, .arena-skin .bg-slate-200 { background-color: var(--slab-2); }
+.arena-skin .bg-slate-700, .arena-skin .bg-slate-800 { background-color: var(--slab); }
+.arena-skin .bg-slate-900 { background-color: var(--stone); }
+
+.arena-skin .text-gray-900, .arena-skin .text-gray-800, .arena-skin .text-gray-700,
+.arena-skin .text-slate-900, .arena-skin .text-slate-800, .arena-skin .text-slate-700 { color: var(--ink); }
+.arena-skin .text-gray-600, .arena-skin .text-gray-500, .arena-skin .text-gray-400,
+.arena-skin .text-slate-600, .arena-skin .text-slate-500, .arena-skin .text-slate-400 { color: var(--mute); }
+
+.arena-skin .border-gray-50, .arena-skin .border-gray-100, .arena-skin .border-gray-200, .arena-skin .border-gray-300,
+.arena-skin .border-slate-100, .arena-skin .border-slate-200, .arena-skin .border-slate-700 { border-color: var(--line); }
+.arena-skin .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.arena-skin .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: var(--line); }
+
+/* Teintes douces -> versions translucides sur fond sombre */
+.arena-skin .bg-emerald-50, .arena-skin .bg-emerald-100, .arena-skin .bg-green-50, .arena-skin .bg-green-100 { background-color: rgba(47,210,138,0.12); }
+.arena-skin .bg-blue-50, .arena-skin .bg-blue-100, .arena-skin .bg-indigo-50, .arena-skin .bg-indigo-100, .arena-skin .bg-sky-50 { background-color: rgba(92,200,255,0.12); }
+.arena-skin .bg-red-50, .arena-skin .bg-red-100, .arena-skin .bg-rose-50, .arena-skin .bg-rose-100 { background-color: rgba(255,84,112,0.12); }
+.arena-skin .bg-orange-50, .arena-skin .bg-orange-100 { background-color: rgba(255,138,61,0.12); }
+.arena-skin .bg-yellow-50, .arena-skin .bg-yellow-100, .arena-skin .bg-amber-50, .arena-skin .bg-amber-100 { background-color: rgba(242,193,78,0.12); }
+.arena-skin .bg-purple-50, .arena-skin .bg-purple-100 { background-color: rgba(168,130,255,0.12); }
+
+.arena-skin .text-emerald-500, .arena-skin .text-emerald-600, .arena-skin .text-emerald-700, .arena-skin .text-green-600, .arena-skin .text-green-700 { color: var(--mala); }
+.arena-skin .text-blue-500, .arena-skin .text-blue-600, .arena-skin .text-blue-700, .arena-skin .text-indigo-600, .arena-skin .text-indigo-700 { color: var(--sky); }
+.arena-skin .text-red-500, .arena-skin .text-red-600, .arena-skin .text-red-700, .arena-skin .text-rose-600 { color: var(--heart); }
+.arena-skin .text-orange-500, .arena-skin .text-orange-600, .arena-skin .text-orange-700 { color: var(--flame); }
+.arena-skin .text-yellow-500, .arena-skin .text-yellow-600, .arena-skin .text-yellow-700, .arena-skin .text-amber-500, .arena-skin .text-amber-600, .arena-skin .text-amber-700 { color: var(--gold); }
+
+.arena-skin .border-emerald-100, .arena-skin .border-emerald-200, .arena-skin .border-green-200 { border-color: rgba(47,210,138,0.35); }
+.arena-skin .border-blue-100, .arena-skin .border-blue-200 { border-color: rgba(92,200,255,0.35); }
+.arena-skin .border-red-100, .arena-skin .border-red-200 { border-color: rgba(255,84,112,0.35); }
+.arena-skin .border-yellow-200, .arena-skin .border-amber-200, .arena-skin .border-orange-200 { border-color: rgba(242,193,78,0.35); }
+
+/* Boutons d'action pleins : bleu/vert d'avant -> malachite en relief */
+.arena-skin .bg-blue-500, .arena-skin .bg-blue-600, .arena-skin .bg-blue-700,
+.arena-skin .bg-emerald-500, .arena-skin .bg-emerald-600, .arena-skin .bg-green-500, .arena-skin .bg-green-600,
+.arena-skin .bg-indigo-600 { background-color: var(--mala); color: var(--stone); }
+.arena-skin .bg-red-500, .arena-skin .bg-red-600 { background-color: var(--heart); color: #fff; }
+
+.arena-skin input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.arena-skin select, .arena-skin textarea { background-color: var(--slab-2); color: var(--ink); border-color: var(--line); }
+.arena-skin input::placeholder, .arena-skin textarea::placeholder { color: var(--mute); opacity: 0.7; }
+.arena-skin option { background-color: var(--slab); color: var(--ink); }
+.arena-skin .shadow-sm, .arena-skin .shadow, .arena-skin .shadow-md, .arena-skin .shadow-lg { box-shadow: 0 2px 0 rgba(0,0,0,0.25); }
