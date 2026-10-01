@@ -38,5 +38,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  // Les fichiers nécessaires à l'installation de l'application (PWA) doivent rester accessibles sans connexion :
+  // le navigateur lit le manifeste et le service worker AVANT que l'utilisateur se connecte.
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|manifest.json|sw.js|offline.html|icon-192.png|icon-512.png).*)'],
 };
