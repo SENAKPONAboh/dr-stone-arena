@@ -24,7 +24,9 @@ export default function PushNotificationManager() {
   const [status, setStatus] = useState<Status>('loading');
   const [busy, setBusy] = useState<'' | 'enable' | 'test' | 'disable'>('');
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  // Clé publique lue auprès du serveur (et non figée dans le code au moment de la construction du site)
+  const [publicKey, setPublicKey] = useState<string>('');
+  const [keyProblem, setKeyProblem] = useState<string>('');
 
   const getRegistration = async () => {
     const existing = await navigator.serviceWorker.getRegistration();
@@ -50,11 +52,19 @@ export default function PushNotificationManager() {
     const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
     if (!supported) { setStatus(isIOS && !standalone ? 'ios-install' : 'unsupported'); return; }
-    if (!publicKey) { setStatus('no-key'); return; }
     if (Notification.permission === 'denied') { setStatus('denied'); return; }
 
     (async () => {
       try {
+        const cfgRes = await fetch('/api/notifications/config', { cache: 'no-store' });
+        const cfg = cfgRes.ok ? await cfgRes.json() : null;
+        if (!cfg?.publicKey || !cfg?.hasPrivate) {
+          const missing = !cfg ? 'le serveur ne répond pas' : [!cfg.hasPublic && 'clé publique (NEXT_PUBLIC_VAPID_PUBLIC_KEY)', !cfg.hasPrivate && 'clé privée (VAPID_PRIVATE_KEY)'].filter(Boolean).join(' et ') + ' introuvable' + (!cfg.hasPublic && !cfg.hasPrivate ? 's' : '');
+          setKeyProblem(missing);
+          setStatus('no-key');
+          return;
+        }
+        setPublicKey(cfg.publicKey);
         const reg = await getRegistration();
         const sub = await reg.pushManager.getSubscription();
         if (sub && Notification.permission === 'granted') {
@@ -86,7 +96,7 @@ export default function PushNotificationManager() {
       if (!sub) {
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey!),
+          applicationServerKey: urlBase64ToUint8Array(publicKey),
         });
       }
       if (!(await sendToServer(sub))) {
@@ -157,7 +167,7 @@ export default function PushNotificationManager() {
       )}
 
       {status === 'no-key' && (
-        <p className={help}>🔧 Les notifications ne sont pas encore configurées (clé manquante). L'administrateur doit les activer.</p>
+        <p className={help}>🔧 Notifications indisponibles : {keyProblem || 'configuration incomplète'}. Ajoute-les dans Vercel (Environment Variables) puis redéploie.</p>
       )}
 
       {status === 'denied' && (
