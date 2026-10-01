@@ -1,19 +1,18 @@
+import AuthShell from '@/components/ui/AuthShell';
+
 export default function ForgotPasswordPage() {
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border-2 border-gray-100 text-center">
-        <div className="w-20 h-20 bg-orange-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-orange-200">
-          <span className="text-4xl">🔑</span>
-        </div>
-        <h1 className="text-2xl font-extrabold text-gray-800">Mot de passe oublié</h1>
-        <p className="text-gray-500 mt-2 mb-6">
-          Pas de panique ! Pour des raisons de sécurité, contactez l'administrateur de votre faculté. 
-          Il pourra réinitialiser votre mot de passe manuellement.
-        </p>
-        <a href="/login" className="inline-block py-3 px-6 bg-emerald-500 text-white font-bold rounded-2xl hover:bg-emerald-600 transition-all">
+    <AuthShell title="Mot de passe oublié" subtitle="Pas de panique !">
+      <p className="mb-6 text-center text-sm leading-relaxed text-mute">
+        Pour des raisons de sécurité, contactez l'administrateur de votre faculté.
+        Il pourra réinitialiser votre mot de passe manuellement.
+      </p>
+      <div className="text-center">
+        <a href="/login"
+          className="inline-block rounded-2xl bg-mala px-6 py-3.5 font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
           Retour à la connexion
         </a>
       </div>
-    </div>
+    </AuthShell>
   );
 }

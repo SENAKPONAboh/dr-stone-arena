@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import Logo from '@/components/ui/Logo';
+import BackgroundCells from '@/components/ui/BackgroundCells';
 
 type Slide = { icon: string; title: string; paragraphs: string[]; highlight?: string };
 
@@ -128,59 +131,61 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-3xl" />
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-stone p-4 font-body">
+      <BackgroundCells />
 
       <div className="relative z-10 w-full max-w-lg">
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-3xl mx-auto flex items-center justify-center text-3xl shadow-2xl mb-4">🧠</div>
-          <p className="text-emerald-300 font-bold tracking-widest uppercase text-xs">Dr. Stone Arena</p>
+        <div className="mb-5 text-center">
+          <div className="mb-3 flex justify-center"><Logo size={56} /></div>
+          <p className="font-display text-xs font-bold uppercase tracking-widest text-mala">Dr. Stone Arena</p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 text-white min-h-[380px] flex flex-col">
-          <div className="text-5xl mb-4">{slide.icon}</div>
-          <h2 className="text-2xl font-extrabold mb-4">{slide.title}</h2>
-
-          <div className="space-y-3 flex-1">
-            {slide.paragraphs.map((p, i) => (
-              <p key={i} className="text-white/80 leading-relaxed">{p}</p>
-            ))}
-            {slide.highlight && (
-              <p className="text-emerald-300 font-bold text-lg leading-relaxed pt-2">{slide.highlight}</p>
-            )}
-          </div>
+        <div className="flex min-h-[400px] flex-col rounded-3xl border border-line bg-slab p-7 text-ink">
+          <AnimatePresence mode="wait">
+            <motion.div key={index} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.2 }} className="flex-1">
+              <div className="mb-4 text-5xl">{slide.icon}</div>
+              <h2 className="mb-4 font-display text-xl font-extrabold">{slide.title}</h2>
+              <div className="space-y-3">
+                {slide.paragraphs.map((p, i) => (
+                  <p key={i} className="leading-relaxed text-ink/80">{p}</p>
+                ))}
+                {slide.highlight && (
+                  <p className="pt-2 text-lg font-bold leading-relaxed text-mala">{slide.highlight}</p>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
           {isLast && (
-            <p className="text-center text-white/50 text-sm mt-4">Prêt à commencer, {prenom} ?</p>
+            <p className="mt-4 text-center text-sm text-mute">Prêt à commencer, {prenom} ?</p>
           )}
 
-          <div className="flex items-center gap-2 mt-8">
+          <div className="mt-8 flex items-center gap-2">
             {index > 0 && (
               <button onClick={() => setIndex(i => i - 1)}
-                className="py-3 px-5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-2xl text-sm transition-all">
-                ← Précédent
+                className="rounded-2xl border border-line bg-slab-2 px-4 py-3 text-sm font-bold text-ink transition-colors active:bg-line">
+                ←
               </button>
             )}
-            <div className="flex-1 flex justify-center gap-1.5">
+            <div className="flex flex-1 justify-center gap-1.5">
               {SLIDES.map((_, i) => (
-                <button key={i} onClick={() => setIndex(i)}
-                  className={`h-1.5 rounded-full transition-all ${i === index ? 'w-6 bg-emerald-400' : 'w-1.5 bg-white/30'}`} />
+                <button key={i} onClick={() => setIndex(i)} aria-label={`Étape ${i + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${i === index ? 'w-6 bg-mala' : 'w-1.5 bg-line'}`} />
               ))}
             </div>
             {isLast ? (
               <button onClick={finish} disabled={finishing}
-                className="py-3 px-6 bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-emerald-500 hover:to-blue-600 text-white font-extrabold rounded-2xl text-sm shadow-lg transition-all disabled:opacity-50 uppercase tracking-wide">
+                className="rounded-2xl bg-mala px-5 py-3 font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f] disabled:opacity-50">
                 {finishing ? '...' : '🚀 Commencer'}
               </button>
             ) : (
               <button onClick={() => setIndex(i => i + 1)}
-                className="py-3 px-6 bg-gradient-to-r from-emerald-400 to-blue-500 hover:from-emerald-500 hover:to-blue-600 text-white font-extrabold rounded-2xl text-sm shadow-lg transition-all">
+                className="rounded-2xl bg-mala px-5 py-3 font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
                 Suivant →
               </button>
             )}
           </div>
-          <p className="text-center text-white/40 text-xs mt-3">Étape {index + 1} / {SLIDES.length}</p>
+          <p className="mt-3 text-center text-xs text-mute">Étape {index + 1} / {SLIDES.length}</p>
         </div>
       </div>
     </div>

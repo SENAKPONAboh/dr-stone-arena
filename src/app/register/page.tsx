@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
+import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -40,126 +41,106 @@ export default function RegisterPage() {
     }
   };
 
+  const choice = (active: boolean) =>
+    `flex-1 rounded-2xl border-2 py-3 text-sm font-bold transition-colors ${active ? 'border-mala bg-mala/10 text-mala' : 'border-line text-mute hover:border-mute'}`;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center py-10 p-4 font-sans">
-      <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl p-8 border-2 border-gray-100">
-        
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-blue-500 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-200">
-            <span className="text-4xl">🩺</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-gray-800">Créer ton compte</h1>
-          <p className="text-gray-500 mt-1 text-sm">Rejoins l'arène des étudiants en médecine et des médecins.</p>
+    <AuthShell wide title="Créer ton compte" subtitle="Rejoins l'arène des étudiants en médecine et des médecins.">
+      {error && (
+        <div className="mb-4 rounded-2xl border-2 border-heart/40 bg-heart/10 px-4 py-3 text-center text-sm font-medium text-heart">
+          {error}
         </div>
-        
-        {error && (
-          <div className="mb-4 bg-red-50 border-2 border-red-100 text-red-600 px-4 py-3 rounded-2xl text-sm text-center font-medium">
-            {error}
+      )}
+
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={AUTH_LABEL}>Prénom</label>
+            <input id="prenom" name="prenom" type="text" required className={AUTH_INPUT} placeholder="Arthur" />
+          </div>
+          <div>
+            <label className={AUTH_LABEL}>Nom</label>
+            <input id="nom" name="nom" type="text" required className={AUTH_INPUT} placeholder="ABOH" />
+          </div>
+        </div>
+
+        <div>
+          <label className={AUTH_LABEL}>Email</label>
+          <input id="email" name="email" type="email" required className={AUTH_INPUT} placeholder="exemple@fac-medecine.com" />
+        </div>
+
+        <div>
+          <label className={AUTH_LABEL}>Mot de passe</label>
+          <input id="password" name="password" type="password" required className={AUTH_INPUT} placeholder="••••••••" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={AUTH_LABEL}>Pays</label>
+            <input id="pays" name="pays" type="text" required className={AUTH_INPUT} placeholder="Bénin" />
+          </div>
+          <div>
+            <label className={AUTH_LABEL}>Université</label>
+            <input id="universite" name="universite" type="text" required className={AUTH_INPUT} placeholder="UAC" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className={AUTH_LABEL}>Faculté</label>
+            <input id="faculte" name="faculte" type="text" required className={AUTH_INPUT} placeholder="Médecine" />
+          </div>
+          <div>
+            <label className={AUTH_LABEL}>Année</label>
+            <select id="anneeEtude" name="anneeEtude" required className={`${AUTH_INPUT} font-medium`}>
+              {NIVEAU_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Question ambassadeur */}
+        <div className="pt-2">
+          <label className={AUTH_LABEL}>
+            Es-tu venu grâce à un ambassadeur Doctor Stone Arena ?
+          </label>
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setHasAmbassador(false)} className={choice(!hasAmbassador)}>
+              ○ Non
+            </button>
+            <button type="button" onClick={() => setHasAmbassador(true)} className={choice(hasAmbassador)}>
+              ○ Oui
+            </button>
+          </div>
+        </div>
+
+        {hasAmbassador && (
+          <div>
+            <label className={AUTH_LABEL}>Code de ton ambassadeur</label>
+            <input
+              id="ambassadorCode"
+              name="ambassadorCode"
+              type="text"
+              required
+              placeholder="Ex: DSA-MARIE01"
+              className={`${AUTH_INPUT} font-medium uppercase tracking-wide`}
+            />
+            <p className="mt-1 text-xs text-mute">Le code t'a été communiqué par ton ambassadeur.</p>
           </div>
         )}
 
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Prénom</label>
-              <input id="prenom" name="prenom" type="text" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="Arthur" />
-            </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Nom</label>
-              <input id="nom" name="nom" type="text" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="ABOH" />
-            </div>
-          </div>
+        <button type="submit" disabled={loading} className={`${AUTH_BUTTON} mt-4`}>
+          {loading ? 'Création...' : "Rejoindre l'arène"}
+        </button>
+      </form>
 
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
-            <input id="email" name="email" type="email" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="exemple@fac-medecine.com" />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">Mot de passe</label>
-            <input id="password" name="password" type="password" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="••••••••" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Pays</label>
-              <input id="pays" name="pays" type="text" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="Bénin" />
-            </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Université</label>
-              <input id="universite" name="universite" type="text" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="UAC" />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Faculté</label>
-              <input id="faculte" name="faculte" type="text" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400" placeholder="Médecine" />
-            </div>
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Année</label>
-              <select id="anneeEtude" name="anneeEtude" required className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 font-medium">
-                              {NIVEAU_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Question ambassadeur */}
-          <div className="pt-2">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Es-tu venu grâce à un ambassadeur Doctor Stone Arena ?
-            </label>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => setHasAmbassador(false)}
-                className={`flex-1 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${!hasAmbassador
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
-              >
-                ○ Non
-              </button>
-              <button
-                type="button"
-                onClick={() => setHasAmbassador(true)}
-                className={`flex-1 py-3 rounded-2xl border-2 font-bold text-sm transition-all ${hasAmbassador
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 text-gray-400 hover:border-gray-300'}`}
-              >
-                ○ Oui
-              </button>
-            </div>
-          </div>
-
-          {hasAmbassador && (
-            <div>
-              <label className="block text-gray-700 text-sm font-bold mb-2">Code de ton ambassadeur</label>
-              <input
-                id="ambassadorCode"
-                name="ambassadorCode"
-                type="text"
-                required
-                placeholder="Ex: DSA-MARIE01"
-                className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-gray-800 placeholder-gray-400 font-medium uppercase tracking-wide"
-              />
-              <p className="text-xs text-gray-400 mt-1">Le code t'a été communiqué par ton ambassadeur.</p>
-            </div>
-          )}
-
-          <button type="submit" disabled={loading} className="w-full py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-extrabold rounded-2xl shadow-md shadow-blue-300 transition-all uppercase tracking-wide mt-4 disabled:opacity-50">
-            {loading ? 'Création...' : "Rejoindre l'arène"}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm">
-          <span className="text-gray-500">Déjà un compte ? </span>
-          <Link href="/login" className="font-extrabold text-blue-600 hover:underline">
-            Se connecter
-          </Link>
-        </div>
+      <div className="mt-6 text-center text-sm">
+        <span className="text-mute">Déjà un compte ? </span>
+        <Link href="/login" className="font-extrabold text-mala hover:underline">
+          Se connecter
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   );
 }
