@@ -8,6 +8,8 @@ import { getTitleDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
 import { getXpGrade } from '@/lib/grades';
+import { getLegendCounts } from '@/lib/seasons';
+import LegendMark from '@/components/ui/LegendMark';
 import TitleBadge from '@/components/ui/TitleBadge';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
@@ -31,6 +33,8 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
     orderBy: { xp: 'desc' },
     select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, anneeEtude: true, pays: true, universite: true, activeFrameId: true, activeTitleId: true }
   });
+
+  const legends = await getLegendCounts(allUsers.map(u => u.id));
 
   const tabStyle = (active: boolean) => `rounded-2xl px-2 py-2.5 text-center font-display text-[11px] font-bold uppercase tracking-wide transition-all ${active
     ? 'bg-mala text-stone shadow-[0_3px_0_#0f7a4f]'
@@ -118,6 +122,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                         <p className="flex items-center gap-1 truncate font-bold text-ink">
                           {u.pseudo || `${u.prenom} ${u.nom}`}
                           {u.isPremium && <span title="Premium">👑</span>}
+                          <LegendMark count={legends[u.id]} />
                         </p>
                         {title && <div className="my-0.5"><TitleBadge title={title} size="sm" /></div>}
                         <p className="truncate text-xs text-mute">

@@ -13,6 +13,7 @@ import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
 import GradeBadge from '@/components/ui/GradeBadge';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
+import LegendMark from '@/components/ui/LegendMark';
 import { getXpGrade } from '@/lib/grades';
 import { getSeasonSummary } from '@/lib/seasons';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
@@ -135,6 +136,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
           <h2 className="text-2xl font-extrabold">
             {profileUser.pseudo || `${profileUser.prenom} ${profileUser.nom}`}
+            <LegendMark count={seasons.gradeCounts[7]} className="ml-2 align-middle" />
           </h2>
 
           {titleDef && (
@@ -152,7 +154,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             <div className="mt-2 flex justify-center"><GradeBadge grade={xpGrade} size="lg" /></div>
           </div>
 
-          <div className="mt-4"><SeasonPalmares summary={seasons} /></div>
+          <SeasonPalmares summary={seasons} />
 
           <div className={`mt-8 text-left border-t pt-6 ${themeDef || profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>

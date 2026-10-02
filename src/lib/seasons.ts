@@ -30,6 +30,21 @@ export async function getSeasonSummary(userId: string): Promise<SeasonSummary> {
   }
 }
 
+/** Nombre de fois où chaque joueur a terminé un mois au grade maximum (pour la marque « ⚡×N » à côté des noms). */
+export async function getLegendCounts(userIds: string[]): Promise<Record<string, number>> {
+  if (userIds.length === 0) return {};
+  try {
+    const rows = await prisma.seasonResult.groupBy({
+      by: ['userId'],
+      where: { userId: { in: userIds }, gradeIndex: XP_GRADES.length - 1 },
+      _count: { _all: true },
+    });
+    return Object.fromEntries(rows.map(r => [r.userId, r._count._all]));
+  } catch {
+    return {};
+  }
+}
+
 /** « 2026-10 » → « octobre 2026 » */
 export function seasonLabel(season: string): string {
   const [y, m] = season.split('-').map(Number);

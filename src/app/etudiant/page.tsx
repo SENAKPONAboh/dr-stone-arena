@@ -11,6 +11,8 @@ import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
 import GradeBadge from '@/components/ui/GradeBadge';
+import LegendMark from '@/components/ui/LegendMark';
+import { getLegendCounts } from '@/lib/seasons';
 import { getXpGrade, gradeProgress } from '@/lib/grades';
 import { getTitleDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
@@ -128,6 +130,7 @@ export default async function EtudiantDashboard() {
   // === PRÉSENTATION (charte Arena Malachite) ===
   const doneToday = Math.min(attemptsToday, dailyTotal);
   const gradePct = gradeProgress(user.xp);
+  const legends = await getLegendCounts(topUsers.map(u => u.id));
   const card = 'rounded-3xl border border-line bg-slab';
 
   return (
@@ -243,7 +246,7 @@ export default async function EtudiantDashboard() {
                   <span className={`w-6 font-display text-sm font-extrabold ${i === 0 ? 'text-gold' : i === 1 ? 'text-mute' : 'text-flame'}`}>{i + 1}</span>
                   <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} frameKey={u.activeFrameId} size={32} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'}</p>
+                    <p className="truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'} <LegendMark count={legends[u.id]} className="ml-1" /></p>
                     {getTitleDef(u.activeTitleId) && <div className="mt-0.5"><TitleBadge title={getTitleDef(u.activeTitleId)!} size="sm" /></div>}
                   </div>
                   <span className="flex items-center gap-1 font-display text-sm font-bold tabular-nums text-mala"><Icon name="star" size={14} /> {u.xp}</span>

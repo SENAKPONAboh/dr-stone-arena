@@ -13,6 +13,7 @@ import { getSeasonSummary } from '@/lib/seasons';
 import GradeBadge from '@/components/ui/GradeBadge';
 import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
+import LegendMark from '@/components/ui/LegendMark';
 import type { CSSProperties } from 'react';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
@@ -109,6 +110,7 @@ export default async function ProfilPage() {
 
           <h2 className="text-2xl font-extrabold">
             {user.pseudo || `${user.prenom} ${user.nom}`}
+            <LegendMark count={seasons.gradeCounts[7]} className="ml-2 align-middle" />
           </h2>
           {titleDef && <div className="mt-2"><TitleBadge title={titleDef} /></div>}
           <p className={user.isPremium ? "text-white/60" : "text-gray-500"}>{user.email}</p>
@@ -134,7 +136,7 @@ export default async function ProfilPage() {
             </Link>
           </div>
 
-          <div className="mt-4"><SeasonPalmares summary={seasons} own /></div>
+          <SeasonPalmares summary={seasons} />
 
           <div className="mt-6 text-left">
             <p className="mb-3 text-center text-sm font-bold">🎨 Apparence</p>

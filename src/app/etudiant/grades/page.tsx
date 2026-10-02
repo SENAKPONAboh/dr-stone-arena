@@ -44,14 +44,17 @@ export default async function GradesPage() {
           <p className="grade-color relative mt-4 text-sm font-extrabold" style={{ '--gt': current.to, '--gf': current.from } as React.CSSProperties}>🌌 Tu es au sommet de la saison. Garde-le jusqu'à la clôture !</p>
         )}
         <p className="relative mx-auto mt-4 max-w-md text-[11px] leading-relaxed text-mute">
-          Les XP repartent à zéro à la fin de chaque mois : tout le monde peut rattraper les autres. Ton grade final est gardé dans ton profil.
+          Les XP repartent à zéro à la fin de chaque mois : tout le monde peut rattraper les autres. Termine un mois en Légende Immortelle et un « ⚡×1 » s'inscrit pour toujours dans ton profil, qui augmente à chaque nouveau mois au sommet.
         </p>
       </section>
 
-      {/* ===== Palmarès ===== */}
-      <section className="rounded-3xl border border-line bg-slab p-5">
-        <SeasonPalmares summary={seasons} own />
-      </section>
+      {/* ===== Palmarès (uniquement pour ceux qui ont déjà terminé un mois en Légende Immortelle) ===== */}
+      {(seasons.gradeCounts[7] ?? 0) > 0 && (
+        <section className="rounded-3xl border border-line bg-slab p-5">
+          <p className="text-center text-sm font-bold">⚡ Ton palmarès</p>
+          <SeasonPalmares summary={seasons} />
+        </section>
+      )}
 
       {/* ===== L'échelle des grades ===== */}
       <section>
