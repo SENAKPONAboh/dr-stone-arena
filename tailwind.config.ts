@@ -12,16 +12,17 @@ const config: Config = {
     extend: {
       colors: {
         // Charte Arena Malachite (stone et sky gardent leurs nuances Tailwind d'origine)
-        stone: { ...colors.stone, DEFAULT: '#0d1311' },
-        sky: { ...colors.sky, DEFAULT: '#5cc8ff' },
-        slab: { DEFAULT: '#151d1a', 2: '#1c2723' },
-        line: '#26332e',
-        ink: '#e9f1ed',
-        mute: '#8fa39a',
-        mala: { DEFAULT: '#2fd28a', deep: '#0f7a4f' },
-        gold: { DEFAULT: '#f2c14e', deep: '#9a6a12' },
-        flame: '#ff8a3d',
-        heart: '#ff5470',
+        // Les valeurs viennent des variables CSS de globals.css (thème sombre / clair)
+        stone: { ...colors.stone, DEFAULT: 'rgb(var(--stone-rgb) / <alpha-value>)' },
+        sky: { ...colors.sky, DEFAULT: 'rgb(var(--sky-rgb) / <alpha-value>)' },
+        slab: { DEFAULT: 'rgb(var(--slab-rgb) / <alpha-value>)', 2: 'rgb(var(--slab-2-rgb) / <alpha-value>)' },
+        line: 'rgb(var(--line-rgb) / <alpha-value>)',
+        ink: 'rgb(var(--ink-rgb) / <alpha-value>)',
+        mute: 'rgb(var(--mute-rgb) / <alpha-value>)',
+        mala: { DEFAULT: 'rgb(var(--mala-rgb) / <alpha-value>)', deep: '#0f7a4f' },
+        gold: { DEFAULT: 'rgb(var(--gold-rgb) / <alpha-value>)', deep: '#9a6a12' },
+        flame: 'rgb(var(--flame-rgb) / <alpha-value>)',
+        heart: 'rgb(var(--heart-rgb) / <alpha-value>)',
       },
       fontFamily: {
         display: ['var(--font-unbounded)', 'system-ui', 'sans-serif'],
