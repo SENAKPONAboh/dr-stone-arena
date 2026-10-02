@@ -48,7 +48,7 @@ const SLIDES: Slide[] = [
       "Chaque mois est une saison : les XP repartent à zéro pour que tout le monde puisse rattraper les autres. Ton grade final est gardé dans ton profil, avec le nombre de fois où tu l'as atteint.",
     ],
     highlight: "Un joueur régulier et sérieux peut atteindre le sommet en un seul mois.",
-    from: '#f472b6', to: '#a5f3fc', extra: 'grades',
+    from: '#8b5cf6', to: '#fde047', extra: 'grades',
   },
   {
     icon: '🔥', kicker: 'Régularité', title: 'La Flamme et les vies',
@@ -82,7 +82,7 @@ const SLIDES: Slide[] = [
       "Les badges se gagnent par tes actions : régularité, performances, duels, défis. Ils ne s'achètent pas.",
       "Les coffres sont des récompenses surprise, débloquées par ta Flamme.",
     ],
-    from: '#a855f7', to: '#f0abfc',
+    from: '#a855f7', to: '#60a5fa',
   },
   {
     icon: '🛡️', kicker: 'Espace Élite', title: 'Le Pass Élite',

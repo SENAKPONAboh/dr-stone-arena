@@ -25,7 +25,7 @@ export const XP_GRADES: XpGrade[] = [
   { index: 4, key: 'CHIRURGIEN',  min: 1400, name: "Chirurgien d'Élite",       icon: '⚔️', tagline: "Précis. Rapide. Implacable.",                 from: '#a855f7', to: '#f0abfc', glow: 'rgba(168,85,247,0.75)' },
   { index: 5, key: 'MAITRE',      min: 1900, name: 'Maître Clinicien',         icon: '🔥', tagline: "L'Arène connaît ton nom.",                    from: '#f97316', to: '#fde047', glow: 'rgba(249,115,22,0.8)' },
   { index: 6, key: 'GRAND_MAITRE',min: 2450, name: "Grand Maître de l'Arène",  icon: '👑', tagline: "Tu règnes sur le classement.",                from: '#f59e0b', to: '#fef3c7', glow: 'rgba(245,158,11,0.9)' },
-  { index: 7, key: 'LEGENDE',     min: 3000, name: 'Légende Immortelle',       icon: '🌌', tagline: "Le sommet. Ton nom restera dans l'histoire.", from: '#f472b6', to: '#a5f3fc', glow: 'rgba(192,132,252,1)' },
+  { index: 7, key: 'LEGENDE',     min: 3000, name: 'Légende Immortelle',       icon: '⚡', tagline: "La foudre porte ton nom. Le sommet est à toi.", from: '#8b5cf6', to: '#dbeafe', glow: 'rgba(139,92,246,1)' },
 ];
 
 export const TOP_GRADE = XP_GRADES[XP_GRADES.length - 1];
