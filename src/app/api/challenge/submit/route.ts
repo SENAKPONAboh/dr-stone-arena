@@ -169,6 +169,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       isCorrect, xpEarned, streakBonus, livesLeft: newLives, newBadges, chestUnlocked,
+      // Pour l'animation « nouveau grade » côté écran
+      xpBefore: user.xp, xpAfter: user.xp + xpEarned,
       // Révélés seulement APRÈS la réponse
       correctAnswer: clinicalCase.correctAnswer,
       explanation: clinicalCase.explanation,

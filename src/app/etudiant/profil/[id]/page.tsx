@@ -11,6 +11,10 @@ import GoldAvatar from '@/components/ui/GoldAvatar';
 import { getCurrentUser } from '@/lib/auth';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
+import GradeBadge from '@/components/ui/GradeBadge';
+import SeasonPalmares from '@/components/ui/SeasonPalmares';
+import { getXpGrade } from '@/lib/grades';
+import { getSeasonSummary } from '@/lib/seasons';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -37,10 +41,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const titleDef = getTitleDef(profileUser.activeTitleId);
   const themeDef = getThemeDef(profileUser.activeThemeId);
 
-  let grade = "🥉 Clinicien Bronze";
-  if (profileUser.xp >= 1000) grade = "🥈 Clinicien Argent";
-  if (profileUser.xp >= 3000) grade = "🥇 Clinicien Or";
-  if (profileUser.xp >= 6000) grade = "💎 Expert Clinicien";
+  const xpGrade = getXpGrade(profileUser.xp).current;
+  const seasons = await getSeasonSummary(profileUser.id);
 
   // ===== STYLES : thème = CSS INLINE (fiable mobile + PC) =====
   const badgeProps = (prem: string, free: string) =>
@@ -147,13 +149,10 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
           <div className={`mt-6 p-4 rounded-2xl ${themeDef ? 'bg-white/5' : 'bg-slab-2'}`}>
             <p className="text-xs font-bold uppercase tracking-wider text-white/50" style={themeDef ? undefined : (profileUser.isPremium ? undefined : { color: '#9ca3af' })}>Grade Actuel</p>
-            <p className={`text-xl mt-1 ${themeDef ? 'font-extrabold' : profileUser.isPremium
-              ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-amber-500 animate-pulse font-extrabold'
-              : 'font-extrabold text-gray-800'}`}
-              style={themeDef ? { color: themeDef.accent } : undefined}>
-              {grade}
-            </p>
+            <div className="mt-2 flex justify-center"><GradeBadge grade={xpGrade} size="lg" /></div>
           </div>
+
+          <div className="mt-4"><SeasonPalmares summary={seasons} /></div>
 
           <div className={`mt-8 text-left border-t pt-6 ${themeDef || profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>

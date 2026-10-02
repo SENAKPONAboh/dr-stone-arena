@@ -50,8 +50,8 @@ export async function POST(request: Request) {
     const score = detailedAnswers.filter(a => a.isCorrect).length;
 
     const updateData: any = isRequester
-      ? { requesterAnswers: detailedAnswers, requesterScore: score, requesterTime: timeSpent, requesterCompleted: true }
-      : { opponentAnswers: detailedAnswers, opponentScore: score, opponentTime: timeSpent, opponentCompleted: true };
+      ? { requesterAnswers: detailedAnswers, requesterScore: score, requesterTime: timeSpent, requesterCompleted: true, requesterCompletedAt: new Date() }
+      : { opponentAnswers: detailedAnswers, opponentScore: score, opponentTime: timeSpent, opponentCompleted: true, opponentCompletedAt: new Date() };
 
     await prisma.duel.update({ where: { id: duel.id }, data: updateData });
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         if (updated.count === 0) return;
         wasFinalized = true;
 
-        // Vainqueur : score d'abord, temps total en départage, sinon égalité
+        // Vainqueur : 1) score  2) temps total  3) premier à avoir terminé (zéro-égalité garanti)
         const rs = fresh.requesterScore ?? 0;
         const os = fresh.opponentScore ?? 0;
         if (rs > os) winnerId = fresh.requesterId;
@@ -87,6 +87,12 @@ export async function POST(request: Request) {
           const ot = fresh.opponentTime ?? Infinity;
           if (rt < ot) winnerId = fresh.requesterId;
           else if (ot < rt) winnerId = fresh.opponentId;
+          else {
+            const rct = fresh.requesterCompletedAt?.getTime() ?? Infinity;
+            const oct = fresh.opponentCompletedAt?.getTime() ?? Infinity;
+            if (rct < oct) winnerId = fresh.requesterId;
+            else if (oct < rct) winnerId = fresh.opponentId;
+          }
         }
 
         await tx.duel.update({ where: { id: duel.id }, data: { winnerId } });

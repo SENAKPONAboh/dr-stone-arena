@@ -7,6 +7,7 @@ import { getCountryFlag } from '@/lib/country-flags';
 import { getTitleDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
+import { getXpGrade } from '@/lib/grades';
 import TitleBadge from '@/components/ui/TitleBadge';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
@@ -120,7 +121,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                         </p>
                         {title && <div className="my-0.5"><TitleBadge title={title} size="sm" /></div>}
                         <p className="truncate text-xs text-mute">
-                          {getNiveauLabel(u.anneeEtude)}{u.pays ? ` · ${getCountryFlag(u.pays)} ${u.pays}` : ''}{u.universite ? ` · 🏫 ${u.universite}` : ''}
+                          {getXpGrade(u.xp).current.icon} {getNiveauLabel(u.anneeEtude)}{u.pays ? ` · ${getCountryFlag(u.pays)} ${u.pays}` : ''}{u.universite ? ` · 🏫 ${u.universite}` : ''}
                         </p>
                       </div>
                     </Link>

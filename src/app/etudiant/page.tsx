@@ -10,6 +10,8 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
+import GradeBadge from '@/components/ui/GradeBadge';
+import { getXpGrade, gradeProgress } from '@/lib/grades';
 import { getTitleDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
 import EcgLine from '@/components/ui/EcgLine';
@@ -100,11 +102,8 @@ export default async function EtudiantDashboard() {
   const userRankLevel = aheadInLevel !== null ? aheadInLevel + 1 : null;
   const dailyTotal = dailyCaseIds?.length ?? 10;
 
-  // Grades et helpers
-  let grade = "🥉 Clinicien Bronze";
-  if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
-  if (user.xp >= 3000) grade = "🥇 Clinicien Or";
-  if (user.xp >= 6000) grade = "💎 Expert Clinicien";
+  // Grade de la saison (XP du mois)
+  const { current: xpGrade, next: xpNextGrade } = getXpGrade(user.xp);
 
   const { current: duelGrade } = getDuelGrade(user.duelsWon);
   const nameOf = (u: { prenom: string; nom: string; pseudo: string | null }) => u.pseudo || `${u.prenom} ${u.nom}`;
@@ -128,10 +127,7 @@ export default async function EtudiantDashboard() {
 
   // === PRÉSENTATION (charte Arena Malachite) ===
   const doneToday = Math.min(attemptsToday, dailyTotal);
-  const gradeSteps = [0, 1000, 3000, 6000];
-  const gradeIdx = user.xp >= 6000 ? 3 : user.xp >= 3000 ? 2 : user.xp >= 1000 ? 1 : 0;
-  const nextStep = gradeSteps[gradeIdx + 1];
-  const gradePct = nextStep ? Math.round(((user.xp - gradeSteps[gradeIdx]) / (nextStep - gradeSteps[gradeIdx])) * 100) : 100;
+  const gradePct = gradeProgress(user.xp);
   const card = 'rounded-3xl border border-line bg-slab';
 
   return (
@@ -151,12 +147,15 @@ export default async function EtudiantDashboard() {
         {/* Salutation + grade */}
         <div className={`${card} p-5`}>
           <h1 className="font-display text-xl font-extrabold text-ink">Bonjour {user.prenom}</h1>
-          <p className="mt-1 text-sm text-mute">{grade} · {getNiveauLabel(user.anneeEtude)}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <GradeBadge grade={xpGrade} />
+            <span className="text-sm text-mute">{getNiveauLabel(user.anneeEtude)}</span>
+          </div>
           <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slab-2">
             <div className="h-full origin-left rounded-full bg-mala" style={{ transform: `scaleX(${gradePct / 100})`, transition: 'transform 1s ease-out' }} />
           </div>
           <p className="mt-1.5 text-[11px] font-bold text-mute">
-            {nextStep ? `${nextStep - user.xp} XP avant le prochain grade` : 'Grade maximum atteint'}
+            {xpNextGrade ? `${(xpNextGrade.min - user.xp).toLocaleString('fr-FR')} XP avant ${xpNextGrade.icon} ${xpNextGrade.name} · saison en cours` : `${xpGrade.icon} Sommet de la saison atteint, bravo !`}
           </p>
           <EcgLine className="mt-3 h-5 opacity-70" />
         </div>

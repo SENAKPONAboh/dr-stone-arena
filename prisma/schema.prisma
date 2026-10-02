@@ -45,6 +45,7 @@ model User {
   uaBalance          Int       @default(0)
   uaLocked           Int       @default(0)
   uaRecharged        Int       @default(0) // part du solde issue de recharges (non retirable)
+  seasonResults      SeasonResult[]
   passActive         Boolean   @default(false)
   passExpiresAt      DateTime?
   streakBeforeReset  Int       @default(0)
@@ -429,4 +430,19 @@ model RechargeRequest {
   note            String?
   validatedAt     DateTime?
   createdAt       DateTime  @default(now())
+}
+
+// Résultat d'une saison mensuelle (créé à la clôture du mois dans le panel admin, puis les XP repartent à zéro)
+model SeasonResult {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season     String   // "2026-10"
+  xp         Int
+  gradeIndex Int      // 0 à 7 (voir src/lib/grades.ts)
+  rank       Int      // classement final du mois
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, season])
+  @@index([season])
 }

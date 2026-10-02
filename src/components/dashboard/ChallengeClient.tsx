@@ -10,6 +10,8 @@ import TimerRing from '@/components/ui/TimerRing';
 import ResultSheet from '@/components/ui/ResultSheet';
 import EcgLine from '@/components/ui/EcgLine';
 import Icon from '@/components/ui/Icon';
+import GradeUpOverlay from '@/components/ui/GradeUpOverlay';
+import { getXpGrade, type XpGrade } from '@/lib/grades';
 
 // ⚠️ correctAnswer et explanation ne sont JAMAIS transmis au navigateur avant la réponse :
 // le serveur les renvoie dans la réponse de /api/challenge/submit.
@@ -32,6 +34,8 @@ type SubmitResult = {
   isCorrect: boolean;
   xpEarned: number;
   livesLeft?: number;
+  xpBefore?: number;
+  xpAfter?: number;
   correctAnswer: string;
   explanation: string;
 };
@@ -45,6 +49,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
   const [loading, setLoading] = useState(false);
   const [guardReady, setGuardReady] = useState(false);
   const [wasViolation, setWasViolation] = useState(false);
+  const [gradeUp, setGradeUp] = useState<{ from: XpGrade; to: XpGrade } | null>(null);
 
   // Chronomètre — démarre SEULEMENT après l'accord de l'avertissement anti-triche
   useEffect(() => {
@@ -79,6 +84,12 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
       const data = await res.json();
       if (res.ok) {
         setResult(data);
+        // Montée de grade : on laisse d'abord apparaître le +XP, puis grande animation plein écran
+        if (typeof data.xpBefore === 'number' && typeof data.xpAfter === 'number') {
+          const from = getXpGrade(data.xpBefore).current;
+          const to = getXpGrade(data.xpAfter).current;
+          if (to.index > from.index) setTimeout(() => setGradeUp({ from, to }), 1500);
+        }
         if (data.isCorrect) {
           confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#2fd28a', '#e9f1ed', '#5cc8ff'], disableForReducedMotion: true });
         }
@@ -202,6 +213,8 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
           +{result.xpEarned} XP
         </motion.div>
       )}
+
+      {gradeUp && <GradeUpOverlay from={gradeUp.from} to={gradeUp.to} onClose={() => setGradeUp(null)} />}
 
       <ResultSheet
         open={!!result}

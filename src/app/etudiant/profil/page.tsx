@@ -8,6 +8,10 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
 import prisma from '@/lib/prisma';
+import { getXpGrade } from '@/lib/grades';
+import { getSeasonSummary } from '@/lib/seasons';
+import GradeBadge from '@/components/ui/GradeBadge';
+import SeasonPalmares from '@/components/ui/SeasonPalmares';
 import type { CSSProperties } from 'react';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
@@ -30,11 +34,9 @@ export default async function ProfilPage() {
     ? ({ background: themeDef.cardBg, border: `2px solid ${themeDef.borderColor}`, color: '#ffffff', '--aura-color': themeDef.aura, animation: 'auraPulse 3.5s ease-in-out infinite' } as CSSProperties)
     : undefined;
 
-  // Calcul du grade
-  let grade = "🥉 Clinicien Bronze";
-  if (user.xp >= 1000) grade = "🥈 Clinicien Argent";
-  if (user.xp >= 3000) grade = "🥇 Clinicien Or";
-  if (user.xp >= 6000) grade = "💎 Expert Clinicien";
+  // Grade de la saison + palmarès des saisons passées
+  const xpGrade = getXpGrade(user.xp).current;
+  const seasons = await getSeasonSummary(user.id);
 
   const { current: duelGrade, next: nextDuelGrade } = getDuelGrade(user.duelsWon);
   const duelProgress = nextDuelGrade
@@ -125,11 +127,13 @@ export default async function ProfilPage() {
           {/* Grade avec animation Premium */}
           <div className={`mt-6 p-4 rounded-2xl ${user.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
             <p className={`text-xs font-bold uppercase tracking-wider ${user.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
-            <p className={`text-xl mt-1 ${gradeStyle}`}>{grade}</p>
+            <div className="mt-2 flex justify-center"><GradeBadge grade={xpGrade} size="lg" /></div>
             <Link href="/etudiant/grades" className={`mt-2 inline-block text-xs font-bold ${user.isPremium ? 'text-yellow-300 hover:text-yellow-200' : 'text-blue-600 hover:underline'}`}>
               🏅 Voir tous les grades →
             </Link>
           </div>
+
+          <div className="mt-4"><SeasonPalmares summary={seasons} own /></div>
 
           {/* Formulaire de modification */}
           <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
