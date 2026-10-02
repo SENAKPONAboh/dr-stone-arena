@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 import Link from 'next/link';
 
 type Case = {
@@ -98,6 +99,7 @@ export default function DuelPlayer({ duelId, opponentName, cases }: { duelId: st
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <LastSecondsAlert remaining={timeLeft} active={!answered && !done} />
       <div className="max-w-3xl mx-auto">
 
         {/* Progression */}

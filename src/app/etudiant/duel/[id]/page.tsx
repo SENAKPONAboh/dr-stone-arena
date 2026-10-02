@@ -1,5 +1,6 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { caseDuration } from '@/lib/case-duration';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import DuelPlayer from '@/components/duel/DuelPlayer';
@@ -150,7 +151,7 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
         options: c.options,
         correctAnswer: c.correctAnswer,
         explanation: c.explanation,
-        durationMax: c.durationMax,
+        durationMax: caseDuration(c.difficulty, c.durationMax),
         subject: c.chapter.subject.name,
         chapter: c.chapter.name
       }))}

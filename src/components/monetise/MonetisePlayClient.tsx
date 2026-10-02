@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { UA_PER_CASE } from '@/lib/monetise';
 import CaseGuard from '@/components/ui/CaseGuard';
+import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 
 // ⚠️ correctAnswer et explanation ne sont JAMAIS transmis au navigateur avant la réponse.
 type ClinicalCaseProps = {
@@ -112,6 +113,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
         </>
       }
     >
+      <LastSecondsAlert remaining={timeLeft} active={guardReady && !isSubmitted} />
       <div className="min-h-screen elite-bg py-8 px-4">
         <div className="max-w-3xl mx-auto">
 

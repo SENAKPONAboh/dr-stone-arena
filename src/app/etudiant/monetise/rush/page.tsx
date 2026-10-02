@@ -1,5 +1,6 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { caseDuration } from '@/lib/case-duration';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import RushStartPanel from '@/components/monetise/RushStartPanel';
@@ -84,7 +85,7 @@ export default async function MonetiseRushPage() {
           title: clinicalCase.title,
           statement: clinicalCase.statement,
           options: clinicalCase.options,
-          durationMax: clinicalCase.durationMax,
+          durationMax: caseDuration(clinicalCase.difficulty, clinicalCase.durationMax),
           difficulty: clinicalCase.difficulty,
           subject: clinicalCase.chapter.subject.name,
           chapter: clinicalCase.chapter.name,

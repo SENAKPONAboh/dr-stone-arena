@@ -4,7 +4,7 @@ import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { ReactNode } from 'react';
 
 export default function ThemeProvider({ children }: { children: ReactNode }) {
-  return <NextThemesProvider attribute="data-theme" defaultTheme="dark" themes={['dark', 'light']} enableSystem={false} disableTransitionOnChange>
+  return <NextThemesProvider attribute="data-theme" defaultTheme="dark" storageKey="arena-theme" themes={['dark', 'light']} enableSystem={false} disableTransitionOnChange>
       {children}
     </NextThemesProvider>;
 }

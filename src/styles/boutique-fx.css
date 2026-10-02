@@ -111,3 +111,7 @@
 @keyframes fxEmberC { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 12% { opacity: 1; } 100% { transform: translate(18px, -150px) scale(0.2); opacity: 0; } }
 @keyframes fxRainC { 0% { transform: translateY(-30px); opacity: 0; } 10% { opacity: 0.85; } 100% { transform: translateY(190px); opacity: 0; } }
 @keyframes fxPetalC { 0% { transform: translate(0, -10px) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 100% { transform: translate(-40px, 180px) rotate(540deg); opacity: 0.3; } }
+
+/* ---------- Compte à rebours des 10 dernières secondes ---------- */
+@keyframes fxCount { 0% { transform: scale(2); opacity: 0; } 18% { opacity: 1; } 100% { transform: scale(1); opacity: 0.88; } }
+@keyframes fxVignette { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }

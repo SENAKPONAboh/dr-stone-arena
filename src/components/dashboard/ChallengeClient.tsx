@@ -10,6 +10,7 @@ import TimerRing from '@/components/ui/TimerRing';
 import ResultSheet from '@/components/ui/ResultSheet';
 import EcgLine from '@/components/ui/EcgLine';
 import Icon from '@/components/ui/Icon';
+import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 import GradeUpOverlay from '@/components/ui/GradeUpOverlay';
 import { getXpGrade, type XpGrade } from '@/lib/grades';
 
@@ -132,6 +133,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
         </>
       }
     >
+      <LastSecondsAlert remaining={timeLeft} active={guardReady && !isSubmitted} />
       <div className="relative min-h-[80vh] pb-40">
         <div className="mx-auto max-w-2xl">
 

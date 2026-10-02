@@ -1,5 +1,6 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { caseDuration } from '@/lib/case-duration';
 import prisma from '@/lib/prisma';
 import MonetisePlayClient from '@/components/monetise/MonetisePlayClient';
 import MonetiseNav from '@/components/monetise/MonetiseNav';
@@ -69,7 +70,7 @@ export default async function MonetisePlayPage() {
         title: clinicalCase.title,
         statement: clinicalCase.statement,
         options: clinicalCase.options,
-        durationMax: clinicalCase.durationMax,
+        durationMax: caseDuration(clinicalCase.difficulty, clinicalCase.durationMax),
         difficulty: clinicalCase.difficulty,
         subject: clinicalCase.chapter.subject.name,
         chapter: clinicalCase.chapter.name,

@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import ChallengeClient from '@/components/dashboard/ChallengeClient';
 import DayRecap from '@/components/dashboard/DayRecap';
 import { getOrCreateDailySelection } from '@/lib/daily-cases';
+import { caseDuration } from '@/lib/case-duration';
 import Link from 'next/link';
 import BackgroundCells from '@/components/ui/BackgroundCells';
 import Icon, { type IconName } from '@/components/ui/Icon';
@@ -96,7 +97,7 @@ export default async function ChallengePage() {
         title: clinicalCase.title,
         statement: clinicalCase.statement,
         options: clinicalCase.options,
-        durationMax: clinicalCase.durationMax,
+        durationMax: caseDuration(clinicalCase.difficulty, clinicalCase.durationMax),
         xp: clinicalCase.xp,
         difficulty: clinicalCase.difficulty,
         chapter: { name: clinicalCase.chapter.name, subject: { name: clinicalCase.chapter.subject.name } },

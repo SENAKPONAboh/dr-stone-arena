@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import CaseGuard from '@/components/ui/CaseGuard';
+import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 import {
   RUSH_MAX_ERRORS,
   RUSH_WEEKEND_CAP_UA,
@@ -283,6 +284,7 @@ export default function RushClient({
         </>
       }
     >
+      <LastSecondsAlert remaining={timeLeft} active={guardReady && phase === 'question'} />
       <div className="min-h-screen elite-bg py-6 px-4 relative">
         {errors >= RUSH_MAX_ERRORS && phase === 'question' && (
           <div className="fixed inset-0 pointer-events-none border-4 border-red-500/50 animate-pulse z-10" />

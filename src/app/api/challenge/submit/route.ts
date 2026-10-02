@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { MAX_LIVES } from '@/lib/lives';
 import { getTodaySelection } from '@/lib/daily-cases';
+import { caseDuration } from '@/lib/case-duration';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
     let streakBonus = 0;
     if (isCorrect) {
       xpEarned = clinicalCase.xp;
-      if (timeSpent < clinicalCase.durationMax / 2) {
+      if (timeSpent < caseDuration(clinicalCase.difficulty, clinicalCase.durationMax) / 2) {
         xpEarned += 5; // Bonus de vitesse
       }
     }
