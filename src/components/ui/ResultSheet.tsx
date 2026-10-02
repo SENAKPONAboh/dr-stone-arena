@@ -21,7 +21,8 @@ export default function ResultSheet({ open, correct, title, children, action }: 
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-          className={`fixed inset-x-0 bottom-0 z-[90] rounded-t-3xl border-t-2 p-5 pb-8 ${correct ? 'border-mala bg-[#0f2a20]' : 'border-heart bg-[#2a1219]'}`}
+          className={`fixed inset-x-0 bottom-0 z-[90] rounded-t-3xl border-t-2 p-5 pb-8 ${correct ? 'border-mala' : 'border-heart'}`}
+          style={{ background: `linear-gradient(rgb(var(--${correct ? 'mala' : 'heart'}-rgb) / 0.16), rgb(var(--${correct ? 'mala' : 'heart'}-rgb) / 0.16)), rgb(var(--slab-rgb))` }}
         >
           <div className="mx-auto max-w-xl">
             <p className={`font-display text-lg font-extrabold ${correct ? 'text-mala' : 'text-heart'}`}>

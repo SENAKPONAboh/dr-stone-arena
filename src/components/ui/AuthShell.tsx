@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import BackgroundCells from './BackgroundCells';
 import Logo from './Logo';
+import ThemeSwitch from './ThemeSwitch';
 import EcgLine from './EcgLine';
 
 // Coquille commune des pages hors connexion (login, inscription, mot de passe oublié).
@@ -14,6 +15,7 @@ export default function AuthShell({ title, subtitle, wide, children }: { title: 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-stone p-4 py-10 font-body">
       <BackgroundCells />
+      <div className="absolute right-4 top-4 z-10"><ThemeSwitch /></div>
       <div className={`relative w-full ${wide ? 'max-w-lg' : 'max-w-md'} rounded-3xl border border-line bg-slab p-7`}>
         <div className="mb-6 text-center">
           <div className="mb-4 flex justify-center"><Logo size={64} /></div>

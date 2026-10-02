@@ -5,11 +5,11 @@ import type { ReactNode } from 'react';
 export type AnswerState = 'idle' | 'selected' | 'correct' | 'wrong' | 'dimmed';
 
 const BOX: Record<AnswerState, string> = {
-  idle: 'bg-slab border-line shadow-[0_4px_0_#26332e]',
+  idle: 'bg-slab border-line shadow-[0_4px_0_rgb(var(--line-rgb))]',
   selected: 'bg-sky/10 border-sky shadow-[0_4px_0_#2b7fa6]',
   correct: 'bg-mala/15 border-mala shadow-[0_4px_0_#0f7a4f]',
   wrong: 'bg-heart/15 border-heart shadow-[0_4px_0_#a1233b] animate-shake',
-  dimmed: 'bg-slab border-line opacity-40 shadow-[0_4px_0_#26332e]',
+  dimmed: 'bg-slab border-line opacity-40 shadow-[0_4px_0_rgb(var(--line-rgb))]',
 };
 const BADGE: Record<AnswerState, string> = {
   idle: 'bg-slab-2 text-mute',

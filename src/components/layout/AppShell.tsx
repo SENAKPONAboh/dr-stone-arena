@@ -7,6 +7,7 @@ import NotificationBell from '@/components/dashboard/NotificationBell';
 import HudPill from '@/components/ui/HudPill';
 import Icon, { type IconName } from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
+import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import BackgroundCells from '@/components/ui/BackgroundCells';
 import { getPlanLabel } from '@/lib/premium';
 import { getNiveauLabel } from '@/lib/niveau';
@@ -90,6 +91,7 @@ export default function AppShell({
         <div className="space-y-1 border-t border-line p-4 text-xs text-mute">
           {premium ? <PremiumBadge /> : <p className="font-bold">Compte Classique</p>}
           <p className="pt-1">{getNiveauLabel(user.anneeEtude)}</p>
+          <div className="pt-2"><ThemeSwitch /></div>
         </div>
       </aside>
 
@@ -109,6 +111,7 @@ export default function AppShell({
             </div>
 
             <div className="flex items-center gap-2">
+              <ThemeSwitch className="hidden sm:flex" />
               <Link href="/etudiant/messages" className="relative flex-shrink-0 text-mute transition-colors hover:text-ink" title="Messages" aria-label="Messages">
                 <Icon name="chat" size={24} />
                 {unreadMessages > 0 && (

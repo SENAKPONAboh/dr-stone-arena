@@ -93,11 +93,11 @@ export default function PassPurchaseForm({ activeMethods, passActive }: {
 
           {/* Instructions + upload */}
           {method && (
-            <div className="bg-blue-500/10 border border-blue-400/20 rounded-2xl p-5 text-sm text-blue-200 space-y-2">
+            <div className="bg-gold/10 border border-gold/30 rounded-2xl p-5 text-sm text-[#f5ecd2] space-y-2">
               <p className="font-bold text-base">Instructions pour {method.icon} {method.name} :</p>
               <p>1. Envoyez <span className="font-extrabold">2 000 FCFA</span> au numéro <span className="font-extrabold">{method.paymentIdentifier || '—'}</span>{method.beneficiaryName ? ` (${method.beneficiaryName})` : ''}.</p>
-              {method.instructions && <p className="text-blue-300/70">{method.instructions}</p>}
-              <p className="text-xs text-blue-300/50">2. Prends une photo claire du reçu. 3. Envoie-la ci-dessous.</p>
+              {method.instructions && <p className="text-[#e9dfc0]/80">{method.instructions}</p>}
+              <p className="text-xs text-[#e9dfc0]/60">2. Prends une photo claire du reçu. 3. Envoie-la ci-dessous.</p>
             </div>
           )}
 

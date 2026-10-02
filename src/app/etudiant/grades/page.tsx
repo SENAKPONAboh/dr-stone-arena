@@ -27,7 +27,7 @@ export default async function GradesPage() {
         <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: `radial-gradient(circle at 50% 0%, ${current.glow}, transparent 65%)` }} />
         <p className="relative mb-4 text-[11px] font-extrabold uppercase tracking-[0.25em] text-mute">Ton grade de la saison</p>
         <div className="relative mb-4 flex justify-center"><GradeEmblem grade={current} size={128} /></div>
-        <h1 className="relative font-display text-2xl font-black" style={{ background: `linear-gradient(90deg, ${current.from}, ${current.to})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent' }}>
+        <h1 className="grade-text relative font-display text-2xl font-black" style={{ background: `linear-gradient(90deg, ${current.from}, ${current.to})`, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', WebkitTextFillColor: 'transparent' }}>
           {current.name}
         </h1>
         <p className="relative mt-1 text-sm text-mute">{current.tagline}</p>
@@ -41,7 +41,7 @@ export default async function GradesPage() {
             <p className="mt-2 text-xs text-mute">Encore <b className="text-ink">{(next.min - user.xp).toLocaleString('fr-FR')} XP</b> pour {next.icon} <b className="text-ink">{next.name}</b></p>
           </div>
         ) : (
-          <p className="relative mt-4 text-sm font-extrabold" style={{ color: current.to }}>🌌 Tu es au sommet de la saison. Garde-le jusqu'à la clôture !</p>
+          <p className="grade-color relative mt-4 text-sm font-extrabold" style={{ '--gt': current.to, '--gf': current.from } as React.CSSProperties}>🌌 Tu es au sommet de la saison. Garde-le jusqu'à la clôture !</p>
         )}
         <p className="relative mx-auto mt-4 max-w-md text-[11px] leading-relaxed text-mute">
           Les XP repartent à zéro à la fin de chaque mois : tout le monde peut rattraper les autres. Ton grade final est gardé dans ton profil.
@@ -71,7 +71,7 @@ export default async function GradesPage() {
                 }}>
                 <GradeEmblem grade={g} size={56} locked={!reached} />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-display text-sm font-extrabold" style={{ color: reached ? g.to : undefined }}>{g.name}</p>
+                  <p className="grade-color truncate font-display text-sm font-extrabold" style={reached ? ({ '--gt': g.to, '--gf': g.from } as React.CSSProperties) : undefined}>{g.name}</p>
                   <p className="text-xs text-mute">{g.min === 0 ? 'Point de départ' : `${g.min.toLocaleString('fr-FR')} XP dans le mois`}</p>
                 </div>
                 <span className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-extrabold" style={isCurrent

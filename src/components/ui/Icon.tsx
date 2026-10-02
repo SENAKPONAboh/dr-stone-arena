@@ -3,7 +3,7 @@ import type { ReactNode, SVGProps } from 'react';
 export type IconName =
   | 'flame' | 'heart' | 'star' | 'trophy' | 'swords' | 'user' | 'home' | 'shield'
   | 'chest' | 'stethoscope' | 'ecg' | 'brain' | 'cell' | 'check' | 'close' | 'lock'
-  | 'chat' | 'bell' | 'gem' | 'crown';
+  | 'chat' | 'bell' | 'gem' | 'crown' | 'sun' | 'moon';
 
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 
@@ -28,6 +28,8 @@ const PATHS: Record<IconName, ReactNode> = {
   chat: <path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H9l-5 4v-4H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" fill="currentColor" />,
   bell: <path d="M12 2.5a6 6 0 0 0-6 6v4L4 16h16l-2-3.5v-4a6 6 0 0 0-6-6ZM9.5 18.5a2.5 2.5 0 0 0 5 0h-5Z" fill="currentColor" />,
   gem: <path d="M6 3h12l4 6-10 12L2 9l4-6Zm1 6 5 9 5-9H7Z" fill="currentColor" fillRule="evenodd" />,
+  sun: <g {...stroke}><circle cx="12" cy="12" r="4.2" /><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6" /></g>,
+  moon: <path d="M20.5 14.2A8.6 8.6 0 0 1 9.8 3.5a8.6 8.6 0 1 0 10.7 10.7Z" fill="currentColor" />,
   crown: <path d="m3 8 4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z" fill="currentColor" />,
 };
 

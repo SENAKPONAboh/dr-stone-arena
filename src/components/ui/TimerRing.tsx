@@ -13,7 +13,7 @@ export default function TimerRing({ remaining, total, size = 56 }: Props) {
   return (
     <div className={`relative inline-flex items-center justify-center ${urgent ? 'animate-heartbeat-fast' : ''}`} style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1c2723" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={stroke} style={{ stroke: 'rgb(var(--slab-2-rgb))' }} />
         <circle
           cx={size / 2}
           cy={size / 2}

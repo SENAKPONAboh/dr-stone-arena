@@ -7,7 +7,7 @@ type Variant = 'mala' | 'gold' | 'ghost' | 'danger';
 const STYLES: Record<Variant, string> = {
   mala: 'bg-mala text-stone shadow-[0_5px_0_#0f7a4f] active:shadow-[0_1px_0_#0f7a4f]',
   gold: 'bg-gold text-stone shadow-[0_5px_0_#9a6a12] active:shadow-[0_1px_0_#9a6a12]',
-  ghost: 'bg-slab-2 text-ink border border-line shadow-[0_5px_0_#26332e] active:shadow-[0_1px_0_#26332e]',
+  ghost: 'bg-slab-2 text-ink border border-line shadow-[0_5px_0_rgb(var(--line-rgb))] active:shadow-[0_1px_0_rgb(var(--line-rgb))]',
   danger: 'bg-heart text-white shadow-[0_5px_0_#a1233b] active:shadow-[0_1px_0_#a1233b]',
 };
 

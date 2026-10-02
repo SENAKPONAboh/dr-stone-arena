@@ -32,9 +32,9 @@ export default function SeasonPalmares({ summary, own = false }: { summary: Seas
       <div className="flex items-center gap-4 rounded-2xl p-4" style={neutral}>
         <GradeEmblem grade={best} size={64} />
         <div className="min-w-0">
-          <p className="truncate font-display text-base font-extrabold" style={{ color: best.to }}>{best.name}</p>
+          <p className="grade-color truncate font-display text-base font-extrabold" style={{ '--gt': best.to, '--gf': best.from } as React.CSSProperties}>{best.name}</p>
           <p className="text-sm font-bold">
-            atteint <span style={{ color: best.from }}>×{summary.gradeCounts[best.index]}</span>
+            atteint <span className="grade-text" style={{ color: best.from }}>×{summary.gradeCounts[best.index]}</span>
             <span className="font-normal opacity-60"> fin de saison</span>
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function SeasonPalmares({ summary, own = false }: { summary: Seas
       {reached.length > 1 && (
         <div className="flex flex-wrap justify-center gap-2">
           {reached.slice(1).map(g => (
-            <span key={g.index} className="rounded-full px-3 py-1 text-xs font-bold" style={{ background: `${g.from}22`, border: `1px solid ${g.from}66`, color: g.to }}>
+            <span key={g.index} className="grade-color rounded-full px-3 py-1 text-xs font-bold" style={{ background: `${g.from}22`, border: `1px solid ${g.from}66`, '--gt': g.to, '--gf': g.from } as React.CSSProperties}>
               {g.icon} {g.name} ×{summary.gradeCounts[g.index]}
             </span>
           ))}
@@ -58,7 +58,7 @@ export default function SeasonPalmares({ summary, own = false }: { summary: Seas
           return (
             <div key={s.season} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs" style={neutral}>
               <span className="font-bold capitalize">{seasonLabel(s.season)}</span>
-              <span className="truncate opacity-80">{g.icon} {g.name}</span>
+              <span className="grade-color truncate opacity-90" style={{ '--gt': g.to, '--gf': g.from } as React.CSSProperties}>{g.icon} {g.name}</span>
               <span className="whitespace-nowrap font-bold">n°{s.rank} · {s.xp.toLocaleString('fr-FR')} XP</span>
             </div>
           );

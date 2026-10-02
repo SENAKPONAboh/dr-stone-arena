@@ -11,6 +11,7 @@ import prisma from '@/lib/prisma';
 import { getXpGrade } from '@/lib/grades';
 import { getSeasonSummary } from '@/lib/seasons';
 import GradeBadge from '@/components/ui/GradeBadge';
+import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
 import type { CSSProperties } from 'react';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
@@ -134,6 +135,11 @@ export default async function ProfilPage() {
           </div>
 
           <div className="mt-4"><SeasonPalmares summary={seasons} own /></div>
+
+          <div className="mt-6 text-left">
+            <p className="mb-3 text-center text-sm font-bold">🎨 Apparence</p>
+            <ThemeSwitch variant="full" />
+          </div>
 
           {/* Formulaire de modification */}
           <div className={`mt-8 text-left border-t pt-6 ${user.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
