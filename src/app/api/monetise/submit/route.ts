@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       });
       if (!fresh) throw new Error('NO_USER');
 
-      // === UA : +1 000 UA par bonne réponse — AUCUN XP ===
+      // === UA : +UA_PER_CASE par bonne réponse — AUCUN XP ===
       let uaEarned = 0;
       let balanceAfter = fresh.uaBalance;
       if (isCorrect) {

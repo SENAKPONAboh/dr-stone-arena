@@ -4,6 +4,7 @@ import Coin from '@/components/ui/Coin';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { RETRY_RUSH_UA, RUSH_WEEKEND_CAP_UA, RUSH_PALIER_1_UA, RUSH_PALIER_2_UA, RUSH_PALIER_3_UA } from '@/lib/monetise';
 
 export default function RushStartPanel({
   isWeekend, activeDays, flameOk, totalWeekend, sessionsCount, hasFinishedSession, ticketCount,
@@ -25,7 +26,7 @@ export default function RushStartPanel({
     } else if (freeEligible) {
       ok = confirm("Lancer une tentative GRATUITE ? Le Rush commence immédiatement (3 erreurs tolérées).");
     } else {
-      ok = confirm("Lancer une tentative supplémentaire ? 15 000 UA seront débitées de ton trésor Élite.");
+      ok = confirm(`Lancer une tentative supplémentaire ? ${RETRY_RUSH_UA.toLocaleString('fr-FR')} UA seront débitées de ton trésor Élite.`);
     }
     if (!ok) return;
     setLoading(true);
@@ -77,7 +78,7 @@ export default function RushStartPanel({
         </div>
         <div className="text-right">
           <p className="text-xs font-bold text-white/40 uppercase">Week-end</p>
-          <p className="font-extrabold text-yellow-300">{totalWeekend.toLocaleString('fr-FR')} / 50 000 points de mérite</p>
+          <p className="font-extrabold text-yellow-300">{totalWeekend.toLocaleString('fr-FR')} / {RUSH_WEEKEND_CAP_UA.toLocaleString('fr-FR')} points de mérite</p>
           <p className="text-xs text-white/30">{sessionsCount} tentative{sessionsCount > 1 ? "s" : ""} jouée{sessionsCount > 1 ? "s" : ""}</p>
         </div>
       </div>
@@ -85,19 +86,19 @@ export default function RushStartPanel({
       {/* Lancement */}
       <motion.button
         onClick={() => handleStart(false)}
-        disabled={loading || !isWeekend || totalWeekend >= 50000}
+        disabled={loading || !isWeekend || totalWeekend >= RUSH_WEEKEND_CAP_UA}
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.97 }}
         className="w-full py-5 bg-yellow-500 text-[#1a1308] font-extrabold text-lg uppercase tracking-wide rounded-2xl shadow-xl shadow-yellow-900/30 disabled:opacity-30"
       >
-        {loading ? '⏳ Lancement...' : freeEligible ? "▶️ Lancer (gratuit)" : "▶️ Lancer — 15 000 UA"}
+        {loading ? '⏳ Lancement...' : freeEligible ? "▶️ Lancer (gratuit)" : `▶️ Lancer — ${RETRY_RUSH_UA.toLocaleString('fr-FR')} UA`}
       </motion.button>
 
       {/* 🎫 Ticket Rush : alternative sans débit d'UA */}
       {!freeEligible && ticketCount > 0 && (
         <motion.button
           onClick={() => handleStart(true)}
-          disabled={loading || !isWeekend || totalWeekend >= 50000}
+          disabled={loading || !isWeekend || totalWeekend >= RUSH_WEEKEND_CAP_UA}
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
           className="w-full py-4 bg-white/5 border-2 border-yellow-500/40 text-yellow-300 font-extrabold uppercase tracking-wide rounded-2xl disabled:opacity-30"
@@ -107,9 +108,9 @@ export default function RushStartPanel({
       )}
 
       <div className="bg-white/5 rounded-2xl p-4 text-xs text-white/40 space-y-1">
-        <p>⚔️ Série continue · 3 erreurs maximum · paliers 10 / 15 / 25 cas</p>
-        <p><Coin /> Palier 1 : +10 000 UA · Palier 2 : +20 000 UA · Palier 3 : +20 000 UA</p>
-        <p>🎁 Palier 3 = Coffre d'Élite du Major (Gel + Restaure gratuits)</p>
+        <p>⚔️ 5 étages de 5 cas · la difficulté monte à chaque étage · 3 erreurs maximum</p>
+        <p><Coin /> Étage 3 : +{RUSH_PALIER_1_UA.toLocaleString('fr-FR')} UA · Étage 4 : +{RUSH_PALIER_2_UA.toLocaleString('fr-FR')} UA · Étage 5 : +{RUSH_PALIER_3_UA.toLocaleString('fr-FR')} UA (ce qui est gagné est gardé)</p>
+        <p>🎁 Étage 5 = Coffre d'Élite du Major (Gel + Restaure gratuits)</p>
         <p>🎫 Ticket Rush = tentative sans payer en UA · 🛡️ Bouclier absorbe 1 erreur · 🔄 Seconde Chance reprend après défaite · ⏱️ Temps Bonus +30 s</p>
       </div>
     </div>

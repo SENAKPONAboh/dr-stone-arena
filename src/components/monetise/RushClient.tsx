@@ -31,11 +31,12 @@ type SubmitResult = {
   explanation: string; correctAnswer: string;
   chestGranted?: boolean; chestItems?: string[];
   nextCase?: RushCase | null; // cas suivant préparé par le serveur (affichage instantané)
+  etage?: number; etageCleared?: boolean;
 };
 
 const PALIERS = [
-  { threshold: 10, amount: RUSH_PALIER_1_UA },
-  { threshold: 15, amount: RUSH_PALIER_2_UA },
+  { threshold: 15, amount: RUSH_PALIER_1_UA },
+  { threshold: 20, amount: RUSH_PALIER_2_UA },
   { threshold: 25, amount: RUSH_PALIER_3_UA },
 ];
 
@@ -94,8 +95,9 @@ export default function RushClient({
   const errors = result?.errors ?? liveErrors;
   const nextPalier = PALIERS.find(p => p.threshold > streak);
   const progressPct = Math.min(100, (streak / 25) * 100);
+  const etage = Math.min(5, Math.floor(streak / 5) + 1);
   const palierReached = result
-    ? (result.currentStreak >= 25 ? 3 : result.currentStreak >= 15 ? 2 : result.currentStreak >= 10 ? 1 : 0)
+    ? (result.currentStreak >= 25 ? 3 : result.currentStreak >= 20 ? 2 : result.currentStreak >= 15 ? 1 : 0)
     : 0;
 
   const showHudError = (msg: string) => {
@@ -355,6 +357,13 @@ export default function RushClient({
                 <Coin /> {balance.toLocaleString('fr-FR')} UA
               </p>
             </div>
+            <div className="mb-2 flex gap-1.5">
+              {[1, 2, 3, 4, 5].map(n => (
+                <span key={n} className={`flex-1 rounded-lg px-1 py-1 text-center text-[10px] font-extrabold ${n < etage ? 'bg-yellow-500 text-[#1a1308]' : n === etage ? 'border border-yellow-400 bg-yellow-500/25 text-yellow-200' : 'bg-white/5 text-white/30'}`}>
+                  {n < etage ? '✓' : ''} Étage {n}
+                </span>
+              ))}
+            </div>
             <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
               <motion.div
                 className="h-full bg-gradient-to-r from-yellow-600 to-yellow-400"
@@ -362,7 +371,7 @@ export default function RushClient({
                 animate={{ width: `${progressPct}%` }}
                 transition={{ type: 'spring', stiffness: 120, damping: 20 }}
               />
-              {[10, 15, 25].map(t => (
+              {[5, 10, 15, 20, 25].map(t => (
                 <div key={t} className="absolute top-0 h-full w-0.5 bg-white/40" style={{ left: `${(t / 25) * 100}%` }} />
               ))}
             </div>
@@ -477,6 +486,12 @@ export default function RushClient({
                         </motion.div>
                       )}
 
+                      {result.etageCleared && (result.uaEarned ?? 0) === 0 && (
+                        <div className="rounded-2xl border-2 border-yellow-500/50 bg-yellow-500/10 p-4 text-center font-extrabold text-yellow-200">
+                          🪜 Étage {Math.floor(result.currentStreak / 5)} terminé ! Direction l'étage {Math.min(5, Math.floor(result.currentStreak / 5) + 1)}.
+                        </div>
+                      )}
+
                       <div className="p-5 rounded-2xl bg-white/5 border border-yellow-500/20">
                         <p className="text-white/60 font-semibold mb-2">💡 Correction :</p>
                         <p className="text-white/50 leading-relaxed">{result.explanation}</p>
@@ -546,7 +561,7 @@ export default function RushClient({
                 </motion.div>
               </AnimatePresence>
               <p className="text-white/40 text-xs sm:text-sm mt-10 font-bold text-center">
-                3 erreurs tolérées · Paliers 10 / 15 / 25 · Jusqu'à {(RUSH_PALIER_1_UA + RUSH_PALIER_2_UA + RUSH_PALIER_3_UA).toLocaleString('fr-FR')} UA
+                3 erreurs tolérées · 5 étages de 5 cas · Jusqu'à {(RUSH_PALIER_1_UA + RUSH_PALIER_2_UA + RUSH_PALIER_3_UA).toLocaleString('fr-FR')} UA
               </p>
             </motion.div>
           )}

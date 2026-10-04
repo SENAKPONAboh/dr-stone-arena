@@ -2,22 +2,24 @@
 // Source unique des valeurs. Anti-pay-to-win : jamais d'XP ni d'avantage académique ici.
 
 export const UA_PER_FCFA = 100;          // 100 UA = 1 FCFA (conversion masquée, visible dans la Cagnotne)
-export const UA_PER_CASE = 1000;         // +1 000 UA par bonne réponse (cas quotidiens monétisés)
-export const UA_DAILY_CAP = 10000;       // plafond journalier (10 cas × 1 000)
+export const UA_PER_CASE = 200;          // +200 UA par bonne réponse (cas quotidiens Élite) — option A : gains divisés par 5
+export const UA_DAILY_CAP = 2000;         // plafond journalier (10 cas × 200)
 export const PASS_PRICE_FCFA = 2000;     // Pass Arène Monétisé
 export const PASS_RENEWAL_UA = 200000;   // renouvellement par UA
-export const WITHDRAWAL_MIN_UA = 200000; // seuil de retrait
+export const WITHDRAWAL_MIN_UA = 100000; // seuil de retrait (= 1 000 FCFA)
 export const RECHARGE_MIN_UA = 10000;    // recharge minimum (100 FCFA) — règle validée
 export const RECHARGE_STEP_UA = 10000;   // multiples de 10 000 UA uniquement — règle validée
-export const RUSH_PALIER_1_UA = 10000;   // 10 cas consécutifs
-export const RUSH_PALIER_2_UA = 20000;   // 15 cas consécutifs
-export const RUSH_PALIER_3_UA = 20000;   // 25 cas consécutifs
-export const RUSH_WEEKEND_CAP_UA = 50000;
-export const RETRY_RUSH_UA = 15000;      // retry direct (paiement immédiat — distinct du Ticket de boutique)
-export const GEL_FLAMME_UA = 15000;
-export const RESTAURE_FLAMME_UA = 30000;
-export const ASSURANCE_FLAMME_UA = 70000;
+export const RUSH_PALIER_1_UA = 3000;    // étage 3 terminé (15 bonnes réponses)
+export const RUSH_PALIER_2_UA = 4000;    // étage 4 terminé (20 bonnes réponses)
+export const RUSH_PALIER_3_UA = 8000;    // étage 5 terminé (25 bonnes réponses)
+export const RUSH_WEEKEND_CAP_UA = 15000;  // plafond du week-end = 3 000 + 4 000 + 8 000
+export const RETRY_RUSH_UA = 3000;       // retry direct (paiement immédiat — distinct du Ticket de boutique)
+export const GEL_FLAMME_UA = 3000;
+export const RESTAURE_FLAMME_UA = 6000;
+export const ASSURANCE_FLAMME_UA = 14000;
 export const RUSH_MAX_ERRORS = 3;
+export const RUSH_ETAGE_SIZE = 5;       // bonnes réponses par étage
+export const RUSH_ETAGES = 5;            // nombre d'étages (5 × 5 = 25 bonnes réponses)
 export const RUSH_FREE_ATTEMPTS = 2;
 export const RUSH_FLAME_REQUIRED = 5;    // jours de Flamme dans la semaine
 

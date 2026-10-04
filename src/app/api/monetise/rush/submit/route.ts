@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
-import { RUSH_MAX_ERRORS, RUSH_WEEKEND_CAP_UA, RUSH_PALIER_1_UA, RUSH_PALIER_2_UA, RUSH_PALIER_3_UA, GEL_FLAMME_UA, RESTAURE_FLAMME_UA, getWeekendId } from '@/lib/monetise';
+import { RUSH_MAX_ERRORS, RUSH_WEEKEND_CAP_UA, RUSH_PALIER_1_UA, RUSH_PALIER_2_UA, RUSH_PALIER_3_UA, GEL_FLAMME_UA, RESTAURE_FLAMME_UA, RUSH_ETAGE_SIZE, RUSH_ETAGES, getWeekendId } from '@/lib/monetise';
 import { isRushWeekend, getWeekendSaturday, pickNextRushCase, countRushPool } from '@/lib/monetise-rush';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
 const PALIERS = [
-  { flag: 'palier1' as const, threshold: 10, amount: RUSH_PALIER_1_UA, type: 'RUSH_P1' },
-  { flag: 'palier2' as const, threshold: 15, amount: RUSH_PALIER_2_UA, type: 'RUSH_P2' },
+  { flag: 'palier1' as const, threshold: 15, amount: RUSH_PALIER_1_UA, type: 'RUSH_P1' },
+  { flag: 'palier2' as const, threshold: 20, amount: RUSH_PALIER_2_UA, type: 'RUSH_P2' },
   { flag: 'palier3' as const, threshold: 25, amount: RUSH_PALIER_3_UA, type: 'RUSH_P3' },
 ];
 
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         balanceAfter = u?.uaBalance ?? 0;
       }
 
-      // === COFFRE DU PALIER 3 ===
+      // === COFFRE DE L'ÉTAGE 5 (palier 3) ===
       let chestGranted = false;
       const chestItems: string[] = [];
       if (paliersToCredit.some(p => p.flag === 'palier3')) {
@@ -155,9 +155,13 @@ export async function POST(request: Request) {
 
     // ⚡ Fluidité : le cas suivant est préparé tout de suite et renvoyé avec la correction.
     // Le navigateur l'affiche sans recharger la page (aucune réponse ni explication n'y figure).
-    const nextCase = response.sessionStatus === 'EN_COURS' ? await pickNextRushCase(level, playedAfter) : null;
+    const nextCase = response.sessionStatus === 'EN_COURS' ? await pickNextRushCase(level, playedAfter, response.currentStreak) : null;
 
-    return NextResponse.json({ ...response, nextCase });
+    // Étage en cours (1 à 5) et étage tout juste terminé (pour l'animation)
+    const etage = Math.min(RUSH_ETAGES, Math.floor(response.currentStreak / RUSH_ETAGE_SIZE) + 1);
+    const etageCleared = response.isCorrect && response.currentStreak > 0 && response.currentStreak % RUSH_ETAGE_SIZE === 0;
+
+    return NextResponse.json({ ...response, nextCase, etage, etageCleared });
   } catch (e: any) {
     if (e?.message === 'NOT_FOUND') return NextResponse.json({ error: "Tentative introuvable" }, { status: 404 });
     if (e?.message === 'SESSION_CLOSED') return NextResponse.json({ error: "Cette tentative est terminée ou expirée." }, { status: 400 });

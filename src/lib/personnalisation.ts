@@ -27,10 +27,10 @@ export async function getOrCreatePersonalisationCatalog() {
     const existing = await prisma.shopItem.findFirst({ where: { name: item.name, category: item.category } });
     if (!existing) {
       await prisma.shopItem.create({ data: item });
-    } else if (existing.effectKey !== item.effectKey || existing.isActive !== item.isActive) {
+    } else if (existing.effectKey !== item.effectKey || existing.isActive !== item.isActive || existing.priceUA !== item.priceUA) {
       await prisma.shopItem.update({
         where: { id: existing.id },
-        data: { effectKey: item.effectKey, isActive: item.isActive },
+        data: { effectKey: item.effectKey, isActive: item.isActive, priceUA: item.priceUA },
       });
     }
   }

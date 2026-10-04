@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 import Icon from '@/components/ui/Icon';
+import { WITHDRAWAL_MIN_UA } from '@/lib/monetise';
 
 function AnimatedCounter({ target }: { target: number }) {
   const [value, setValue] = useState(0);
@@ -59,7 +60,7 @@ export default function MonetiseDashboard({ uaBalance, uaRecharged, streak, pass
           <span className="rounded-full bg-stone/15 px-3 py-1">⭐ Points de mérite : {merit.toLocaleString('fr-FR')}</span>
           {credits > 0 && <span className="rounded-full bg-stone/15 px-3 py-1">⚡ Crédits de recharge : {credits.toLocaleString('fr-FR')}</span>}
         </div>
-        {merit >= 200000 && (
+        {merit >= WITHDRAWAL_MIN_UA && (
           <Link href="/etudiant/monetise/cagnotte" className="relative mt-4 inline-block rounded-2xl bg-stone px-6 py-2.5 font-display text-xs font-bold uppercase tracking-wide text-gold">
             Prime Arena disponible
           </Link>

@@ -21,7 +21,7 @@ export async function POST(request: Request) {
       const accountName = body?.accountName ? String(body.accountName).trim() : null;
 
       if (!Number.isInteger(amountUA) || amountUA < WITHDRAWAL_MIN_UA) {
-        return NextResponse.json({ error: `Le retrait minimum est de ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (= 2 000 FCFA).` }, { status: 400 });
+        return NextResponse.json({ error: `Le retrait minimum est de ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (= ${uaToFCFA(WITHDRAWAL_MIN_UA).toLocaleString('fr-FR')} FCFA).` }, { status: 400 });
       }
       if (amountUA % 100 !== 0) {
         return NextResponse.json({ error: "Le montant doit être un multiple de 100 UA (100 UA = 1 FCFA)." }, { status: 400 });

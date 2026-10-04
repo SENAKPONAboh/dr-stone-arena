@@ -4,14 +4,14 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { GEL_FLAMME_UA, RESTAURE_FLAMME_UA, ASSURANCE_FLAMME_UA } from '@/lib/monetise';
 
-export const TICKET_RUSH_UA = 15000;
-export const BOUCLIER_UA = 25000;
-export const SECONDE_CHANCE_UA = 35000;
-export const TEMPS_BONUS_UA = 20000;
-export const COFFRE_BRONZE_UA = 30000;
-export const COFFRE_SILVER_UA = 70000;
-export const COFFRE_GOLD_UA = 150000;
-export const COFFRE_DIAMOND_UA = 300000;
+export const TICKET_RUSH_UA = 3000;
+export const BOUCLIER_UA = 5000;
+export const SECONDE_CHANCE_UA = 7000;
+export const TEMPS_BONUS_UA = 4000;
+export const COFFRE_BRONZE_UA = 6000;
+export const COFFRE_SILVER_UA = 14000;
+export const COFFRE_GOLD_UA = 30000;
+export const COFFRE_DIAMOND_UA = 60000;
 
 const CATALOG: { name: string; category: string; priceUA: number; icon: string; effectKey: string; description: string }[] = [
   { name: 'Gel de Flamme', category: 'FLAMME', priceUA: GEL_FLAMME_UA, icon: '🧊', effectKey: 'GEL_FLAMME', description: 'Gèle ta Flamme pour la protéger temporairement. À activer quand TU le décides.' },
@@ -51,8 +51,8 @@ export async function getOrCreateShopCatalog() {
     const existing = await prisma.shopItem.findFirst({ where: { name: item.name, category: item.category } });
     if (!existing) {
       await prisma.shopItem.create({ data: item });
-    } else if (!existing.effectKey) {
-      await prisma.shopItem.update({ where: { id: existing.id }, data: { effectKey: item.effectKey } });
+    } else if (!existing.effectKey || existing.priceUA !== item.priceUA) {
+      await prisma.shopItem.update({ where: { id: existing.id }, data: { effectKey: item.effectKey, priceUA: item.priceUA } });
     }
   }
   return prisma.shopItem.findMany({

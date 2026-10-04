@@ -53,7 +53,7 @@ export default async function MonetiseRushPage() {
   // ===== Tentative en cours → jeu =====
   if (state.currentSession && state.currentSession.status === 'EN_COURS') {
     const session = state.currentSession;
-    const nextCase = await pickNextRushCase(level, session.playedCaseIds);
+    const nextCase = await pickNextRushCase(level, session.playedCaseIds, session.currentStreak);
     if (!nextCase) {
       return screen(infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.'));
     }

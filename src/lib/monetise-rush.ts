@@ -1,6 +1,6 @@
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
-import { RUSH_FLAME_REQUIRED, getWeekendId } from '@/lib/monetise';
+import { RUSH_FLAME_REQUIRED, RUSH_ETAGE_SIZE, RUSH_ETAGES, getWeekendId } from '@/lib/monetise';
 import { caseDuration } from '@/lib/case-duration';
 
 export function isRushWeekend(date = new Date()): boolean {
@@ -95,6 +95,21 @@ export type RushCasePayload = {
   durationMax: number; difficulty: string; subject: string; chapter: string;
 };
 
+// ===== ÉTAGES DU RUSH : la difficulté monte avec les bonnes réponses =====
+// 5 étages de 5 cas. É1 facile · É2 facile/moyen · É3 moyen · É4 moyen/difficile · É5 difficile.
+// (Durées : facile 60 s, moyen 90 s, difficile 120 s — voir case-duration.ts)
+const DIFFICULTY_ORDER = ['FACILE', 'MOYEN', 'DIFFICILE'];
+
+export function rushDifficultyFor(correctCount: number): 'FACILE' | 'MOYEN' | 'DIFFICILE' {
+  const etage = Math.min(RUSH_ETAGES, Math.floor(correctCount / RUSH_ETAGE_SIZE) + 1);
+  const pos = correctCount % RUSH_ETAGE_SIZE;
+  if (etage === 1) return 'FACILE';
+  if (etage === 2) return pos % 2 === 0 ? 'FACILE' : 'MOYEN';
+  if (etage === 3) return 'MOYEN';
+  if (etage === 4) return pos % 2 === 0 ? 'MOYEN' : 'DIFFICILE';
+  return 'DIFFICILE';
+}
+
 /** Nombre de cas différents disponibles pour un niveau (sert à savoir si la banque est épuisée). */
 export async function countRushPool(level: number): Promise<number> {
   return prisma.clinicalCase.count({ where: { anneeEtude: level } });
@@ -105,20 +120,30 @@ export async function countRushPool(level: number): Promise<number> {
  * Si la banque du niveau est épuisée, on autorise une répétition (en évitant le tout dernier cas joué)
  * plutôt que de bloquer le joueur.
  */
-export async function pickNextRushCase(level: number, playedIds: string[]): Promise<RushCasePayload | null> {
-  let ids = (await prisma.clinicalCase.findMany({
+export async function pickNextRushCase(level: number, playedIds: string[], correctCount = 0): Promise<RushCasePayload | null> {
+  // On vise la difficulté de l'étage ; s'il n'y a pas assez de cas de cette difficulté, on prend la plus proche.
+  const target = DIFFICULTY_ORDER.indexOf(rushDifficultyFor(correctCount));
+  const pickClosest = (cands: { id: string; difficulty: string }[]): string | null => {
+    if (cands.length === 0) return null;
+    const dist = (d: string) => { const i = DIFFICULTY_ORDER.indexOf(String(d).toUpperCase()); return i < 0 ? 1 : Math.abs(i - target); };
+    const best = Math.min(...cands.map(c => dist(c.difficulty)));
+    const group = cands.filter(c => dist(c.difficulty) === best);
+    return group[Math.floor(Math.random() * group.length)].id;
+  };
+
+  let id = pickClosest(await prisma.clinicalCase.findMany({
     where: { anneeEtude: level, id: { notIn: playedIds } },
-    select: { id: true },
-  })).map(c => c.id);
+    select: { id: true, difficulty: true },
+  }));
 
-  if (ids.length === 0) {
+  if (!id) {
+    // Banque du niveau épuisée : on autorise une répétition (en évitant le tout dernier cas joué)
     const last = playedIds[playedIds.length - 1];
-    const all = (await prisma.clinicalCase.findMany({ where: { anneeEtude: level }, select: { id: true } })).map(c => c.id);
-    ids = all.length > 1 ? all.filter(id => id !== last) : all;
+    const all = await prisma.clinicalCase.findMany({ where: { anneeEtude: level }, select: { id: true, difficulty: true } });
+    id = pickClosest(all.length > 1 ? all.filter(c => c.id !== last) : all);
   }
-  if (ids.length === 0) return null;
+  if (!id) return null;
 
-  const id = ids[Math.floor(Math.random() * ids.length)];
   const c = await prisma.clinicalCase.findUnique({
     where: { id },
     include: { chapter: { include: { subject: true } } },

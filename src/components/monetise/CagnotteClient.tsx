@@ -87,7 +87,7 @@ export default function CagnotteClient({
   const amountNum = parseInt(amount || '0', 10) || 0;
   const amountError = amountNum === 0 ? ''
     : amountNum % 100 !== 0 ? 'Multiple de 100 UA requis (100 UA = 1 FCFA).'
-    : amountNum < WITHDRAWAL_MIN_UA ? `Minimum : ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (2 000 FCFA).`
+    : amountNum < WITHDRAWAL_MIN_UA ? `Minimum : ${WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (${uaToFCFA(WITHDRAWAL_MIN_UA).toLocaleString('fr-FR')} FCFA).`
     : amountNum > merit ? 'Montant supérieur à tes points de mérite disponibles.'
     : '';
   const phoneDigits = phone.replace(/\D/g, '');
@@ -230,7 +230,7 @@ export default function CagnotteClient({
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="bg-white/5 border border-yellow-500/20 rounded-3xl p-6">
           <h2 className="font-extrabold text-white mb-1">💰 Prime Arena — demander mon retrait</h2>
-          <p className="text-xs text-white/40 mb-5">100 UA = 1 FCFA · Minimum {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA (2 000 FCFA) · Paiement manuel après vérification — tu seras notifié.</p>
+          <p className="text-xs text-white/40 mb-5">100 UA = 1 FCFA · Minimum {WITHDRAWAL_MIN_UA.toLocaleString('fr-FR')} UA ({uaToFCFA(WITHDRAWAL_MIN_UA).toLocaleString('fr-FR')} FCFA) · Paiement manuel après vérification — tu seras notifié.</p>
 
           {merit < WITHDRAWAL_MIN_UA && (
             <div className="bg-white/5 border border-yellow-500/20 rounded-2xl p-5 text-center text-sm text-white/50">
