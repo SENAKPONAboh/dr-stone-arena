@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { UA_PER_CASE } from '@/lib/monetise';
+import { isWeekdayWAT } from '@/lib/wat-time';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
@@ -15,6 +16,10 @@ export async function POST(request: Request) {
   const user = await getCurrentUserCore();
   if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   if (!user.passActive) return NextResponse.json({ error: "Pass Monétisé requis." }, { status: 403 });
+  // Les 10 cas Élite du quotidien se jouent du lundi au vendredi. Le week-end, c'est le Rush.
+  if (!isWeekdayWAT()) {
+    return NextResponse.json({ error: "Les cas Élite du quotidien sont disponibles du lundi au vendredi. Ce week-end, place au Rush !" }, { status: 403 });
+  }
 
   try {
     const { clinicalCaseId, userAnswer, timeSpent } = await request.json();

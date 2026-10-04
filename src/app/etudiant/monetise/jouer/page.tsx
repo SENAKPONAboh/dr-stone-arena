@@ -5,12 +5,30 @@ import prisma from '@/lib/prisma';
 import MonetisePlayClient from '@/components/monetise/MonetisePlayClient';
 import MonetiseNav from '@/components/monetise/MonetiseNav';
 import { getOrCreateMonetiseSelection } from '@/lib/monetise-daily';
+import { isWeekdayWAT } from '@/lib/wat-time';
 import type { ReactNode } from 'react';
 
 export default async function MonetisePlayPage() {
   const user = await getCurrentUserCore();
   if (!user) redirect('/api/auth/logout');
   if (!user.passActive) redirect('/etudiant/monetise/pass');
+
+  // Week-end : pas de cas quotidiens Élite (ils se jouent du lundi au vendredi) — place au Rush
+  if (!isWeekdayWAT()) {
+    return (
+      <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain elite-bg">
+        <div className="py-4 px-4 max-w-3xl mx-auto"><MonetiseNav passActive={true} /></div>
+        <div className="min-h-[50vh] flex items-center justify-center p-4">
+          <div className="text-center bg-white/5 border border-yellow-500/20 p-8 rounded-3xl max-w-md w-full">
+            <div className="text-6xl mb-4">🌴</div>
+            <h2 className="text-2xl font-extrabold text-yellow-300 mb-2">Pause du week-end</h2>
+            <p className="text-white/60 mb-6">Les 10 cas Élite du quotidien se jouent du lundi au vendredi. Ce week-end, place au Rush : une série de cas à enchaîner, avec des paliers de mérite.</p>
+            <a href="/etudiant/monetise/rush" className="inline-block py-3 px-6 bg-yellow-500 text-[#1a1308] font-bold rounded-2xl">⚔️ Aller au Rush</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const level = user.anneeEtude ?? 1;
   const caseIds = await getOrCreateMonetiseSelection(user.id, level);
