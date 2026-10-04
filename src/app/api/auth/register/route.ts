@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   try {
     // Freine les inscriptions en rafale depuis une même adresse
     const ipKey = `register:${clientIp(request)}`;
-    const wait = checkRateLimit(ipKey, 10, 60 * 60 * 1000);
+    const wait = checkRateLimit(ipKey, 60, 60 * 60 * 1000);
     if (wait > 0) return NextResponse.json({ error: "Trop de tentatives. Réessaie plus tard." }, { status: 429 });
     recordFailure(ipKey, 60 * 60 * 1000);
 

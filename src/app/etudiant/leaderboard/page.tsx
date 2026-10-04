@@ -32,10 +32,15 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
   const allUsers = await prisma.user.findMany({
     where,
     orderBy: { xp: 'desc' },
+    take: 100, // le top 100 suffit : charger tous les étudiants (et leurs photos) ralentissait la page
     select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, anneeEtude: true, pays: true, universite: true, activeFrameId: true, activeTitleId: true }
   });
 
   const legends = await getLegendCounts(allUsers.map(u => u.id));
+
+  // Hors du top 100 : on affiche quand même ton rang
+  const inTop = allUsers.some(u => u.id === user.id);
+  const myRank = inTop ? null : (await prisma.user.count({ where: { ...where, xp: { gt: user.xp } } })) + 1;
 
   const tabStyle = (active: boolean) => `rounded-2xl px-2 py-2.5 text-center font-display text-[11px] font-bold uppercase tracking-wide transition-all ${active
     ? 'bg-mala text-stone shadow-[0_3px_0_#0f7a4f]'
@@ -89,6 +94,12 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
               <p className="font-bold text-gold">Pays non renseigné</p>
               <p className="mt-1 text-sm text-mute">Ton compte n'a pas de pays associé, le classement par pays n'est pas disponible.</p>
             </div>
+          )}
+
+          {myRank && (
+            <p className="mb-4 rounded-2xl border border-mala/40 bg-mala/10 p-3 text-center text-sm font-bold text-ink">
+              Ton rang : <span className="text-mala">n°{myRank}</span> · {user.xp.toLocaleString('fr-FR')} XP
+            </p>
           )}
 
           {allUsers.length === 0 ? (
