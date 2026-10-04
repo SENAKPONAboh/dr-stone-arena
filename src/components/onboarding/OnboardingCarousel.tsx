@@ -71,10 +71,21 @@ const SLIDES: Slide[] = [
     icon: '🏆', kicker: 'Reconnaissance', title: 'Classements et profil',
     paragraphs: [
       "Compare-toi au classement du mois : global, par niveau ou par pays. Ton profil public montre ton grade, ton palmarès de saisons (« Légende Immortelle ×2 »), tes badges et tes objets équipés.",
-      "À la fin de chaque mois, les meilleurs du classement peuvent être sélectionnés pour une compétition spéciale.",
+      "À la fin de chaque mois, les 10 premiers de chaque promotion se qualifient pour le Tournoi mensuel (étape suivante).",
     ],
     highlight: "Chaque nouveau mois, tout le monde repart sur la même ligne de départ.",
     from: '#f2c14e', to: '#ff8a3d',
+  },
+  {
+    icon: '🏆', kicker: 'Fin de mois', title: 'Le Tournoi mensuel',
+    paragraphs: [
+      "Quand le mois se termine, les 10 premiers de chaque promotion (selon les XP du mois) sont qualifiés pour le Tournoi. Tu peux suivre ta place dans l'onglet Tournoi.",
+      "Le week-end suivant, chaque finaliste joue UNE seule fois, pendant 48 h : 20 cas inédits, chronométrés par le serveur. Les bonnes réponses restent secrètes jusqu'à la clôture, pour que personne ne triche.",
+      "Le meilleur de chaque promotion devient Champion de promotion : un trophée et un titre exclusif qui restent sur son profil. Tout le monde peut voir les résultats et les corrections.",
+    ],
+    points: ['🎯 Top 10 de ta promotion', '⏱️ 20 cas inédits, 1 tentative', '👑 Champion de promotion'],
+    highlight: "Pas besoin de payer : on se qualifie au mérite.",
+    from: '#f2c14e', to: '#8b5cf6',
   },
   {
     icon: '🎖️', kicker: 'Récompenses', title: 'Badges et coffres',
@@ -87,7 +98,7 @@ const SLIDES: Slide[] = [
   {
     icon: '🛡️', kicker: 'Espace Élite', title: 'Le Pass Élite',
     paragraphs: [
-      "Le Pass Élite (2 000 FCFA par mois) te donne accès à l'Espace Élite : 10 cas Élite par jour, le Rush du week-end, la boutique, la personnalisation (cadres animés, thèmes, titres) et le classement Élite.",
+      "Le Pass Élite (2 000 FCFA par mois) te donne accès à l'Espace Élite : 10 cas Élite par jour du lundi au vendredi, le Rush du week-end (5 étages de difficulté croissante), la boutique, la personnalisation (cadres animés, thèmes, titres) et le classement Élite.",
       "Tes réussites te rapportent des points de mérite. La Prime Arena est une bourse de mérite qui récompense ta performance : elle n'est pas garantie.",
     ],
     highlight: "Tu paies un accès, pas une mise. C'est ton travail qui compte.",

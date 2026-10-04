@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { RUSH_FLAME_REQUIRED, RUSH_ETAGE_SIZE, RUSH_ETAGES, getWeekendId } from '@/lib/monetise';
 import { caseDuration } from '@/lib/case-duration';
+import { getReservedCaseIds } from '@/lib/tournoi';
 
 export function isRushWeekend(date = new Date()): boolean {
   const day = date.getDay();
@@ -131,8 +132,9 @@ export async function pickNextRushCase(level: number, playedIds: string[], corre
     return group[Math.floor(Math.random() * group.length)].id;
   };
 
+  const reserved = await getReservedCaseIds(); // cas d'un tournoi à venir : on les évite
   let id = pickClosest(await prisma.clinicalCase.findMany({
-    where: { anneeEtude: level, id: { notIn: playedIds } },
+    where: { anneeEtude: level, id: { notIn: [...playedIds, ...reserved] } },
     select: { id: true, difficulty: true },
   }));
 

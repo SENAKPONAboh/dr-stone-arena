@@ -11,6 +11,7 @@ import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
 import GradeBadge from '@/components/ui/GradeBadge';
+import TournoiHomeCard from '@/components/tournoi/TournoiHomeCard';
 import LegendMark from '@/components/ui/LegendMark';
 import { getLegendCounts } from '@/lib/seasons';
 import { getXpGrade, gradeProgress } from '@/lib/grades';
@@ -230,6 +231,9 @@ export default async function EtudiantDashboard() {
             <p className="text-sm text-mute">Défis, duels et séries</p>
           </Link>
         </div>
+
+        {/* Tournoi mensuel */}
+        <TournoiHomeCard userId={user.id} />
 
         {/* Top 3 du niveau */}
         <div className={`${card} p-5`}>

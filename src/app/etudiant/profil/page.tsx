@@ -13,6 +13,8 @@ import { getSeasonSummary } from '@/lib/seasons';
 import GradeBadge from '@/components/ui/GradeBadge';
 import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
+import TournoiTrophies from '@/components/ui/TournoiTrophies';
+import { getTournoiTrophies } from '@/lib/tournoi';
 import LegendMark from '@/components/ui/LegendMark';
 import type { CSSProperties } from 'react';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
@@ -40,6 +42,7 @@ export default async function ProfilPage() {
   // Grade de la saison + palmarès des saisons passées
   const xpGrade = getXpGrade(user.xp).current;
   const seasons = await getSeasonSummary(user.id);
+  const tournoi = await getTournoiTrophies(user.id);
 
   const { current: duelGrade, next: nextDuelGrade } = getDuelGrade(user.duelsWon);
   const duelProgress = nextDuelGrade
@@ -143,6 +146,7 @@ export default async function ProfilPage() {
           </div>
 
           <SeasonPalmares summary={seasons} />
+          <TournoiTrophies data={tournoi} />
 
           <div className="mt-6 text-left">
             <p className="mb-3 text-center text-sm font-bold">🎨 Apparence</p>

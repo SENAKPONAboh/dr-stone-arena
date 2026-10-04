@@ -64,6 +64,10 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
       <main className="mx-auto mt-6 max-w-3xl px-4">
         <div className="rounded-3xl border border-line bg-slab p-5">
 
+          <Link href="/etudiant/tournoi" className="mb-4 flex items-center justify-between rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm font-bold text-ink">
+            <span>🏆 Tournoi mensuel : les 10 premiers de chaque promotion</span><span className="text-gold">→</span>
+          </Link>
+
           {/* ===== Onglets : Global | Niveau | Pays ===== */}
           <div className="mb-6 grid grid-cols-3 gap-3">
             <Link href="/etudiant/leaderboard" className={tabStyle(isGlobal)}>🌍 Global</Link>

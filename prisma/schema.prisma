@@ -46,6 +46,7 @@ model User {
   uaLocked           Int       @default(0)
   uaRecharged        Int       @default(0) // part du solde issue de recharges (non retirable)
   seasonResults      SeasonResult[]
+  tournamentEntries  TournamentEntry[]
   passActive         Boolean   @default(false)
   passExpiresAt      DateTime?
   streakBeforeReset  Int       @default(0)
@@ -445,4 +446,42 @@ model SeasonResult {
 
   @@unique([userId, season])
   @@index([season])
+}
+
+
+// ===== TOURNOI MENSUEL : les 10 premiers de chaque promotion jouent 20 cas inédits sur 48 h =====
+model Tournament {
+  id         String   @id @default(cuid())
+  season     String   // mois dont sont issus les finalistes, ex. "2026-10"
+  anneeEtude Int      // promotion (1 à 7)
+  title      String
+  status     String   @default("BROUILLON") // BROUILLON | PUBLIE | TERMINE
+  caseIds    String[] @default([])         // les 20 cas inédits, dans l'ordre
+  opensAt    DateTime
+  closesAt   DateTime
+  prize      String?
+  createdAt  DateTime @default(now())
+  entries    TournamentEntry[]
+
+  @@unique([season, anneeEtude])
+}
+
+model TournamentEntry {
+  id            String     @id @default(cuid())
+  tournamentId  String
+  tournament    Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seed          Int        // rang de qualification (1 = premier du mois)
+  currentIndex  Int        @default(0)
+  caseStartedAt DateTime?  // heure de départ du cas en cours (le chrono est mesuré par le serveur)
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  score         Int        @default(0)
+  totalTime     Int        @default(0) // secondes (départage les égalités)
+  answers       Json       @default("[]")
+  rank          Int?       // rang final, renseigné à la clôture
+
+  @@unique([tournamentId, userId])
+  @@index([userId])
 }

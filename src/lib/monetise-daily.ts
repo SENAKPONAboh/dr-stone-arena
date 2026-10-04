@@ -3,6 +3,7 @@
 // sélection et tentatives totalement indépendantes du mode classique.
 
 import prisma from '@/lib/prisma';
+import { getReservedCaseIds } from '@/lib/tournoi';
 import { UA_PER_CASE } from '@/lib/monetise';
 
 const CASES_PER_DAY = 10;
@@ -41,10 +42,14 @@ export async function getOrCreateMonetiseSelection(userId: string, anneeEtude: n
   });
   const attemptedIds = new Set(attemptsAsc.map(a => a.clinicalCaseId));
 
-  const allCases = await prisma.clinicalCase.findMany({
+  const everyCase = await prisma.clinicalCase.findMany({
     where: { anneeEtude },
     select: { id: true },
   });
+  // Les cas réservés par un tournoi à venir restent inédits (sauf si la banque deviendrait trop petite)
+  const reserved = new Set(await getReservedCaseIds());
+  const notReserved = everyCase.filter(c => !reserved.has(c.id));
+  const allCases = notReserved.length >= CASES_PER_DAY ? notReserved : everyCase;
   const neverSeen = allCases.filter(c => !attemptedIds.has(c.id));
 
   let selected: string[];

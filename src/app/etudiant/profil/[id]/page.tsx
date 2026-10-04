@@ -13,6 +13,8 @@ import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
 import GradeBadge from '@/components/ui/GradeBadge';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
+import TournoiTrophies from '@/components/ui/TournoiTrophies';
+import { getTournoiTrophies } from '@/lib/tournoi';
 import LegendMark from '@/components/ui/LegendMark';
 import { getXpGrade } from '@/lib/grades';
 import { getSeasonSummary } from '@/lib/seasons';
@@ -44,6 +46,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   const xpGrade = getXpGrade(profileUser.xp).current;
   const seasons = await getSeasonSummary(profileUser.id);
+  const tournoi = await getTournoiTrophies(profileUser.id);
 
   // ===== STYLES : thème = CSS INLINE (fiable mobile + PC) =====
   const badgeProps = (prem: string, free: string) =>
@@ -155,6 +158,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           </div>
 
           <SeasonPalmares summary={seasons} />
+          <TournoiTrophies data={tournoi} />
 
           <div className={`mt-8 text-left border-t pt-6 ${themeDef || profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>
