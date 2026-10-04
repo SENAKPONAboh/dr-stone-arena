@@ -71,7 +71,7 @@ export default function RegisterPage() {
 
         <div>
           <label className={AUTH_LABEL}>Mot de passe</label>
-          <input id="password" name="password" type="password" required className={AUTH_INPUT} placeholder="••••••••" />
+          <input id="password" name="password" type="password" required minLength={8} className={AUTH_INPUT} placeholder="8 caractères minimum" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

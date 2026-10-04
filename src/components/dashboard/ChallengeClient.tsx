@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
@@ -54,6 +54,20 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
   const [wasViolation, setWasViolation] = useState(false);
   const [gradeUp, setGradeUp] = useState<{ from: XpGrade; to: XpGrade } | null>(null);
 
+  // Jeton de début de cas : permet au serveur de mesurer le temps lui-même (bonus de rapidité, dépassement du chrono)
+  const startTokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!guardReady) return;
+    fetch('/api/challenge/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicalCaseId: clinicalCase.id }),
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.token) startTokenRef.current = d.token; })
+      .catch(() => { /* sans jeton : pas de bonus de rapidité, mais le jeu continue */ });
+  }, [guardReady, clinicalCase.id]);
+
   // Chronomètre — démarre SEULEMENT après l'accord de l'avertissement anti-triche
   useEffect(() => {
     if (isSubmitted || !guardReady) return;
@@ -80,7 +94,8 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
         body: JSON.stringify({
           clinicalCaseId: clinicalCase.id,
           userAnswer: violation ? "Cas annulé — sortie de l'application" : timeout ? "Aucune réponse (Temps écoulé)" : selectedAnswer,
-          timeSpent: timeSpent
+          timeSpent: timeSpent,
+          startToken: startTokenRef.current,
         })
       });
 
