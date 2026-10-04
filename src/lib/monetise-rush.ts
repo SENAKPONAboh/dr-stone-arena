@@ -3,25 +3,28 @@ import type { Prisma } from '@prisma/client';
 import { RUSH_FLAME_REQUIRED, RUSH_ETAGE_SIZE, RUSH_ETAGES, getWeekendId } from '@/lib/monetise';
 import { caseDuration } from '@/lib/case-duration';
 import { getReservedCaseIds } from '@/lib/tournoi';
+import { watDay } from '@/lib/wat-time';
+
+// Tout est calculé à l'heure locale (Niger / Bénin, UTC+1) comme les cas Élite du quotidien :
+// ainsi le Rush s'ouvre exactement quand les cas du quotidien se ferment (samedi 00h00), sans chevauchement.
+const WAT_MS = 60 * 60 * 1000;
 
 export function isRushWeekend(date = new Date()): boolean {
-  const day = date.getDay();
+  const day = watDay(date);
   return day === 0 || day === 6;
 }
 
+// Lundi 00h00 (heure locale) de la semaine en cours, exprimé en instant UTC
 function getWeekendMonday(date = new Date()): Date {
-  const day = date.getDay();
+  const local = new Date(date.getTime() + WAT_MS);
+  const day = local.getUTCDay();
   const daysFromMonday = day === 0 ? 6 : day - 1;
-  const monday = new Date(date);
-  monday.setDate(date.getDate() - daysFromMonday);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+  const mondayLocal = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate() - daysFromMonday);
+  return new Date(mondayLocal - WAT_MS);
 }
 
 export function getWeekendSaturday(date = new Date()): Date {
-  const saturday = getWeekendMonday(date);
-  saturday.setDate(saturday.getDate() + 5);
-  return saturday;
+  return new Date(getWeekendMonday(date).getTime() + 5 * 86400000);
 }
 
 export async function getActiveDaysThisWeek(userId: string): Promise<number> {
