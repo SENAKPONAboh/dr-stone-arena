@@ -6,7 +6,8 @@ import Link from 'next/link';
 export default async function StatsPage() {
   const user = await getCurrentUser();
 
-  if (!user || user.role !== 'ETUDIANT') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ETUDIANT') redirect('/login');
 
   // 1. Récupérer tout l'historique de l'étudiant avec les infos du cas
   const attempts = await prisma.attempt.findMany({

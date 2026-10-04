@@ -34,6 +34,13 @@ export async function POST(request: Request) {
     const { withdrawalId, action, note } = await request.json();
 
     const result = await prisma.$transaction(async (tx) => {
+      // 🔒 Verrou sur la demande AVANT de lire son statut : un double clic (ou deux admins)
+      // ne peut plus traiter deux fois la même demande (ex. double restitution des UA).
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'wd:' + String(withdrawalId)}))`;
+      } catch (lockErr) {
+        console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
+      }
       const wd = await tx.withdrawalRequest.findUnique({ where: { id: withdrawalId } });
       if (!wd) throw new Error('NOT_FOUND');
       if (!['EN_ATTENTE', 'EN_TRAITEMENT'].includes(wd.status)) throw new Error('ALREADY_PROCESSED');

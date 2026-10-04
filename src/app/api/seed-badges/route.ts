@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
+import { getAdminOrNull } from '@/lib/auth';
 import prisma from "@/lib/prisma";
 
 export async function GET() {
+  // 🔒 Route sensible : réservée à l'administrateur connecté
+  if (!(await getAdminOrNull())) return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+
   try {
     const badges = [
       { name: "Premier Cas", description: "Résoudre votre tout premier cas clinique", icon: "🥇" },

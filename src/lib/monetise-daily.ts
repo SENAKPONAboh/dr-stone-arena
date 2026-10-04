@@ -71,6 +71,10 @@ export async function getOrCreateMonetiseSelection(userId: string, anneeEtude: n
     });
   } catch (e: any) {
     if (e?.code !== 'P2002') throw e;
+    // Créée au même instant par une autre requête (double-clic/refresh) : on renvoie la sélection
+    // réellement enregistrée, sinon le cas affiché pourrait ne pas en faire partie.
+    const saved = await prisma.monetiseSelection.findFirst({ where: { userId, date: { gte: today, lt: tomorrow } } });
+    if (saved) return saved.caseIds;
   }
 
   return selected;

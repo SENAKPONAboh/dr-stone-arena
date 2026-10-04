@@ -8,7 +8,7 @@ import { getDailyDuelQuota } from '@/lib/duel';
 
 export default async function DuelPage() {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   // Expiration paresseuse : invitations > 24h, duels acceptés non joués > 24h
   await expireStaleDuels(user.id);

@@ -7,7 +7,8 @@ import { getReceiptSignedUrl } from '@/lib/supabase-storage';
 
 export default async function AdminMonetisePage() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const requests = await prisma.passRequest.findMany({
     where: { status: 'EN_ATTENTE' },

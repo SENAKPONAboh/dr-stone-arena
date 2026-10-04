@@ -31,7 +31,8 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
 
 export default async function FinancePage({ searchParams }: { searchParams: Promise<{ view?: string; months?: string; status?: string; method?: string; tier?: string; period?: string; page?: string }> }) {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const now = new Date();
 

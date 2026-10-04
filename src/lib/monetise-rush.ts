@@ -1,6 +1,7 @@
 import prisma from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { RUSH_FLAME_REQUIRED, getWeekendId } from '@/lib/monetise';
+import { caseDuration } from '@/lib/case-duration';
 
 export function isRushWeekend(date = new Date()): boolean {
   const day = date.getDay();
@@ -84,5 +85,53 @@ export async function getRushState(userId: string) {
     totalWeekend: totalWeekend,
     sessionsCount: sessionsCount,
     currentSession: currentSession,
+  };
+}
+
+// ===== CAS SUIVANT DU RUSH =====
+// Données envoyées au navigateur AVANT la réponse : jamais correctAnswer ni explanation.
+export type RushCasePayload = {
+  id: string; title: string; statement: string; options: string[];
+  durationMax: number; difficulty: string; subject: string; chapter: string;
+};
+
+/** Nombre de cas différents disponibles pour un niveau (sert à savoir si la banque est épuisée). */
+export async function countRushPool(level: number): Promise<number> {
+  return prisma.clinicalCase.count({ where: { anneeEtude: level } });
+}
+
+/**
+ * Tire au hasard un cas du niveau qui n'a pas encore été joué dans la tentative.
+ * Si la banque du niveau est épuisée, on autorise une répétition (en évitant le tout dernier cas joué)
+ * plutôt que de bloquer le joueur.
+ */
+export async function pickNextRushCase(level: number, playedIds: string[]): Promise<RushCasePayload | null> {
+  let ids = (await prisma.clinicalCase.findMany({
+    where: { anneeEtude: level, id: { notIn: playedIds } },
+    select: { id: true },
+  })).map(c => c.id);
+
+  if (ids.length === 0) {
+    const last = playedIds[playedIds.length - 1];
+    const all = (await prisma.clinicalCase.findMany({ where: { anneeEtude: level }, select: { id: true } })).map(c => c.id);
+    ids = all.length > 1 ? all.filter(id => id !== last) : all;
+  }
+  if (ids.length === 0) return null;
+
+  const id = ids[Math.floor(Math.random() * ids.length)];
+  const c = await prisma.clinicalCase.findUnique({
+    where: { id },
+    include: { chapter: { include: { subject: true } } },
+  });
+  if (!c) return null;
+  return {
+    id: c.id,
+    title: c.title,
+    statement: c.statement,
+    options: c.options,
+    durationMax: caseDuration(c.difficulty, c.durationMax),
+    difficulty: c.difficulty,
+    subject: c.chapter.subject.name,
+    chapter: c.chapter.name,
   };
 }

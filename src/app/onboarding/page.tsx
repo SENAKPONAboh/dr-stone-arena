@@ -4,7 +4,7 @@ import OnboardingCarousel from '@/components/onboarding/OnboardingCarousel';
 
 export default async function OnboardingPage() {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (user.role === 'ADMIN') redirect('/admin');
   if (user.role === 'CORRECTEUR') redirect('/correcteur');
   if (user.onboardingCompleted) redirect('/etudiant');

@@ -7,7 +7,8 @@ import { getPlanLabel } from '@/lib/premium';
 
 export default async function AmbassadorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const { id } = await params;
 

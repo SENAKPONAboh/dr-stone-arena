@@ -7,7 +7,7 @@ import MonetiseNav from '@/components/monetise/MonetiseNav';
 
 export default async function PassPage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   const pendingRequest = await prisma.passRequest.findFirst({
     where: { userId: user.id, status: 'EN_ATTENTE' },

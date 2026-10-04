@@ -5,7 +5,7 @@ import CodeActions from '@/components/ambassador/CodeActions';
 
 export default async function AmbassadorCodePage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   const ambassador = await prisma.ambassador.findUnique({
     where: { userId: user.id },

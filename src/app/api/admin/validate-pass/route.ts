@@ -9,15 +9,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { requestId, userId, action } = await request.json();
+    const { requestId, action } = await request.json();
 
     const passRequest = await prisma.passRequest.findUnique({ where: { id: requestId } });
     if (!passRequest) return NextResponse.json({ error: "Demande introuvable" }, { status: 404 });
 
-    await prisma.passRequest.update({
-      where: { id: requestId },
+    // 🔒 Une demande ne se traite qu'une fois : passage atomique depuis EN_ATTENTE.
+    // Un double clic ne prolonge donc plus le Pass deux fois (+60 jours).
+    const changed = await prisma.passRequest.updateMany({
+      where: { id: requestId, status: 'EN_ATTENTE' },
       data: { status: action, ...(action === 'VALIDE' ? { validatedAt: new Date() } : {}) }
     });
+    if (changed.count === 0) {
+      return NextResponse.json({ error: "Cette demande a déjà été traitée." }, { status: 400 });
+    }
+    // Le bénéficiaire est celui de la demande (et non une valeur envoyée par le navigateur)
+    const userId = passRequest.userId;
 
     if (action === 'VALIDE') {
       // Prolongation : +30 jours à partir de l'expiration actuelle si encore active, sinon maintenant

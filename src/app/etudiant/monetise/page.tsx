@@ -6,7 +6,7 @@ import MonetiseNav from '@/components/monetise/MonetiseNav';
 
 export default async function MonetiseHomePage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   // Sans Pass actif → page de présentation/vente
   if (!user.passActive) redirect('/etudiant/monetise/pass');

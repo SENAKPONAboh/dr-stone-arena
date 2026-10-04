@@ -8,7 +8,8 @@ import SendPushButton from '@/components/admin/SendPushButton';
 
 export default async function AdminDashboard() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const now = new Date();
   const [pendingUsers, totalUsers, totalCases, premiumActifs, totalSubjects] = await Promise.all([

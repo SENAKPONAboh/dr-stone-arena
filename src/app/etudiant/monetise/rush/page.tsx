@@ -1,22 +1,12 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { caseDuration } from '@/lib/case-duration';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import RushStartPanel from '@/components/monetise/RushStartPanel';
 import RushClient from '@/components/monetise/RushClient';
-import { getRushState } from '@/lib/monetise-rush';
+import { getRushState, pickNextRushCase } from '@/lib/monetise-rush';
 import { getWeekendId } from '@/lib/monetise';
 import type { ReactNode } from 'react';
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 function infoScreen(emoji: string, title: string, text: string) {
   return (
@@ -40,7 +30,7 @@ const RECAP = {
 
 export default async function MonetiseRushPage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (!user.passActive) redirect('/etudiant/monetise/pass');
 
   const level = user.anneeEtude ?? 1;
@@ -63,33 +53,14 @@ export default async function MonetiseRushPage() {
   // ===== Tentative en cours → jeu =====
   if (state.currentSession && state.currentSession.status === 'EN_COURS') {
     const session = state.currentSession;
-    const pool = await prisma.clinicalCase.findMany({ where: { anneeEtude: level }, select: { id: true } });
-
-    if (pool.length === 0) {
+    const nextCase = await pickNextRushCase(level, session.playedCaseIds);
+    if (!nextCase) {
       return screen(infoScreen('📭', 'Pas encore de cas pour ton niveau', 'De nouveaux cas cliniques seront bientôt publiés pour ton niveau.'));
     }
 
-    let unplayed = pool.filter(c => !session.playedCaseIds.includes(c.id));
-    if (unplayed.length === 0) unplayed = pool;
-    const nextId = shuffle(unplayed)[0].id;
-    const clinicalCase = await prisma.clinicalCase.findUnique({
-      where: { id: nextId },
-      include: { chapter: { include: { subject: true } } },
-    });
-    if (!clinicalCase) return screen(infoScreen('⚠️', 'Erreur', 'Cas introuvable, réessaie dans un instant.'));
-
     return screen(
       <RushClient
-        clinicalCase={{
-          id: clinicalCase.id,
-          title: clinicalCase.title,
-          statement: clinicalCase.statement,
-          options: clinicalCase.options,
-          durationMax: caseDuration(clinicalCase.difficulty, clinicalCase.durationMax),
-          difficulty: clinicalCase.difficulty,
-          subject: clinicalCase.chapter.subject.name,
-          chapter: clinicalCase.chapter.name,
-        }}
+        clinicalCase={nextCase}
         session={{ id: session.id, errors: session.errors, currentStreak: session.currentStreak, attemptNumber: session.attemptNumber }}
         uaBalance={user.uaBalance}
         weekendTotal={state.totalWeekend}

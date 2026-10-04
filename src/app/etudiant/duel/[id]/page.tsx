@@ -6,10 +6,11 @@ import Link from 'next/link';
 import DuelPlayer from '@/components/duel/DuelPlayer';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
+import { readStoredAnswers } from '@/lib/duel-answers';
 
 export default async function DuelDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   const { id } = await params;
   await expireStaleDuels(user.id);
@@ -136,6 +137,11 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
     where: { id: { in: duel.caseIds } },
     include: { chapter: { include: { subject: true } } }
   });
+  // Reprise : les réponses déjà enregistrées (rechargement de la page) ne se rejouent pas
+  const progress = readStoredAnswers(isRequester ? duel.requesterAnswers : duel.opponentAnswers);
+  const answeredIds = new Set(progress.map(a => a.caseId));
+  const firstUnanswered = duel.caseIds.findIndex(cid => !answeredIds.has(cid));
+
   const orderedCases = duel.caseIds
     .map(cid => cases.find(c => c.id === cid))
     .filter((c): c is NonNullable<typeof c> => c !== undefined);
@@ -144,13 +150,13 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
     <DuelPlayer
       duelId={duel.id}
       opponentName={opponentName}
+      startIndex={firstUnanswered === -1 ? duel.caseIds.length : firstUnanswered}
+      startCorrect={progress.filter(a => a.isCorrect).length}
       cases={orderedCases.map(c => ({
         id: c.id,
         title: c.title,
         statement: c.statement,
         options: c.options,
-        correctAnswer: c.correctAnswer,
-        explanation: c.explanation,
         durationMax: caseDuration(c.difficulty, c.durationMax),
         subject: c.chapter.subject.name,
         chapter: c.chapter.name

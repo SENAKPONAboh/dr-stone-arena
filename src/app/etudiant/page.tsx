@@ -22,8 +22,9 @@ import HomeStagger from '@/components/dashboard/HomeStagger';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ETUDIANT') redirect('/login');
-  if (user.statut !== 'VALIDE') redirect('/login?error=non_valide');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ETUDIANT') redirect('/login');
+  if (user.statut !== 'VALIDE') redirect('/api/auth/logout');
 
   const premium = user.isPremium;
 

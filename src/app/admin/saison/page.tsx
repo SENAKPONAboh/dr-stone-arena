@@ -8,7 +8,8 @@ import { getXpGrade, XP_GRADES } from '@/lib/grades';
 
 export default async function AdminSeasonPage() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const top = await prisma.user.findMany({
     where: { role: 'ETUDIANT', xp: { gt: 0 } },

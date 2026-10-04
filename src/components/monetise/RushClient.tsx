@@ -30,6 +30,7 @@ type SubmitResult = {
   uaEarned: number; balanceAfter: number; sessionStatus: string;
   explanation: string; correctAnswer: string;
   chestGranted?: boolean; chestItems?: string[];
+  nextCase?: RushCase | null; // cas suivant préparé par le serveur (affichage instantané)
 };
 
 const PALIERS = [
@@ -41,7 +42,7 @@ const PALIERS = [
 const GOLD_CONFETTI = ['#fbbf24', '#f59e0b', '#fde68a', '#ffffff'];
 
 export default function RushClient({
-  clinicalCase, session, uaBalance, weekendTotal, bouclierStock, secondeChanceStock, tempsBonusStock,
+  clinicalCase: initialCase, session, uaBalance, weekendTotal, bouclierStock, secondeChanceStock, tempsBonusStock,
 }: {
   clinicalCase: RushCase;
   session: RushSessionProps;
@@ -52,6 +53,12 @@ export default function RushClient({
   tempsBonusStock: number;
 }) {
   const router = useRouter();
+
+  // Le cas affiché vit dans l'état local : « Cas suivant » le remplace instantanément,
+  // sans recharger toute la page (c'était la cause des saccades du Rush).
+  const [clinicalCase, setClinicalCase] = useState<RushCase>(initialCase);
+  const [liveStreak, setLiveStreak] = useState(session.currentStreak);
+  const [liveErrors, setLiveErrors] = useState(session.errors);
 
   const [phase, setPhase] = useState<'countdown' | 'question' | 'feedback' | 'finale'>(
     session.currentStreak === 0 && session.errors === 0 ? 'countdown' : 'question'
@@ -64,7 +71,6 @@ export default function RushClient({
   const [balance, setBalance] = useState(uaBalance);
   const [earnedTotal, setEarnedTotal] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [navCount, setNavCount] = useState(0);
   const [guardReady, setGuardReady] = useState(false);
   const [wasViolation, setWasViolation] = useState(false);
 
@@ -84,8 +90,8 @@ export default function RushClient({
     DIFFICILE: 'bg-red-400/20 text-red-300',
   };
 
-  const streak = result?.currentStreak ?? session.currentStreak;
-  const errors = result?.errors ?? session.errors;
+  const streak = result?.currentStreak ?? liveStreak;
+  const errors = result?.errors ?? liveErrors;
   const nextPalier = PALIERS.find(p => p.threshold > streak);
   const progressPct = Math.min(100, (streak / 25) * 100);
   const palierReached = result
@@ -113,13 +119,17 @@ export default function RushClient({
     return () => clearTimeout(timer);
   }, [timeLeft, phase, guardReady]);
 
-  // ==== NOUVEAU CAS : reset complet ====
-  const prevCaseId = useRef<string | null>(null);
+  // ==== Données renvoyées par le serveur (rechargement de secours, Seconde Chance) ====
   useEffect(() => {
-    if (prevCaseId.current === null && navCount === 0) {
-      prevCaseId.current = clinicalCase.id;
-      return;
-    }
+    setClinicalCase(initialCase);
+    setLiveStreak(session.currentStreak);
+    setLiveErrors(session.errors);
+  }, [initialCase.id, session.currentStreak, session.errors]);
+
+  // ==== NOUVEAU CAS : reset complet ====
+  const prevCaseId = useRef<string>(initialCase.id);
+  useEffect(() => {
+    if (prevCaseId.current === clinicalCase.id) return;
     prevCaseId.current = clinicalCase.id;
     setTimeLeft(clinicalCase.durationMax);
     setSelectedAnswer(null);
@@ -131,7 +141,20 @@ export default function RushClient({
     setReviving(false);
     setGameMsg('');
     setWasViolation(false);
-  }, [clinicalCase.id, navCount]);
+  }, [clinicalCase.id, clinicalCase.durationMax]);
+
+  // ==== CAS SUIVANT : instantané si le serveur l'a déjà préparé ====
+  const goToNextCase = () => {
+    if (refreshing || !result) return;
+    if (result.nextCase) {
+      setLiveStreak(result.currentStreak);
+      setLiveErrors(result.errors);
+      setClinicalCase(result.nextCase);
+      return;
+    }
+    setRefreshing(true);
+    router.refresh();
+  };
 
   const handleSubmit = async (timeout = false, violation = false) => {
     if (phase !== 'question') return;
@@ -274,6 +297,7 @@ export default function RushClient({
 
   return (
     <CaseGuard
+      resetKey={clinicalCase.id}
       armed={guardReady && phase === 'question'}
       onAcknowledge={() => setGuardReady(true)}
       onViolation={() => handleSubmit(false, true)}
@@ -327,7 +351,7 @@ export default function RushClient({
               <p className="text-sm font-extrabold text-white whitespace-nowrap">
                 <span className="inline-block animate-flame">🔥</span> Série : <span className="text-yellow-300">{streak}</span>
               </p>
-              <p className="text-sm font-extrabold text-yellow-300 rounded-xl px-3 py-1 animate-glow-gold whitespace-nowrap">
+              <p className="text-sm font-extrabold text-yellow-300 rounded-xl px-3 py-1 border border-yellow-500/40 whitespace-nowrap">
                 <Coin /> {balance.toLocaleString('fr-FR')} UA
               </p>
             </div>
@@ -358,7 +382,7 @@ export default function RushClient({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -40 }}
               transition={{ type: 'spring', stiffness: 200, damping: 24 }}
-              className="bg-white/5 backdrop-blur rounded-3xl border border-yellow-500/20 p-6 md:p-8"
+              className="bg-[#1a150b] rounded-3xl border border-yellow-500/20 p-6 md:p-8"
             >
               <div className="flex justify-between items-start gap-3 mb-6">
                 <div>
@@ -482,7 +506,7 @@ export default function RushClient({
 
                       {result.sessionStatus === 'EN_COURS' && !shieldPrompt && (
                         <motion.button
-                          onClick={() => { setNavCount(c => c + 1); setRefreshing(true); router.refresh(); }}
+                          onClick={goToNextCase}
                           disabled={refreshing}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.97 }}

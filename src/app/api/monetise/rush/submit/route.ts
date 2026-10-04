@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { RUSH_MAX_ERRORS, RUSH_WEEKEND_CAP_UA, RUSH_PALIER_1_UA, RUSH_PALIER_2_UA, RUSH_PALIER_3_UA, GEL_FLAMME_UA, RESTAURE_FLAMME_UA, getWeekendId } from '@/lib/monetise';
-import { isRushWeekend, getWeekendSaturday } from '@/lib/monetise-rush';
+import { isRushWeekend, getWeekendSaturday, pickNextRushCase, countRushPool } from '@/lib/monetise-rush';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
@@ -26,6 +26,13 @@ export async function POST(request: Request) {
     const clinicalCase = await prisma.clinicalCase.findUnique({ where: { id: clinicalCaseId } });
     if (!clinicalCase) return NextResponse.json({ error: "Cas introuvable" }, { status: 404 });
 
+    const level = user.anneeEtude ?? 1;
+    if (clinicalCase.anneeEtude !== level) return NextResponse.json({ error: "Ce cas ne correspond pas à ton niveau." }, { status: 403 });
+    // Taille de la banque du niveau : si tous les cas ont déjà été joués dans la tentative,
+    // une répétition est permise (sinon le joueur resterait bloqué sur une petite banque).
+    const poolSize = await countRushPool(level);
+    let playedAfter: string[] = [];
+
     const response = await prisma.$transaction(async (tx) => {
       // 🔒 VERROU best effort (voir route semaine)
       try {
@@ -38,7 +45,9 @@ export async function POST(request: Request) {
       if (!session || session.userId !== user.id) throw new Error('NOT_FOUND');
       if (session.status !== 'EN_COURS') throw new Error('SESSION_CLOSED');
       if (session.weekend !== weekendId) throw new Error('SESSION_CLOSED');
-      if (session.playedCaseIds.includes(clinicalCaseId)) throw new Error('CASE_PLAYED');
+      if (session.playedCaseIds.includes(clinicalCaseId) && new Set(session.playedCaseIds).size < poolSize) {
+        throw new Error('CASE_PLAYED');
+      }
 
       const isCorrect = normalizeString(userAnswer) === normalizeString(clinicalCase.correctAnswer);
 
@@ -114,6 +123,7 @@ export async function POST(request: Request) {
         });
       }
 
+      playedAfter = [...session.playedCaseIds, clinicalCaseId];
       await tx.rushSession.update({
         where: { id: session.id },
         data: {
@@ -143,7 +153,11 @@ export async function POST(request: Request) {
       };
     });
 
-    return NextResponse.json(response);
+    // ⚡ Fluidité : le cas suivant est préparé tout de suite et renvoyé avec la correction.
+    // Le navigateur l'affiche sans recharger la page (aucune réponse ni explication n'y figure).
+    const nextCase = response.sessionStatus === 'EN_COURS' ? await pickNextRushCase(level, playedAfter) : null;
+
+    return NextResponse.json({ ...response, nextCase });
   } catch (e: any) {
     if (e?.message === 'NOT_FOUND') return NextResponse.json({ error: "Tentative introuvable" }, { status: 404 });
     if (e?.message === 'SESSION_CLOSED') return NextResponse.json({ error: "Cette tentative est terminée ou expirée." }, { status: 400 });

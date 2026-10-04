@@ -8,7 +8,7 @@ import SeasonPalmares from '@/components/ui/SeasonPalmares';
 
 export default async function GradesPage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   const { current, next } = getXpGrade(user.xp);
   const { current: duelCurrent, next: duelNext } = getDuelGrade(user.duelsWon);

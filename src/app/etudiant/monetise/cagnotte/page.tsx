@@ -6,7 +6,7 @@ import CagnotteClient from '@/components/monetise/CagnotteClient';
 
 export default async function CagnottePage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (!user.passActive) redirect('/etudiant/monetise/pass');
 
   const fresh = await prisma.user.findUnique({

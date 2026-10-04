@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { POINTS_PER_WIN } from '@/lib/duel';
 import { checkDuelBadges } from '@/lib/duel-server';
+import { readStoredAnswers } from '@/lib/duel-answers';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
 
   try {
     const { duelId, answers, timeSpent } = await request.json();
-    if (!duelId || !Array.isArray(answers)) {
+    if (!duelId) {
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
 
@@ -35,23 +36,34 @@ export async function POST(request: Request) {
     if (alreadyCompleted) return NextResponse.json({ error: "Tu as déjà joué ce duel." }, { status: 400 });
 
     // ===== Score calculé UNIQUEMENT côté serveur =====
+    // Source de vérité : les réponses enregistrées une par une (/api/duel/answer).
+    // Repli (ancienne version de l'écran encore ouverte) : les réponses envoyées maintenant.
+    const stored = readStoredAnswers(isRequester ? duel.requesterAnswers : duel.opponentAnswers);
     const cases = await prisma.clinicalCase.findMany({ where: { id: { in: duel.caseIds } } });
     const answerMap = new Map<string, string>();
-    for (const a of answers) {
-      if (a && a.caseId) answerMap.set(a.caseId, a.answer ?? '');
+    if (stored.length === 0) {
+      for (const a of (Array.isArray(answers) ? answers : [])) {
+        if (a && a.caseId) answerMap.set(a.caseId, a.answer ?? '');
+      }
     }
 
     const detailedAnswers = duel.caseIds.map(caseId => {
+      const saved = stored.find(s => s.caseId === caseId);
+      if (saved) return { caseId, answer: saved.answer, isCorrect: saved.isCorrect, timeSpent: saved.timeSpent };
       const c = cases.find(cc => cc.id === caseId);
       const given = answerMap.get(caseId) ?? '';
       const isCorrect = c ? normalizeString(given) === normalizeString(c.correctAnswer) : false;
-      return { caseId, answer: given, isCorrect };
+      return { caseId, answer: given, isCorrect, timeSpent: 0 };
     });
     const score = detailedAnswers.filter(a => a.isCorrect).length;
+    // Temps total : celui mesuré cas par cas côté serveur quand il existe (borné à la durée du cas)
+    const serverTime = stored.reduce((sum, a) => sum + a.timeSpent, 0);
+    const clientTime = Number.isFinite(Number(timeSpent)) ? Math.max(0, Math.round(Number(timeSpent))) : 0;
+    const totalTime = stored.length > 0 ? serverTime : clientTime;
 
     const updateData: any = isRequester
-      ? { requesterAnswers: detailedAnswers, requesterScore: score, requesterTime: timeSpent, requesterCompleted: true, requesterCompletedAt: new Date() }
-      : { opponentAnswers: detailedAnswers, opponentScore: score, opponentTime: timeSpent, opponentCompleted: true, opponentCompletedAt: new Date() };
+      ? { requesterAnswers: detailedAnswers, requesterScore: score, requesterTime: totalTime, requesterCompleted: true, requesterCompletedAt: new Date() }
+      : { opponentAnswers: detailedAnswers, opponentScore: score, opponentTime: totalTime, opponentCompleted: true, opponentCompletedAt: new Date() };
 
     await prisma.duel.update({ where: { id: duel.id }, data: updateData });
 

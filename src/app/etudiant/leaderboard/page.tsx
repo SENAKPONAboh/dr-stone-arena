@@ -14,7 +14,8 @@ import TitleBadge from '@/components/ui/TitleBadge';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'ETUDIANT') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ETUDIANT') redirect('/login');
 
   const { scope } = await searchParams;
   const isGlobal = !scope || scope === 'global';

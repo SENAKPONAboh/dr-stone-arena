@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { requestId, userId, action } = await request.json();
+    const { requestId, action } = await request.json();
 
     // Récupérer la demande pour connaître le plan demandé
     const premiumRequest = await prisma.premiumRequest.findUnique({
@@ -22,10 +22,24 @@ export async function POST(request: Request) {
     }
 
     // Mettre à jour la demande (date d'encaissement enregistrée à la validation)
-    await prisma.premiumRequest.update({
-      where: { id: requestId },
-      data: { status: action, ...(action === 'VALIDE' ? { validatedAt: new Date() } : {}) }
-    });
+    // 🔒 Validation / rejet : uniquement depuis EN_ATTENTE (atomique) — un double clic
+    // ne réactive plus le Premium et ne recrée rien. Les autres actions gardent leur comportement.
+    if (action === 'VALIDE' || action === 'REJETE') {
+      const changed = await prisma.premiumRequest.updateMany({
+        where: { id: requestId, status: 'EN_ATTENTE' },
+        data: { status: action, ...(action === 'VALIDE' ? { validatedAt: new Date() } : {}) }
+      });
+      if (changed.count === 0) {
+        return NextResponse.json({ error: "Cette demande a déjà été traitée." }, { status: 400 });
+      }
+    } else {
+      await prisma.premiumRequest.update({
+        where: { id: requestId },
+        data: { status: action }
+      });
+    }
+    // Le bénéficiaire est celui de la demande (et non une valeur envoyée par le navigateur)
+    const userId = premiumRequest.userId;
 
     // Si validé, activer le Premium (plan demandé) pendant 30 jours
     if (action === 'VALIDE') {

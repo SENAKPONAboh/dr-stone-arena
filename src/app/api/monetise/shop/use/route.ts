@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const item = await prisma.shopItem.findUnique({ where: { id: itemId } });
     if (!item || !item.isActive) return NextResponse.json({ error: "Objet introuvable." }, { status: 404 });
     if (item.category === 'RUSH') return NextResponse.json({ error: "Cet objet s'utilise dans le Rush — intégration en cours (prochaine mise à jour)." }, { status: 400 });
-    if (item.category !== 'FLAMME') return NextResponse.json({ error: "Cet objet ne s'active ici." }, { status: 400 });
+    if (item.category !== 'FLAMME') return NextResponse.json({ error: "Cet objet ne s'active pas ici." }, { status: 400 });
 
     const result = await prisma.$transaction(async (tx) => {
       // 🔒 VERROU best effort (même pattern que les autres routes monétisées)

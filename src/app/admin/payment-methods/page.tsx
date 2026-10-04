@@ -6,7 +6,8 @@ import PaymentMethodManager from '@/components/admin/PaymentMethodManager';
 
 export default async function AdminPaymentMethodsPage() {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const methods = await prisma.paymentMethod.findMany({
     orderBy: [{ displayOrder: 'asc' }, { name: 'asc' }]

@@ -4,20 +4,29 @@ import { useState, useEffect } from 'react';
 import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 import Link from 'next/link';
 
+// ⚠️ La bonne réponse et l'explication ne sont plus envoyées avec les cas :
+// le serveur les révèle après l'enregistrement de chaque réponse (/api/duel/answer).
 type Case = {
   id: string; title: string; statement: string; options: string[];
-  correctAnswer: string; explanation: string; durationMax: number;
-  subject: string; chapter: string;
+  durationMax: number; subject: string; chapter: string;
 };
 
-export default function DuelPlayer({ duelId, opponentName, cases }: { duelId: string; opponentName: string; cases: Case[] }) {
-  const [index, setIndex] = useState(0);
+type Verdict = { isCorrect: boolean; correctAnswer: string; explanation: string };
+
+export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0, startCorrect = 0 }: {
+  duelId: string; opponentName: string; cases: Case[];
+  startIndex?: number;   // reprise après rechargement : premier cas non répondu
+  startCorrect?: number; // bonnes réponses déjà enregistrées
+}) {
+  const [index, setIndex] = useState(Math.min(startIndex, Math.max(0, cases.length - 1)));
   const [answers, setAnswers] = useState<{ caseId: string; answer: string }[]>([]);
-  const [correctCount, setCorrectCount] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(cases[0]?.durationMax ?? 60);
+  const [correctCount, setCorrectCount] = useState(startCorrect);
+  const [verdict, setVerdict] = useState<Verdict | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(cases[Math.min(startIndex, Math.max(0, cases.length - 1))]?.durationMax ?? 60);
   const [totalTime, setTotalTime] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
-  const [answered, setAnswered] = useState(false);
+  const [answered, setAnswered] = useState(startIndex >= cases.length && cases.length > 0);
   const [lastCorrect, setLastCorrect] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -26,31 +35,56 @@ export default function DuelPlayer({ duelId, opponentName, cases }: { duelId: st
   const current = cases[index];
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
+  // Tous les cas déjà répondus (rechargement juste avant la fin) : on envoie directement le résultat.
   useEffect(() => {
-    if (answered || done) return;
+    if (startIndex >= cases.length && cases.length > 0) submitDuel();
+  }, []);
+
+  useEffect(() => {
+    if (answered || done || checking) return;
     if (timeLeft <= 0) {
       handleAnswer(true);
       return;
     }
     const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
     return () => clearTimeout(timer);
-  }, [timeLeft, answered, done]);
+  }, [timeLeft, answered, done, checking]);
 
-  const handleAnswer = (timeout = false) => {
-    if (answered) return;
+  const handleAnswer = async (timeout = false) => {
+    if (answered || checking) return;
     const answer = timeout ? "Aucune réponse (Temps écoulé)" : selected;
-    const isCorrect = !timeout && !!answer && answer.trim().toLowerCase() === current.correctAnswer.trim().toLowerCase();
-    setAnswers(prev => [...prev, { caseId: current.id, answer: answer ?? '' }]);
-    if (isCorrect) setCorrectCount(c => c + 1);
-    setLastCorrect(isCorrect);
-    setTotalTime(t => t + (current.durationMax - timeLeft));
-    setAnswered(true);
+    const spent = current.durationMax - timeLeft;
+    setChecking(true);
+    setError('');
+    try {
+      const res = await fetch('/api/duel/answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duelId, caseId: current.id, answer: answer ?? '', timeSpent: spent }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Erreur');
+        return;
+      }
+      setVerdict({ isCorrect: !!data.isCorrect, correctAnswer: String(data.correctAnswer ?? ''), explanation: String(data.explanation ?? '') });
+      setAnswers(prev => [...prev, { caseId: current.id, answer: answer ?? '' }]);
+      if (data.isCorrect) setCorrectCount(c => c + 1);
+      setLastCorrect(!!data.isCorrect);
+      setTotalTime(t => t + spent);
+      setAnswered(true);
+    } catch {
+      setError('Erreur de connexion — réessaie.');
+    } finally {
+      setChecking(false);
+    }
   };
 
   const nextCase = () => {
     if (index + 1 < cases.length) {
       setIndex(i => i + 1);
       setSelected(null);
+      setVerdict(null);
       setAnswered(false);
       setTimeLeft(cases[index + 1].durationMax);
     } else {
@@ -128,7 +162,7 @@ export default function DuelPlayer({ duelId, opponentName, cases }: { duelId: st
             {current.options.map((option, i) => {
               let cls = "w-full text-left p-4 rounded-2xl border-2 transition-all flex items-center gap-4 ";
               if (answered) {
-                if (option === current.correctAnswer) cls += "border-green-500 bg-green-50 text-green-700 font-bold";
+                if (option === verdict?.correctAnswer) cls += "border-green-500 bg-green-50 text-green-700 font-bold";
                 else if (option === selected) cls += "border-red-500 bg-red-50 text-red-700";
                 else cls += "border-gray-200 text-gray-400 opacity-70";
               } else {
@@ -146,10 +180,10 @@ export default function DuelPlayer({ duelId, opponentName, cases }: { duelId: st
           {!answered ? (
             <button
               onClick={() => handleAnswer(false)}
-              disabled={!selected}
+              disabled={!selected || checking}
               className="w-full mt-8 py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Valider ma réponse
+              {checking ? 'Vérification…' : 'Valider ma réponse'}
             </button>
           ) : (
             <div className="mt-8">
@@ -157,7 +191,7 @@ export default function DuelPlayer({ duelId, opponentName, cases }: { duelId: st
                 <p className={`font-extrabold mb-2 ${lastCorrect ? 'text-green-600' : 'text-red-600'}`}>
                   {lastCorrect ? '🎉 Bonne réponse !' : '❌ Mauvaise réponse'}
                 </p>
-                <p className="text-gray-600 leading-relaxed text-sm">💡 {current.explanation}</p>
+                <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">💡 {verdict?.explanation}</p>
               </div>
               <button
                 onClick={nextCase}

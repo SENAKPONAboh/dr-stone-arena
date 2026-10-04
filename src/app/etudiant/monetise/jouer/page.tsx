@@ -9,7 +9,7 @@ import type { ReactNode } from 'react';
 
 export default async function MonetisePlayPage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (!user.passActive) redirect('/etudiant/monetise/pass');
 
   const level = user.anneeEtude ?? 1;
@@ -65,6 +65,7 @@ export default async function MonetisePlayPage() {
 
   return screen(
     <MonetisePlayClient
+      key={clinicalCase.id}
       clinicalCase={{
         id: clinicalCase.id,
         title: clinicalCase.title,

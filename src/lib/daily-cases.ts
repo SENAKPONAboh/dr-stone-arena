@@ -120,7 +120,11 @@ export async function getOrCreateDailySelection(userId: string, anneeEtude: numb
       data: { userId, date: today, caseIds: selected },
     });
   } catch (e: any) {
-    if (e?.code !== 'P2002') throw e; // P2002 = déjà créée entre-temps → on utilise la valeur calculée
+    if (e?.code !== 'P2002') throw e;
+    // Créée au même instant par une autre requête (double-clic/refresh) : on renvoie la sélection
+    // réellement enregistrée, sinon le cas affiché pourrait ne pas en faire partie.
+    const saved = await prisma.dailyCaseSelection.findFirst({ where: { userId, date: { gte: today, lt: tomorrow } } });
+    if (saved) return saved.caseIds;
   }
 
   // 4. Alerte admin (90% / 100%)

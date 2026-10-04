@@ -34,7 +34,7 @@ function InfoScreen({ icon, color, title, text, buttonText = 'Retour au tableau 
 
 export default async function ChallengePage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   const level = user.anneeEtude ?? 1;
 

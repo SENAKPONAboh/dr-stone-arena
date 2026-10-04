@@ -14,7 +14,8 @@ import { getDailyDuelQuota, getDuelGrade } from '@/lib/duel';
 
 export default async function ArenePage() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ETUDIANT') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ETUDIANT') redirect('/login');
 
   await expireStaleDuels(user.id);
 

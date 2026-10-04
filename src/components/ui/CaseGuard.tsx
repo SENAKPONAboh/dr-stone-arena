@@ -16,10 +16,11 @@ type CaseGuardProps = {
   onAcknowledge: () => void;    // l'étudiant a accepté les règles → démarrer le chronomètre
   onViolation: () => void;      // sortie détectée → annuler le cas
   rules?: ReactNode;            // règles spécifiques au mode
+  resetKey?: string;            // change à chaque nouveau cas affiché sans recharger la page (Rush)
   children: ReactNode;
 };
 
-export default function CaseGuard({ armed, onAcknowledge, onViolation, rules, children }: CaseGuardProps) {
+export default function CaseGuard({ armed, onAcknowledge, onViolation, rules, resetKey, children }: CaseGuardProps) {
   const [acknowledged, setAcknowledged] = useState(false);
   const [violated, setViolated] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -27,6 +28,13 @@ export default function CaseGuard({ armed, onAcknowledge, onViolation, rules, ch
   const violationRef = useRef(false);
   const onViolationRef = useRef(onViolation);
   useEffect(() => { onViolationRef.current = onViolation; }, [onViolation]);
+
+  // Nouveau cas sans rechargement : la protection se réarme (l'accord aux règles reste acquis).
+  useEffect(() => {
+    violationRef.current = false;
+    setViolated(false);
+    setDismissed(false);
+  }, [resetKey]);
 
   useEffect(() => {
     if (!armed || violationRef.current) return;

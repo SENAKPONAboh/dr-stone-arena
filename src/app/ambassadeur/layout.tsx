@@ -6,7 +6,7 @@ import AmbassadorNav from '@/components/ambassador/AmbassadorNav';
 
 export default async function AmbassadorLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (user.role === 'ADMIN') redirect('/admin');
   if (user.role === 'CORRECTEUR') redirect('/correcteur');
 

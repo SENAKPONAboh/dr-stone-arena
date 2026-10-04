@@ -34,6 +34,13 @@ export async function POST(request: Request) {
     const { rechargeId, action, note } = await request.json();
 
     const result = await prisma.$transaction(async (tx) => {
+      // 🔒 Verrou sur la demande AVANT de lire son statut : deux clics simultanés
+      // ne peuvent plus créditer deux fois la même recharge.
+      try {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'rc:' + String(rechargeId)}))`;
+      } catch (lockErr) {
+        console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
+      }
       const rc = await tx.rechargeRequest.findUnique({ where: { id: rechargeId } });
       if (!rc) throw new Error('NOT_FOUND');
 

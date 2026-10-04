@@ -6,6 +6,7 @@ import { animate, motion, useReducedMotion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import Icon from '@/components/ui/Icon';
 import BackgroundCells from '@/components/ui/BackgroundCells';
+import ShareButton from '@/components/ui/ShareButton';
 
 type Props = { total: number; correct: number; xp: number; streak: number; nextBatch: string };
 
@@ -36,6 +37,10 @@ export default function DayRecap({ total, correct, xp, streak, nextBatch }: Prop
         <p className="mt-6 font-display text-5xl font-extrabold tabular-nums text-mala">{score}<span className="text-2xl text-mute">/{total}</span></p>
         <p className="text-xs font-bold uppercase tracking-wider text-mute">diagnostics posés</p>
         <p className="mt-3 inline-block rounded-full bg-mala/15 px-4 py-1.5 font-display text-sm font-bold text-mala">+{xp} XP aujourd'hui</p>
+
+        <div className="mt-5 flex justify-center">
+          <ShareButton type="jour" />
+        </div>
 
         <p className="mt-6 text-sm leading-relaxed text-mute">Prochaine consultation demain : {nextBatch} nouveaux cas t'attendent.</p>
         <Link href="/etudiant"

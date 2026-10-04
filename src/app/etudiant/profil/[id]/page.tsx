@@ -35,7 +35,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   if (!profileUser) redirect('/etudiant');
 
   const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   const { current: duelGrade } = getDuelGrade(profileUser.duelsWon);
 

@@ -19,11 +19,12 @@ import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import TitleBadge from '@/components/ui/TitleBadge';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
+import ShareButton from '@/components/ui/ShareButton';
 
 export default async function ProfilPage() {
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   // Objets de la boutique équipés (cadre, titre, thème) : visibles aussi sur MON profil
   const equipped = await prisma.user.findUnique({
@@ -134,6 +135,11 @@ export default async function ProfilPage() {
             <Link href="/etudiant/grades" className={`mt-2 inline-block text-xs font-bold ${user.isPremium ? 'text-yellow-300 hover:text-yellow-200' : 'text-blue-600 hover:underline'}`}>
               🏅 Voir tous les grades →
             </Link>
+          </div>
+
+          {/* Partage : belle carte image du profil (WhatsApp, statut, Instagram…) */}
+          <div className="mt-5 flex justify-center">
+            <ShareButton type="profil" />
           </div>
 
           <SeasonPalmares summary={seasons} />

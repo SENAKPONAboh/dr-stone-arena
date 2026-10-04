@@ -2,6 +2,7 @@
 
 import Coin from '@/components/ui/Coin';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { UA_PER_CASE } from '@/lib/monetise';
@@ -37,6 +38,7 @@ type SubmitResult = {
 const GOLD_CONFETTI = ['#fbbf24', '#f59e0b', '#fde68a', '#ffffff'];
 
 export default function MonetisePlayClient({ clinicalCase, progressLabel }: ClinicalCaseProps) {
+  const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(clinicalCase.durationMax);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -220,7 +222,7 @@ export default function MonetisePlayClient({ clinicalCase, progressLabel }: Clin
                 )}
                 <div className="flex flex-col gap-3">
                   <motion.button
-                    onClick={() => { window.location.href = '/etudiant/monetise/jouer'; }}
+                    onClick={() => router.refresh()}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     className="w-full py-4 bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-[#1a1308] text-lg font-extrabold rounded-2xl shadow-lg uppercase tracking-wide text-center transition-all"

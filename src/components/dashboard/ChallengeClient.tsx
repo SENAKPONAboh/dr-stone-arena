@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import CaseGuard from '@/components/ui/CaseGuard';
@@ -42,6 +43,7 @@ type SubmitResult = {
 };
 
 export default function ChallengeClient({ clinicalCase, caseNumber, total }: ClinicalCaseProps) {
+  const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(clinicalCase.durationMax);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -224,7 +226,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
         title={wasViolation ? "Cas annulé — sortie de l'application" : result?.isCorrect ? `Diagnostic posé ! +${result.xpEarned} XP` : 'Pas grave, voici le raisonnement'}
         action={
           <div className="space-y-2">
-            <ArenaButton full onClick={() => { window.location.href = '/etudiant/challenge'; }}>Continuer le défi</ArenaButton>
+            <ArenaButton full onClick={() => router.refresh()}>Continuer le défi</ArenaButton>
             <button onClick={() => { window.location.href = '/etudiant'; }} className="w-full py-2 text-sm font-bold text-mute">
               Retour à l'accueil
             </button>

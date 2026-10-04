@@ -8,7 +8,7 @@ import { getOrCreatePersonalisationCatalog } from '@/lib/personnalisation';
 
 export default async function BoutiquePage() {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (!user.passActive) redirect('/etudiant/monetise/pass');
 
   const [shopItems, persoItems] = await Promise.all([

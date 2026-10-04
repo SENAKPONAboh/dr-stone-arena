@@ -11,7 +11,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default async function AdminUsersPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const { filter } = await searchParams;
   const showPremiumOnly = filter === 'premium';

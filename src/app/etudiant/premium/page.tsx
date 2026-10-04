@@ -8,7 +8,7 @@ import prisma from '@/lib/prisma';
 export default async function PremiumPage() {
   const user = await getCurrentUser();
 
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
 
   // Moyens de paiement ACTIFS uniquement, dans l'ordre défini par l'admin
   const activeMethods = await prisma.paymentMethod.findMany({

@@ -73,6 +73,8 @@ export async function getCurrentUser() {
     }
   });
 
+  // Compte banni : la session (même encore valide) ne donne plus accès à rien.
+  if (user?.statut === 'BANNI') return null;
   return user;
 }
 // Version allégée pour les routes API et layouts : mêmes vérifications de session,
@@ -120,5 +122,14 @@ export async function getCurrentUserCore() {
     }
   });
 
+  // Compte banni : la session (même encore valide) ne donne plus accès à rien.
+  if (user?.statut === 'BANNI') return null;
+  return user;
+}
+
+// Garde des routes réservées à l'administrateur (seed, diagnostic…) : renvoie l'admin ou null.
+export async function getAdminOrNull() {
+  const user = await getCurrentUserCore();
+  if (!user || user.role !== 'ADMIN') return null;
   return user;
 }

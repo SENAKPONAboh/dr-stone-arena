@@ -6,7 +6,8 @@ import AmbassadorManager from '@/components/admin/AmbassadorManager';
 
 export default async function AdminAmbassadorsPage() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   const now = new Date();
 

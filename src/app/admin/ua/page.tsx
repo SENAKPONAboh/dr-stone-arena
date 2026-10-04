@@ -8,7 +8,8 @@ import UaCorrectionManager from '@/components/admin/UaCorrectionManager';
 
 export default async function AdminUaPage() {
   const user = await getCurrentUserCore();
-  if (!user || user.role !== 'ADMIN') redirect('/login');
+  if (!user) redirect('/api/auth/logout');
+  if (user.role !== 'ADMIN') redirect('/login');
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">

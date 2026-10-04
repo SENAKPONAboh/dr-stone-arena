@@ -5,7 +5,7 @@ import AppShell from '@/components/layout/AppShell';
 
 export default async function EtudiantLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUserCore();
-  if (!user) redirect('/login');
+  if (!user) redirect('/api/auth/logout');
   if (user.role === 'ADMIN') redirect('/admin');
   if (user.role === 'CORRECTEUR') redirect('/correcteur');
 
