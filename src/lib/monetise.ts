@@ -20,6 +20,14 @@ export const ASSURANCE_FLAMME_UA = 49000;
 export const RUSH_MAX_ERRORS = 3;
 export const RUSH_ETAGE_SIZE = 5;       // bonnes réponses par étage
 export const RUSH_ETAGES = 5;            // nombre d'étages (5 × 5 = 25 bonnes réponses)
+// Noms des 5 niveaux du Rush (du plus facile au plus dur)
+export const RUSH_LEVEL_NAMES = [
+  { icon: '🚑', name: 'Urgences' },
+  { icon: '🏥', name: 'Bloc' },
+  { icon: '⚡', name: 'Réa' },
+  { icon: '🧠', name: 'Neuro' },
+  { icon: '👑', name: 'Major' },
+];
 export const RUSH_FREE_ATTEMPTS = 2;
 export const RUSH_FLAME_REQUIRED = 5;    // jours de Flamme dans la semaine
 

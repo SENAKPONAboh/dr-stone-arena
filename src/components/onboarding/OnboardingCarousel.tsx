@@ -98,7 +98,7 @@ const SLIDES: Slide[] = [
   {
     icon: '🛡️', kicker: 'Espace Élite', title: 'Le Pass Élite',
     paragraphs: [
-      "Le Pass Élite (2 000 FCFA par mois) te donne accès à l'Espace Élite : 10 cas Élite par jour du lundi au vendredi, le Rush du week-end (5 étages de difficulté croissante), la boutique, la personnalisation (cadres animés, thèmes, titres) et le classement Élite.",
+      "Le Pass Élite (2 000 FCFA par mois) te donne accès à l'Espace Élite : 10 cas Élite par jour du lundi au vendredi, le Rush du week-end (5 zones de difficulté croissante : Urgences, Bloc, Réa, Neuro, puis le Major), la boutique, la personnalisation (cadres animés, thèmes, titres) et le classement Élite.",
       "Tes réussites te rapportent des points de mérite. La Prime Arena est une bourse de mérite qui récompense ta performance : elle n'est pas garantie.",
     ],
     highlight: "Tu paies un accès, pas une mise. C'est ton travail qui compte.",

@@ -108,9 +108,9 @@ export default function RushStartPanel({
       )}
 
       <div className="bg-white/5 rounded-2xl p-4 text-xs text-white/40 space-y-1">
-        <p>⚔️ 5 étages de 5 cas · la difficulté monte à chaque étage · 3 erreurs maximum</p>
-        <p><Coin /> Étage 3 : +{RUSH_PALIER_1_UA.toLocaleString('fr-FR')} UA · Étage 4 : +{RUSH_PALIER_2_UA.toLocaleString('fr-FR')} UA · Étage 5 : +{RUSH_PALIER_3_UA.toLocaleString('fr-FR')} UA (ce qui est gagné est gardé)</p>
-        <p>🎁 Étage 5 = Coffre d'Élite du Major (Gel + Restaure gratuits)</p>
+        <p>⚔️ 5 zones de 5 cas : 🚑 Urgences → 🏥 Bloc → ⚡ Réa → 🧠 Neuro → 👑 Major · la difficulté monte à chaque zone · 3 erreurs maximum</p>
+        <p><Coin /> ⚡ Réa : +{RUSH_PALIER_1_UA.toLocaleString('fr-FR')} UA · 🧠 Neuro : +{RUSH_PALIER_2_UA.toLocaleString('fr-FR')} UA · 👑 Major : +{RUSH_PALIER_3_UA.toLocaleString('fr-FR')} UA (ce qui est gagné est gardé)</p>
+        <p>🎁 Zone Major = Coffre d'Élite du Major (Gel + Restaure gratuits)</p>
         <p>🎫 Ticket Rush = tentative sans payer en UA · 🛡️ Bouclier absorbe 1 erreur · 🔄 Seconde Chance reprend après défaite · ⏱️ Temps Bonus +30 s</p>
       </div>
     </div>

@@ -13,6 +13,7 @@ import {
   RUSH_PALIER_1_UA,
   RUSH_PALIER_2_UA,
   RUSH_PALIER_3_UA,
+  RUSH_LEVEL_NAMES,
 } from '@/lib/monetise';
 
 // ⚠️ correctAnswer et explanation ne sont JAMAIS transmis avant la réponse.
@@ -360,7 +361,7 @@ export default function RushClient({
             <div className="mb-2 flex gap-1.5">
               {[1, 2, 3, 4, 5].map(n => (
                 <span key={n} className={`flex-1 rounded-lg px-1 py-1 text-center text-[10px] font-extrabold ${n < etage ? 'bg-yellow-500 text-[#1a1308]' : n === etage ? 'border border-yellow-400 bg-yellow-500/25 text-yellow-200' : 'bg-white/5 text-white/30'}`}>
-                  {n < etage ? '✓' : ''} Étage {n}
+                  {n < etage ? '✓' : RUSH_LEVEL_NAMES[n - 1].icon} {RUSH_LEVEL_NAMES[n - 1].name}
                 </span>
               ))}
             </div>
@@ -488,7 +489,7 @@ export default function RushClient({
 
                       {result.etageCleared && (result.uaEarned ?? 0) === 0 && (
                         <div className="rounded-2xl border-2 border-yellow-500/50 bg-yellow-500/10 p-4 text-center font-extrabold text-yellow-200">
-                          🪜 Étage {Math.floor(result.currentStreak / 5)} terminé ! Direction l'étage {Math.min(5, Math.floor(result.currentStreak / 5) + 1)}.
+                          {RUSH_LEVEL_NAMES[Math.min(5, Math.floor(result.currentStreak / 5)) - 1].icon} Zone « {RUSH_LEVEL_NAMES[Math.min(5, Math.floor(result.currentStreak / 5)) - 1].name} » franchie ! Prochaine zone : {RUSH_LEVEL_NAMES[Math.min(4, Math.floor(result.currentStreak / 5))].icon} {RUSH_LEVEL_NAMES[Math.min(4, Math.floor(result.currentStreak / 5))].name}.
                         </div>
                       )}
 
@@ -561,7 +562,7 @@ export default function RushClient({
                 </motion.div>
               </AnimatePresence>
               <p className="text-white/40 text-xs sm:text-sm mt-10 font-bold text-center">
-                3 erreurs tolérées · 5 étages de 5 cas · Jusqu'à {(RUSH_PALIER_1_UA + RUSH_PALIER_2_UA + RUSH_PALIER_3_UA).toLocaleString('fr-FR')} UA
+                3 erreurs tolérées · 5 zones de 5 cas · Jusqu'à {(RUSH_PALIER_1_UA + RUSH_PALIER_2_UA + RUSH_PALIER_3_UA).toLocaleString('fr-FR')} UA
               </p>
             </motion.div>
           )}
