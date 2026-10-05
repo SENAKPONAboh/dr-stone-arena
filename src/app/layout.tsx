@@ -3,8 +3,10 @@ import { Inter, Unbounded, Figtree } from "next/font/google";
 import "./globals.css";
 import "@/styles/monetise.css";
 import "@/styles/boutique-fx.css";
+import "@/styles/logo.css";
 import ThemeProvider from '@/components/ThemeProvider';
 import PwaRegistrar from '@/components/PwaRegistrar';
+import LaunchSplash from '@/components/LaunchSplash';
 import NextTopLoader from 'nextjs-toploader';
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,12 +24,12 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/icon-192.png',
-    apple: '/icon-192.png',
+    apple: '/apple-icon.png',
   }
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0d1311",
+  themeColor: "#04070e",
 };
 
 export default function RootLayout({
@@ -38,6 +40,9 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.className} ${unbounded.variable} ${figtree.variable}`}>
+        {/* Décide avant l'affichage si l'écran d'ouverture animé doit jouer (1 fois par session ; pas sur l'intro « / » qui a déjà le logo animé) */}
+        <script dangerouslySetInnerHTML={{ __html: "try{if(!sessionStorage.getItem('arena-splash')&&location.pathname!=='/')document.documentElement.dataset.splash='1'}catch(e){}" }} />
+        <LaunchSplash />
         <NextTopLoader
           color="#10b981"
           height={4}

@@ -61,6 +61,10 @@ export async function GET(request: Request) {
     readFile(join(process.cwd(), 'assets/fonts/Poppins-Regular.ttf')),
   ]);
 
+  // Logo DS (si le fichier est introuvable, on garde l'ancienne pastille)
+  let markSrc = '';
+  try { markSrc = 'data:image/png;base64,' + (await readFile(join(process.cwd(), 'assets/logo/mark.png'))).toString('base64'); } catch { /* repli */ }
+
   return new ImageResponse(
     (
       <div style={{
@@ -71,11 +75,16 @@ export async function GET(request: Request) {
       }}>
         {/* En-tête : marque */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
+          {markSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={markSrc} width={104} height={104} alt="" />
+          ) : (
           <div style={{ display: 'flex', width: 84, height: 84, borderRadius: 26, background: C.slab, border: `2px solid ${C.line}`, alignItems: 'center', justifyContent: 'center' }}>
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke={C.mala} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 5v14M12 5a3 3 0 0 0-5.5 1.5A3.5 3.5 0 0 0 5 12.5 3.5 3.5 0 0 0 7.5 18 3 3 0 0 0 12 19M12 5a3 3 0 0 1 5.5 1.5A3.5 3.5 0 0 1 19 12.5a3.5 3.5 0 0 1-2.5 5.5A3 3 0 0 1 12 19" />
             </svg>
           </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', fontSize: 44, fontWeight: 800 }}>Dr. Stone Arena</div>
             <div style={{ display: 'flex', fontSize: 22, fontWeight: 700, color: C.mala, letterSpacing: 8 }}>L'ARÈNE MÉDICALE</div>

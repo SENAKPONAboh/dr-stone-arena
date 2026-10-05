@@ -9,18 +9,65 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0d1311",
-  "theme_color": "#0d1311",
-  "categories": ["education", "medical"],
+  "background_color": "#04070e",
+  "theme_color": "#04070e",
+  "categories": [
+    "education",
+    "medical"
+  ],
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Défi du jour", "short_name": "Défi", "url": "/etudiant/challenge", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Classement", "short_name": "Classement", "url": "/etudiant/leaderboard", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Espace Élite", "short_name": "Élite", "url": "/etudiant/monetise", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "Défi du jour",
+      "short_name": "Défi",
+      "url": "/etudiant/challenge",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Classement",
+      "short_name": "Classement",
+      "url": "/etudiant/leaderboard",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Espace Élite",
+      "short_name": "Élite",
+      "url": "/etudiant/monetise",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }

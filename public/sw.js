@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dr-stone-arena-v3';
+const CACHE_NAME = 'dr-stone-arena-v4';
 // Uniquement des fichiers statiques (les pages dépendent de la connexion de l'utilisateur)
 const urlsToCache = [
   '/offline.html',
