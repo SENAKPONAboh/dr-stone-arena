@@ -44,7 +44,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: "try{if(!sessionStorage.getItem('arena-splash')&&location.pathname!=='/')document.documentElement.dataset.splash='1'}catch(e){}" }} />
         <LaunchSplash />
         <NextTopLoader
-          color="#10b981"
+          color="#3b82f6"
           height={4}
           showSpinner={false}
           crawlSpeed={200}
