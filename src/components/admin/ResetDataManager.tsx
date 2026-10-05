@@ -16,23 +16,29 @@ export default function ResetDataManager() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<ResetResult | null>(null);
+  const [deleteBank, setDeleteBank] = useState(false);
+  const [deleteSubjects, setDeleteSubjects] = useState(false);
+  const [bank, setBank] = useState<{ cases: number; subjects: number; tournaments: number } | null>(null);
 
   const handleReset = async () => {
     if (confirmText !== CONFIRM_WORD) return;
     setLoading(true);
     setError('');
     setResult(null);
+    setBank(null);
     try {
       const res = await fetch('/api/admin/reset-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirmation: CONFIRM_WORD }),
+        body: JSON.stringify({ confirmation: CONFIRM_WORD, deleteCaseBank: deleteBank, deleteSubjects: deleteBank && deleteSubjects }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Erreur');
       } else {
         setResult(data.result);
+        setBank(data.bank ?? null);
+        setDeleteBank(false); setDeleteSubjects(false);
         setArmed(false);
         setConfirmText('');
       }
@@ -62,7 +68,11 @@ export default function ResetDataManager() {
             <p className="bg-white p-2 rounded-xl text-center"><b>{result.notifications}</b> notifications</p>
             <p className="bg-white p-2 rounded-xl text-center"><b>{result.expenses}</b> dépenses</p>
           </div>
-          <p className="text-xs text-emerald-600 text-center">Les cas cliniques, matières, chapitres, comptes et ambassadeurs sont intacts.</p>
+          {bank ? (
+            <p className="text-sm font-bold text-red-600 text-center">🗑️ Banque supprimée : {bank.cases} cas cliniques{bank.subjects > 0 ? `, ${bank.subjects} matières (et leurs chapitres)` : ''}{bank.tournaments > 0 ? `, ${bank.tournaments} tournois` : ''}. Tu peux importer la nouvelle banque.</p>
+          ) : (
+            <p className="text-xs text-emerald-600 text-center">Les cas cliniques, matières, chapitres, comptes et ambassadeurs sont intacts.</p>
+          )}
         </div>
       )}
 
@@ -98,6 +108,18 @@ export default function ResetDataManager() {
           <p className="text-sm text-red-600 text-center">
             Pour confirmer, tape le mot <b className="font-mono tracking-widest">{CONFIRM_WORD}</b> en toutes lettres :
           </p>
+          <div className="space-y-2 rounded-2xl border-2 border-red-200 bg-white p-4">
+            <label className="flex items-start gap-3 text-sm font-bold text-red-700">
+              <input type="checkbox" checked={deleteBank} onChange={e => { setDeleteBank(e.target.checked); if (!e.target.checked) setDeleteSubjects(false); }} className="mt-1 h-5 w-5" />
+              <span>Supprimer AUSSI toute la banque de cas cliniques<span className="block text-xs font-normal text-red-500">Tous les cas sont effacés, ainsi que les tentatives et tournois liés. À cocher le jour où tu importes la nouvelle banque.</span></span>
+            </label>
+            {deleteBank && (
+              <label className="flex items-start gap-3 pl-1 text-sm font-bold text-red-700">
+                <input type="checkbox" checked={deleteSubjects} onChange={e => setDeleteSubjects(e.target.checked)} className="mt-1 h-5 w-5" />
+                <span>Supprimer aussi les matières et chapitres<span className="block text-xs font-normal text-red-500">Sinon ils sont gardés et tu les réutilises à l'import.</span></span>
+              </label>
+            )}
+          </div>
           <input
             type="text"
             value={confirmText}
@@ -116,7 +138,7 @@ export default function ResetDataManager() {
               onClick={handleReset}
               disabled={loading || confirmText !== CONFIRM_WORD}
               className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-2xl text-sm uppercase tracking-wide disabled:opacity-30 disabled:cursor-not-allowed">
-              {loading ? '⏳ Initialisation...' : '🔥 CONFIRMER LE RESET'}
+              {loading ? '⏳ Initialisation...' : deleteBank ? '🔥 RESET + SUPPRIMER LA BANQUE' : '🔥 CONFIRMER LE RESET'}
             </button>
           </div>
         </div>

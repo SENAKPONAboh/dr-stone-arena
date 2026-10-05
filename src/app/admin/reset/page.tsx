@@ -25,7 +25,7 @@ export default async function AdminResetPage() {
         <div className="bg-red-50 border-2 border-red-100 p-5 rounded-3xl mb-6">
           <p className="text-sm text-red-700">
             🔴 <b>Zone dangereuse.</b> À utiliser uniquement pour repartir de zéro avant le lancement officiel.
-            Cette page réinitialise toutes les données de jeu (XP, grades, duels, badges, paiements...) mais <b>conserve la banque de cas cliniques et les comptes</b>.
+            Cette page réinitialise toutes les données de jeu (XP, grades, duels, badges, paiements...) mais <b>conserve la banque de cas cliniques et les comptes</b>, sauf si tu coches l'option « Supprimer aussi la banque » au moment de confirmer.
           </p>
         </div>
         <ResetDataManager />

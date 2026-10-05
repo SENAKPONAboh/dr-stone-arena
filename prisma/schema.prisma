@@ -282,6 +282,15 @@ model Ambassador {
   referredUsers  User[]   @relation("ReferredBy")
 }
 
+// Mot de passe d'accès au panel ambassadeur (table à part pour ne pas toucher à Ambassador)
+model AmbassadorPanelAccess {
+  ambassadorId String    @id
+  passwordHash String
+  failedCount  Int       @default(0)
+  lockedUntil  DateTime?
+  updatedAt    DateTime  @default(now()) @updatedAt
+}
+
 model AmbassadorCommission {
   id                String   @id @default(cuid())
   ambassadorId      String

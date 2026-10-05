@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import PasswordInput from '@/components/ui/PasswordInput';
 import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
 
 export default function LoginPage() {
@@ -55,7 +56,7 @@ export default function LoginPage() {
 
         <div>
           <label className={AUTH_LABEL}>Mot de passe</label>
-          <input id="password" name="password" type="password" required className={AUTH_INPUT} placeholder="••••••••" />
+          <PasswordInput id="password" name="password" required autoComplete="current-password" className={AUTH_INPUT} placeholder="••••••••" />
         </div>
 
         {/* Lien Mot de passe oublié */}

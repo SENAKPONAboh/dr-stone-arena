@@ -59,6 +59,18 @@ export default function AmbassadorManager({ ambassadors, students }: { ambassado
     return data;
   };
 
+  const handleResetAccess = async (a: AmbassadorItem) => {
+    if (!confirm(`Effacer le mot de passe du panel de ${a.user.prenom} ${a.user.nom} ? Il devra en choisir un nouveau à sa prochaine visite.`)) return;
+    setBusyId(a.id); setError('');
+    try {
+      const res = await fetch('/api/admin/ambassadors/panel-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ambassadorId: a.id }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur');
+      flash('Mot de passe du panel effacé ✅');
+    } catch (e: any) { setError(e.message); }
+    finally { setBusyId(null); }
+  };
+
   const handleStatus = async (a: AmbassadorItem, newStatus: string) => {
     const labels: Record<string, string> = { ACTIF: 'valider', SUSPENDU: 'suspendre', EN_ATTENTE: 'remettre en attente' };
     if (!confirm(`Voulez-vous vraiment ${labels[newStatus] ?? newStatus} ${a.user.prenom} ${a.user.nom} ?`)) return;
@@ -206,6 +218,10 @@ export default function AmbassadorManager({ ambassadors, students }: { ambassado
                     <button onClick={() => handleCode(a)} disabled={busy}
                       className="py-2 px-4 bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 font-bold rounded-xl text-xs uppercase disabled:opacity-50">
                       🔑 Modifier le code
+                    </button>
+                    <button onClick={() => handleResetAccess(a)} disabled={busy}
+                      className="py-2 px-4 bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100 font-bold rounded-xl text-xs uppercase disabled:opacity-50">
+                      🔐 Réinit. accès panel
                     </button>
                     {a.stats.commissionPending > 0 && (
                       <button onClick={() => handlePayout(a)} disabled={busy}

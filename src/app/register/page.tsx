@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
+import PasswordInput from '@/components/ui/PasswordInput';
 import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
 
 export default function RegisterPage() {
@@ -71,7 +72,7 @@ export default function RegisterPage() {
 
         <div>
           <label className={AUTH_LABEL}>Mot de passe</label>
-          <input id="password" name="password" type="password" required minLength={8} className={AUTH_INPUT} placeholder="8 caractères minimum" />
+          <PasswordInput id="password" name="password" required autoComplete="new-password" minLength={8} className={AUTH_INPUT} placeholder="8 caractères minimum" />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
