@@ -4,6 +4,7 @@ import "./globals.css";
 import "@/styles/monetise.css";
 import "@/styles/boutique-fx.css";
 import "@/styles/logo.css";
+import "@/styles/grade-fx.css";
 import ThemeProvider from '@/components/ThemeProvider';
 import PwaRegistrar from '@/components/PwaRegistrar';
 import LaunchSplash from '@/components/LaunchSplash';

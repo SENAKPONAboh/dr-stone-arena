@@ -8,7 +8,8 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
 import prisma from '@/lib/prisma';
-import { getXpGrade } from '@/lib/grades';
+import { getXpGrade, TOP_GRADE } from '@/lib/grades';
+import LegendLightning from '@/components/ui/LegendLightning';
 import { getSeasonSummary } from '@/lib/seasons';
 import GradeBadge from '@/components/ui/GradeBadge';
 import ThemeSwitch from '@/components/ui/ThemeSwitch';
@@ -69,6 +70,8 @@ export default async function ProfilPage() {
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
       {themeDef && <ThemeBackdrop themeKey={themeDef.key} />}
+      {/* ⚡ Légende Immortelle : les éclairs traversent le profil */}
+      {xpGrade.index === TOP_GRADE.index && <LegendLightning />}
 
       <header className={`relative z-10 border-b ${themeDef ? 'border-white/10' : 'border-line bg-stone'}`} style={themeDef ? { background: 'rgba(0,0,0,0.4)' } : undefined}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">

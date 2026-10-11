@@ -16,7 +16,8 @@ import SeasonPalmares from '@/components/ui/SeasonPalmares';
 import TournoiTrophies from '@/components/ui/TournoiTrophies';
 import { getTournoiTrophies } from '@/lib/tournoi';
 import LegendMark from '@/components/ui/LegendMark';
-import { getXpGrade } from '@/lib/grades';
+import { getXpGrade, TOP_GRADE } from '@/lib/grades';
+import LegendLightning from '@/components/ui/LegendLightning';
 import { getSeasonSummary } from '@/lib/seasons';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 
@@ -83,6 +84,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
       {/* ✨ AMBIANCE PLEIN ÉCRAN — effet signature du thème équipé */}
       {themeDef && <ThemeBackdrop themeKey={themeDef.key} />}
+      {/* ⚡ Légende Immortelle : les éclairs traversent le profil */}
+      {xpGrade.index === TOP_GRADE.index && <LegendLightning />}
 
       <header
         className={`relative z-10 border-b ${themeDef ? 'border-white/10' : 'border-line bg-stone'}`}
