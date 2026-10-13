@@ -53,6 +53,30 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
   const [guardReady, setGuardReady] = useState(false);
   const [wasViolation, setWasViolation] = useState(false);
   const [gradeUp, setGradeUp] = useState<{ from: XpGrade; to: XpGrade } | null>(null);
+  // Montée de grade en attente (pendant les 1,5 s du +XP) et action à lancer une fois l'animation fermée :
+  // « Continuer le défi » charge le cas suivant, ce qui démonte cet écran (et coupait l'animation).
+  const pendingGradeRef = useRef<{ from: XpGrade; to: XpGrade } | null>(null);
+  const gradeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const afterGradeRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => { if (gradeTimerRef.current) clearTimeout(gradeTimerRef.current); }, []);
+
+  const leaveCase = (action: () => void) => {
+    if (pendingGradeRef.current) {
+      afterGradeRef.current = action;
+      if (gradeTimerRef.current) clearTimeout(gradeTimerRef.current);
+      setGradeUp(pendingGradeRef.current);
+      return;
+    }
+    action();
+  };
+
+  const closeGradeUp = () => {
+    setGradeUp(null);
+    pendingGradeRef.current = null;
+    const action = afterGradeRef.current;
+    afterGradeRef.current = null;
+    action?.();
+  };
 
   // Jeton de début de cas : permet au serveur de mesurer le temps lui-même (bonus de rapidité, dépassement du chrono)
   const startTokenRef = useRef<string | null>(null);
@@ -106,7 +130,10 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
         if (typeof data.xpBefore === 'number' && typeof data.xpAfter === 'number') {
           const from = getXpGrade(data.xpBefore).current;
           const to = getXpGrade(data.xpAfter).current;
-          if (to.index > from.index) setTimeout(() => setGradeUp({ from, to }), 1500);
+          if (to.index > from.index) {
+            pendingGradeRef.current = { from, to };
+            gradeTimerRef.current = setTimeout(() => setGradeUp({ from, to }), 1500);
+          }
         }
         if (data.isCorrect) {
           confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 }, colors: ['#2fd28a', '#e9f1ed', '#5cc8ff'], disableForReducedMotion: true });
@@ -233,7 +260,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
         </motion.div>
       )}
 
-      {gradeUp && <GradeUpOverlay from={gradeUp.from} to={gradeUp.to} onClose={() => setGradeUp(null)} />}
+      {gradeUp && <GradeUpOverlay from={gradeUp.from} to={gradeUp.to} onClose={closeGradeUp} />}
 
       <ResultSheet
         open={!!result}
@@ -241,8 +268,8 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
         title={wasViolation ? "Cas annulé — sortie de l'application" : result?.isCorrect ? `Diagnostic posé ! +${result.xpEarned} XP` : 'Pas grave, voici le raisonnement'}
         action={
           <div className="space-y-2">
-            <ArenaButton full onClick={() => router.refresh()}>Continuer le défi</ArenaButton>
-            <button onClick={() => { window.location.href = '/etudiant'; }} className="w-full py-2 text-sm font-bold text-mute">
+            <ArenaButton full onClick={() => leaveCase(() => router.refresh())}>Continuer le défi</ArenaButton>
+            <button onClick={() => leaveCase(() => { window.location.href = '/etudiant'; })} className="w-full py-2 text-sm font-bold text-mute">
               Retour à l'accueil
             </button>
           </div>
