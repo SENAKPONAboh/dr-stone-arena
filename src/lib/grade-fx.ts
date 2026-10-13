@@ -150,6 +150,7 @@ export function createFx(cv: HTMLCanvasElement, opts: { center?: () => [number, 
   const loop = (now: number) => {
     if (!alive) return;
     raf = requestAnimationFrame(loop);
+    if (W < 10 || H < 10) size(); // écran pas encore affiché au moment de la création : on remesure
     if (!st.mode && !st.bolts.length && !st.parts.length) { if (!cleared) { ctx.clearRect(0, 0, W, H); cleared = true; } return; }
     cleared = false; ctx.clearRect(0, 0, W, H); ctx.globalCompositeOperation = 'lighter';
     if (st.mode === 'storm') {

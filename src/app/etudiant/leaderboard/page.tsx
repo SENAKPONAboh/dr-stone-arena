@@ -11,6 +11,8 @@ import { getXpGrade } from '@/lib/grades';
 import { getLegendCounts } from '@/lib/seasons';
 import LegendMark from '@/components/ui/LegendMark';
 import TitleBadge from '@/components/ui/TitleBadge';
+import GradeInsignia from '@/components/ui/GradeInsignia';
+import LegendRowStorm from '@/components/ui/LegendRowStorm';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const user = await getCurrentUser();
@@ -114,8 +116,11 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
             <div className="space-y-2">
               {allUsers.map((u, index) => {
                 const title = getTitleDef(u.activeTitleId);
+                const grade = getXpGrade(u.xp).current;
+                const legend = grade.index === 7; // ⚡ Légende Immortelle : les éclairs traversent sa ligne
                 return (
-                  <div key={u.id} className={`flex items-center gap-3 rounded-2xl p-3 ${u.id === user.id ? 'border-2 border-mala/50 bg-mala/10' : 'border border-line bg-slab-2'}`}>
+                  <div key={u.id} className={`flex items-center gap-3 rounded-2xl p-3 ${u.id === user.id ? 'border-2 border-mala/50 bg-mala/10' : 'border border-line bg-slab-2'} ${legend ? 'legend-row' : ''}`}>
+                    {legend && <LegendRowStorm />}
 
                     <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full font-display text-base font-extrabold ${
                       index === 0 ? 'bg-gold text-stone' :
@@ -142,7 +147,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                         </p>
                         {title && <div className="my-0.5"><TitleBadge title={title} size="sm" /></div>}
                         <p className="truncate text-xs text-mute">
-                          {getXpGrade(u.xp).current.icon} {getNiveauLabel(u.anneeEtude)}{u.pays ? ` · ${getCountryFlag(u.pays)} ${u.pays}` : ''}{u.universite ? ` · 🏫 ${u.universite}` : ''}
+                          <GradeInsignia grade={grade} size={18} animated={false} className="mr-1 inline-block align-middle" />{getNiveauLabel(u.anneeEtude)}{u.pays ? ` · ${getCountryFlag(u.pays)} ${u.pays}` : ''}{u.universite ? ` · 🏫 ${u.universite}` : ''}
                         </p>
                       </div>
                     </Link>

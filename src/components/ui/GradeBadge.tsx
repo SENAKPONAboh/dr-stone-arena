@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react';
 import type { XpGrade } from '@/lib/grades';
+import GradeInsignia from './GradeInsignia';
 
 // Pastille de grade : plus le grade est haut, plus elle brille (reflet qui balaie dès « Maître », tempête électrique pour la Légende).
 export default function GradeBadge({ grade, size = 'md', className = '' }: { grade: XpGrade; size?: 'sm' | 'md' | 'lg'; className?: string }) {
   const pad = size === 'sm' ? 'px-2.5 py-0.5 text-[11px]' : size === 'lg' ? 'px-5 py-2 text-base' : 'px-3.5 py-1 text-sm';
+  const icon = size === 'sm' ? 18 : size === 'lg' ? 34 : 24;
   const sweep = grade.index >= 5 ? 'fx-title fx-title--rare' : '';
   const style = {
     background: `linear-gradient(135deg, ${grade.from}38, ${grade.to}22)`,
@@ -16,7 +18,7 @@ export default function GradeBadge({ grade, size = 'md', className = '' }: { gra
   } as CSSProperties;
   return (
     <span className={`grade-color relative inline-flex items-center gap-1.5 overflow-hidden rounded-full font-display font-bold ${pad} ${sweep} ${className}`} style={style}>
-      <span className="relative z-[1]">{grade.icon}</span>
+      <GradeInsignia grade={grade} size={icon} className="relative z-[1] -my-1" />
       <span className="relative z-[1]">{grade.name}</span>
     </span>
   );

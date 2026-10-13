@@ -3,11 +3,11 @@
 import { Fragment, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { XP_GRADES, type XpGrade } from '@/lib/grades';
 import { createFx, createSfx, type Fx, type Sfx } from '@/lib/grade-fx';
-import GradeMedal3D, { MedalLayers } from './GradeMedal3D';
+import GradeInsignia from './GradeInsignia';
 
 // Plein écran « NOUVEAU GRADE », inspiré des montées de rang de Call of Duty Mobile :
 // 1. échelle des grades, la barre d'XP se remplit  2. noir + battement ECG
-// 3. ouverture propre au grade (éclairs / pluie d'or / feu)  4. la médaille s'assemble en tournant (« clic » à chaque pièce)
+// 3. ouverture propre au grade (éclairs / pluie d'or / feu)  4. l'insigne (GradeInsignia) s'assemble en tournant, pièce par pièce (« clic » à chaque pièce)
 // 5. atterrissage + nom du grade  6. retour à l'échelle des grades, confettis, bouton Continuer.
 
 const sleepFactory = (alive: () => boolean) => (ms: number) =>
@@ -20,7 +20,6 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
   const heroRef = useRef<HTMLDivElement>(null);
   const bobRef = useRef<HTMLDivElement>(null);
   const spinRef = useRef<HTMLDivElement>(null);
-  const crownRef = useRef<SVGSVGElement>(null);
   const waveRef = useRef<HTMLDivElement>(null);
   const runRef = useRef(0);
 
@@ -92,26 +91,24 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
 
     const assemble = (): number => {
       const spin = spinRef.current!;
-      const dur = top ? 2100 : 1100;
-      spin.animate([{ transform: 'rotateY(1260deg) scale(.75)' }, { transform: 'rotateY(0deg) scale(1.3)' }], { duration: dur, easing: 'cubic-bezier(.22,.65,.2,1)', fill: 'forwards' });
-      if (!top) return dur;
-      const plan: [string, number, string, number][] = [
-        ['.gfx-thick', 0, 'scale(2.6)', 0], ['.gfx-rim', 0, 'scale(2.6)', 0.8],
-        ['.gfx-plate', 320, 'translate3d(0,280px,0) rotate(40deg)', 0.9],
-        ['.gfx-ring', 620, 'scale(0) rotate(-220deg)', 1.05],
-        ['.gfx-wingL', 920, 'translate3d(-300px,-60px,0) rotate(-60deg)', 1.2], ['.gfx-wingR', 920, 'translate3d(300px,-60px,0) rotate(60deg)', 0],
-        ['.gfx-emb', 1250, 'translate3d(0,0,650px) rotate(120deg)', 1.5],
-        ['.gfx-orn', 1560, 'translate3d(0,-300px,0)', 1.8],
-        ['.gfx-shine', 1650, 'scaleX(0)', 0],
-      ];
-      for (const [sel, delay, fromT, pitch] of plan) {
-        spin.querySelectorAll<HTMLElement | SVGElement>(sel).forEach(el => {
-          const z = (el as HTMLElement).dataset.z ?? '0';
-          el.animate([{ transform: `translateZ(${z}px) ${fromT}`, opacity: 0 }, { opacity: 1, offset: 0.25 }, { transform: `translateZ(${z}px)`, opacity: 1 }],
-            { duration: 480, delay, easing: 'cubic-bezier(.25,1.45,.45,1)', fill: 'both' });
-        });
-        if (pitch) timers.push(setTimeout(() => { if (!alive()) return; sfx.clink(pitch); if (sel === '.gfx-emb' && to.index === 7) sfx.crackle(); }, delay + 420));
-      }
+      const dur = top ? 1900 : 1300, step = dur / 7;
+      spin.animate([{ transform: 'rotateY(1080deg) scale(.6)' }, { transform: 'rotateY(0deg) scale(1.25)' }], { duration: dur, easing: 'cubic-bezier(.22,.65,.2,1)', fill: 'forwards' });
+      const piece = (sel: string, from: string, delay: number, d = 480) => spin.querySelectorAll<SVGElement>(sel).forEach((el, k) =>
+        el.animate([{ opacity: 0, transform: from }, { opacity: 1, transform: 'none' }], { duration: d, delay: delay + k * 140, easing: 'cubic-bezier(.25,1.45,.45,1)', fill: 'both' }));
+      piece('.gi-aura', 'scale(.3)', 0, 600);
+      piece('.gi-frame', 'scale(2.4)', 0);
+      piece('.gi-ring', 'scale(0) rotate(-220deg)', step);
+      piece('.gi-plate', 'scale(.2)', step * 1.6, 420);
+      piece('.gi-emb', 'translateY(-60px) scale(2.2)', step * 2.4);
+      piece('.gi-wl', 'scaleX(0) rotate(30deg)', step * 3.2, 600);
+      piece('.gi-wr', 'scaleX(0) rotate(-30deg)', step * 3.2, 600);
+      piece('.gi-spk', 'translateY(-120px) scaleY(1.6)', step * 4.2, 460);
+      piece('.gi-star', 'scale(3) rotate(-120deg)', step * 5, 420);
+      [0, 1, 1.6, 2.4].forEach((d, k) => timers.push(setTimeout(() => {
+        if (!alive()) return; sfx.clink(0.8 + k * 0.25); if (k === 3 && to.index === 7) sfx.crackle();
+      }, d * step + 380)));
+      if (to.index >= 3) timers.push(setTimeout(() => { if (alive()) sfx.whoosh(); }, step * 3.2 + 100));
+      spin.querySelectorAll('.gi-star').forEach((_, k) => timers.push(setTimeout(() => { if (alive()) sfx.clink(1.8 + k * 0.2); }, step * 5 + k * 140 + 300)));
       return dur;
     };
 
@@ -143,7 +140,7 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
         await wait(assemble());
 
         // --- Atterrissage ---
-        spinRef.current!.animate([{ transform: 'rotateY(0deg) scale(1.3)' }, { transform: 'rotateY(0deg) scale(1)' }], { duration: 650, easing: 'cubic-bezier(.3,1.6,.5,1)', fill: 'forwards' });
+        spinRef.current!.animate([{ transform: 'rotateY(0deg) scale(1.25)' }, { transform: 'rotateY(0deg) scale(1)' }], { duration: 650, easing: 'cubic-bezier(.3,1.6,.5,1)', fill: 'forwards' });
         setHalo(true); wave(); quake(); sfx.land();
         setSparks(Array.from({ length: 26 }, (_, i) => { const a = (Math.PI * 2 * i) / 26 + Math.random() * 0.3, r = 100 + Math.random() * 100; return { dx: Math.cos(a) * r, dy: Math.sin(a) * r, d: Math.random() * 80 }; }));
         if (to.index === 7) {
@@ -154,12 +151,8 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
           fx.addBolt(cx, cy, fx.W + 10, cy - Math.random() * 120, { life: 600, rough: 90, w: 1.2, nb: 3 });
           flash('#ffffff', 1, 0.7); sfx.thunder(true);
         }
-        if (to.index === 6 && crownRef.current) { // la couronne géante tombe sur la médaille
-          const c = crownRef.current; c.style.opacity = '1';
-          c.animate([{ transform: 'translateY(-520px) scale(1.8) rotate(-12deg)', opacity: 0 }, { opacity: 1, offset: 0.3 }, { transform: 'translateY(-170px) scale(1) rotate(0)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.6,0,1,1)', fill: 'forwards' });
-          await wait(420);
-          c.animate([{ transform: 'translateY(-170px) scale(1.15,.85)' }, { transform: 'translateY(-170px) scale(1)' }], { duration: 300, easing: 'cubic-bezier(.3,1.8,.5,1)', fill: 'forwards' });
-          wave(); quake(); fx.spawnGold(40, true); sfx.fanfare(); flash('#fff1b8', 0.7, 0.5); fx.st.level = 0.45;
+        if (to.index === 6) { // la couronne de pointes de l'insigne vient de se poser : pluie d'or et fanfare
+          wave(); fx.spawnGold(40, true); sfx.fanfare(); flash('#fff1b8', 0.7, 0.5); fx.st.level = 0.45;
         }
         if (to.index === 5) { fx.spawnFire(60, true); sfx.roar(); fx.st.level = 1.4; flash('#ff7a1a', 0.6, 0.5); }
         await wait(700);
@@ -169,7 +162,6 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
 
         // --- Retour à l'échelle des grades ---
         setText(false); heroRef.current?.classList.add('out'); setHalo(false); fx.st.arcs = false;
-        crownRef.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, fill: 'forwards' });
         await wait(380);
         finale();
       } catch { /* animation interrompue (Passer / fermeture) */ }
@@ -193,10 +185,10 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
       {/* Échelle des grades : précédent · actuel · suivant */}
       <div className="gfx-ladder" style={{ opacity: phase === 'show' ? 0 : 1 }}>
         <div className="gfx-slot side">
-          {prev && <><GradeMedal3D grade={prev} width={76} /><p className="font-display text-[10.5px] font-bold leading-tight">{prev.name}</p></>}
+          {prev && <><GradeInsignia grade={prev} size={64} animated={false} /><p className="font-display text-[10.5px] font-bold leading-tight">{prev.name}</p></>}
         </div>
         <div key={shakeKey} className={`gfx-slot center ${shakeKey ? 'gfx-shake' : ''}`}>
-          <div className="gfx-frame"><GradeMedal3D grade={cur} width={140} /></div>
+          <div className="grid h-[150px] place-items-center"><GradeInsignia grade={cur} size={128} /></div>
           <p className="font-display text-[10.5px] font-bold leading-tight">{cur.name}</p>
           {next && (
             <>
@@ -206,8 +198,8 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
           )}
         </div>
         <div className={`gfx-slot side ${next ? 'locked' : ''}`}>
-          {next ? <><GradeMedal3D grade={next} width={76} /><p className="font-display text-[10.5px] font-bold leading-tight">???</p></>
-            : <><div className="grid h-[80px] place-items-center text-3xl">🏔️</div><p className="font-display text-[10.5px] font-bold leading-tight">Sommet atteint</p></>}
+          {next ? <><GradeInsignia grade={next} size={64} locked /><p className="font-display text-[10.5px] font-bold leading-tight">???</p></>
+            : <><div className="grid h-[64px] place-items-center text-3xl">🏔️</div><p className="font-display text-[10.5px] font-bold leading-tight">Sommet atteint</p></>}
         </div>
       </div>
 
@@ -223,16 +215,8 @@ export default function GradeUpOverlay({ from, to, onClose }: { from: XpGrade; t
         {sparks.map((s, i) => <i key={i} className="gfx-spark" style={{ '--dx': `${s.dx}px`, '--dy': `${s.dy}px`, animationDelay: `${s.d}ms` } as CSSProperties} />)}
         {phase !== 'final' && (
           <div ref={heroRef} className="gfx-hero">
-            <div ref={bobRef} className="gfx-bob"><div ref={spinRef} className="gfx-spin"><MedalLayers grade={to} /></div></div>
+            <div ref={bobRef} className="gfx-bob"><div ref={spinRef} className="gfx-spin grid place-items-center"><GradeInsignia grade={to} size={210} animated /></div></div>
           </div>
-        )}
-        {to.index === 6 && (
-          <svg ref={crownRef} className="gfx-crown" viewBox="56 60 88 84" aria-hidden>
-            <defs><linearGradient id="gfxCrownG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff6d1" /><stop offset=".4" stopColor="#f2c14e" /><stop offset=".7" stopColor="#9a6a12" /><stop offset="1" stopColor="#f2c14e" /></linearGradient></defs>
-            <path d="M64 124 L58 82 L80 100 L100 66 L120 100 L142 82 L136 124 Z" fill="url(#gfxCrownG)" stroke="#3d2a05" strokeWidth="2" />
-            <path d="M64 124 H136 V138 H64 Z" fill="url(#gfxCrownG)" stroke="#3d2a05" strokeWidth="2" />
-            <circle cx="58" cy="82" r="5" fill="#38bdf8" /><circle cx="100" cy="66" r="6" fill="#e11d48" /><circle cx="142" cy="82" r="5" fill="#38bdf8" /><circle cx="100" cy="131" r="4.5" fill="#e11d48" />
-          </svg>
         )}
       </div>
 

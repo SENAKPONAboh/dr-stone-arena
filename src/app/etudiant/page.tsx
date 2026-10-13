@@ -13,6 +13,7 @@ import Icon from '@/components/ui/Icon';
 import GradeBadge from '@/components/ui/GradeBadge';
 import TournoiHomeCard from '@/components/tournoi/TournoiHomeCard';
 import LegendMark from '@/components/ui/LegendMark';
+import LegendRowStorm from '@/components/ui/LegendRowStorm';
 import { getLegendCounts } from '@/lib/seasons';
 import { getXpGrade, gradeProgress } from '@/lib/grades';
 import { getTitleDef } from '@/lib/personnalisation-data';
@@ -247,7 +248,8 @@ export default async function EtudiantDashboard() {
             <div className="space-y-2">
               {topUsers.map((u, i) => (
                 <Link key={u.id} href={`/etudiant/profil/${u.id}`}
-                  className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${u.id === user.id ? 'bg-mala/10' : 'hover:bg-slab-2'}`}>
+                  className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${u.id === user.id ? 'bg-mala/10' : 'hover:bg-slab-2'} ${getXpGrade(u.xp).current.index === 7 ? 'legend-row border' : ''}`}>
+                  {getXpGrade(u.xp).current.index === 7 && <LegendRowStorm />}
                   <span className={`w-6 font-display text-sm font-extrabold ${i === 0 ? 'text-gold' : i === 1 ? 'text-mute' : 'text-flame'}`}>{i + 1}</span>
                   <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} frameKey={u.activeFrameId} size={32} />
                   <div className="min-w-0 flex-1">

@@ -12,6 +12,7 @@ import { getXpGrade, TOP_GRADE } from '@/lib/grades';
 import LegendLightning from '@/components/ui/LegendLightning';
 import { getSeasonSummary } from '@/lib/seasons';
 import GradeBadge from '@/components/ui/GradeBadge';
+import GradeInsignia from '@/components/ui/GradeInsignia';
 import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
 import TournoiTrophies from '@/components/ui/TournoiTrophies';
@@ -137,6 +138,7 @@ export default async function ProfilPage() {
           {/* Grade avec animation Premium */}
           <div className={`mt-6 p-4 rounded-2xl ${user.isPremium ? 'bg-white/5' : 'bg-gray-50'}`}>
             <p className={`text-xs font-bold uppercase tracking-wider ${user.isPremium ? 'text-white/50' : 'text-gray-400'}`}>Grade Actuel</p>
+            <div className="mt-3 flex justify-center"><GradeInsignia grade={xpGrade} size={110} /></div>
             <div className="mt-2 flex justify-center"><GradeBadge grade={xpGrade} size="lg" /></div>
             <Link href="/etudiant/grades" className={`mt-2 inline-block text-xs font-bold ${user.isPremium ? 'text-yellow-300 hover:text-yellow-200' : 'text-blue-600 hover:underline'}`}>
               🏅 Voir tous les grades →

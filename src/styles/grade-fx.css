@@ -1,4 +1,4 @@
-/* ===== Montée de grade (GradeUpOverlay) + médailles en relief (GradeMedal3D) ===== */
+/* ===== Montée de grade (GradeUpOverlay) + insignes de grade (GradeInsignia) ===== */
 
 /* --- Médaille : couches SVG empilées en 3D --- */
 .gfx-med { position: relative; width: 240px; height: 223px; transform-style: preserve-3d; }
@@ -83,4 +83,40 @@
 @media (prefers-reduced-motion: reduce) {
   .gfx-rays.on, .gfx-halo.on, .gfx-bob.breathe, .gfx-med > .gfx-shine::before { animation: none; }
   .gfx-cf { display: none; }
+}
+
+/* ===== Insigne de grade style CoD (GradeInsignia) ===== */
+.gi .gi-pc { transform-box: fill-box; transform-origin: center; }
+.gi .gi-wl { transform-origin: right center; }
+.gi .gi-wr { transform-origin: left center; }
+.gi .gi-spk { transform-origin: center bottom; }
+.gi-locked { filter: grayscale(1) brightness(.45); }
+.gi .gi-sweep { animation: giSweep 3.8s ease-in-out infinite; }
+@keyframes giSweep { 0% { transform: translateX(0) skewX(-22deg); } 50%, 100% { transform: translateX(420px) skewX(-22deg); } }
+.gi .gi-breathe { animation: giBreathe 2.6s ease-in-out infinite; }
+@keyframes giBreathe { 0%, 100% { opacity: .5; transform: scale(.93); } 50% { opacity: 1; transform: scale(1.05); } }
+.gi .gi-ember { opacity: 0; animation: giEmber var(--t) linear var(--d) infinite; }
+@keyframes giEmber { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+.gi .gi-twk { transform-box: fill-box; transform-origin: center; animation: giTwinkle 2s ease-in-out infinite; }
+@keyframes giTwinkle { 0%, 100% { opacity: 0; transform: scale(.3); } 50% { opacity: 1; transform: scale(1); } }
+/* Légende : éclairs qui crépitent sur l'insigne */
+.gi .gi-arc { opacity: 0; filter: drop-shadow(0 0 4px #a78bfa) drop-shadow(0 0 10px #8b5cf6); animation: giArc 1.7s steps(1) infinite; }
+@keyframes giArc { 0%, 6% { opacity: 1; } 7%, 10% { opacity: 0; } 11%, 14% { opacity: .9; } 15%, 100% { opacity: 0; } }
+.gi-legend { filter: drop-shadow(0 0 10px rgba(139, 92, 246, .55)); }
+
+/* Ligne d'une Légende dans le classement : éclairs qui traversent la carte */
+.legend-row { position: relative; overflow: hidden; isolation: isolate; border-color: rgba(167, 139, 250, .7) !important; box-shadow: 0 0 14px rgba(139, 92, 246, .45), inset 0 0 18px rgba(139, 92, 246, .18); animation: legendRowGlow 2.6s ease-in-out infinite; }
+@keyframes legendRowGlow { 0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, .35), inset 0 0 14px rgba(139, 92, 246, .14); } 50% { box-shadow: 0 0 20px rgba(167, 139, 250, .65), inset 0 0 22px rgba(139, 92, 246, .25); } }
+.legend-row > * { position: relative; z-index: 1; }
+.legend-row > .legend-storm { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.legend-storm .ls-bolt { opacity: 0; filter: drop-shadow(0 0 3px #c4b5fd) drop-shadow(0 0 8px #8b5cf6); animation: giArc var(--t, 2.4s) steps(1) var(--d, 0s) infinite; }
+.legend-storm .ls-flash { opacity: 0; animation: lsFlash var(--t, 2.4s) steps(1) var(--d, 0s) infinite; }
+@keyframes lsFlash { 0%, 6% { opacity: .35; } 7%, 100% { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gi .gi-sweep, .gi .gi-breathe, .gi .gi-twk, .legend-row { animation: none; }
+  .gi .gi-ember, .legend-storm .ls-flash { animation: none; opacity: 0; }
+  /* Sans animation, les éclairs de la Légende restent visibles, immobiles */
+  .gi .gi-arc { animation: none; opacity: .85; }
+  .legend-storm .ls-bolt { animation: none; opacity: .5; }
 }

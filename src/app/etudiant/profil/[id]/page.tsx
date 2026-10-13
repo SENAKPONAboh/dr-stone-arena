@@ -12,6 +12,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
 import GradeBadge from '@/components/ui/GradeBadge';
+import GradeInsignia from '@/components/ui/GradeInsignia';
 import SeasonPalmares from '@/components/ui/SeasonPalmares';
 import TournoiTrophies from '@/components/ui/TournoiTrophies';
 import { getTournoiTrophies } from '@/lib/tournoi';
@@ -157,6 +158,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
           <div className={`mt-6 p-4 rounded-2xl ${themeDef ? 'bg-white/5' : 'bg-slab-2'}`}>
             <p className="text-xs font-bold uppercase tracking-wider text-white/50" style={themeDef ? undefined : (profileUser.isPremium ? undefined : { color: '#9ca3af' })}>Grade Actuel</p>
+            <div className="mt-3 flex justify-center"><GradeInsignia grade={xpGrade} size={110} /></div>
             <div className="mt-2 flex justify-center"><GradeBadge grade={xpGrade} size="lg" /></div>
           </div>
 
