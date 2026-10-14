@@ -39,10 +39,18 @@ export async function POST() {
     }
 
     // 4. Récompense (20 XP)
-    await prisma.user.update({
-      where: { id: user.id },
+    // Atomique : la vérification « pas encore réclamée aujourd'hui » et le +20 XP se font en UNE seule écriture.
+    // Sans ça, 20 requêtes envoyées en même temps passaient toutes la vérification ci-dessus (+400 XP).
+    const claimed = await prisma.user.updateMany({
+      where: {
+        id: user.id,
+        OR: [{ lastDailyRewardClaimedAt: null }, { lastDailyRewardClaimedAt: { lt: today } }],
+      },
       data: { xp: { increment: 20 }, lastDailyRewardClaimedAt: new Date() }
     });
+    if (claimed.count === 0) {
+      return NextResponse.json({ error: "Récompense déjà réclamée aujourd'hui" }, { status: 400 });
+    }
 
     return NextResponse.json({ success: true, message: "20 XP bonus gagnés !" });
   } catch (error) {

@@ -32,14 +32,17 @@ export async function GET(request: Request) {
       data: { isRead: true },
     });
 
-    const [messages, friend] = await Promise.all([
+    // Les 100 messages les PLUS RÉCENTS (avant : les 100 plus anciens → au-delà de 100, les nouveaux n'apparaissaient plus),
+    // remis ensuite dans l'ordre chronologique pour l'affichage.
+    const [latest, friend] = await Promise.all([
       prisma.directMessage.findMany({
         where: { OR: [{ senderId: user.id, recipientId: withUserId }, { senderId: withUserId, recipientId: user.id }] },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
         take: 100,
       }),
       prisma.user.findUnique({ where: { id: withUserId }, select: USER_SELECT }),
     ]);
+    const messages = latest.reverse();
 
     return NextResponse.json({ messages, friend });
   } catch (e: any) {

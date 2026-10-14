@@ -4,6 +4,7 @@ import { getCurrentUserCore } from '@/lib/auth';
 import { POINTS_PER_WIN } from '@/lib/duel';
 import { checkDuelBadges } from '@/lib/duel-server';
 import { readStoredAnswers } from '@/lib/duel-answers';
+import { caseDuration } from '@/lib/case-duration';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
   try {
-    const { duelId, answers, timeSpent } = await request.json();
+    const { duelId, answers } = await request.json();
     if (!duelId) {
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
@@ -57,9 +58,11 @@ export async function POST(request: Request) {
     });
     const score = detailedAnswers.filter(a => a.isCorrect).length;
     // Temps total : celui mesuré cas par cas côté serveur quand il existe (borné à la durée du cas)
+    // Repli (réponses non enregistrées une par une) : le temps envoyé par le téléphone n'est PAS cru
+    // (un tricheur pouvait envoyer « 0 seconde » pour gagner les égalités) → on compte le temps maximal des cas.
     const serverTime = stored.reduce((sum, a) => sum + a.timeSpent, 0);
-    const clientTime = Number.isFinite(Number(timeSpent)) ? Math.max(0, Math.round(Number(timeSpent))) : 0;
-    const totalTime = stored.length > 0 ? serverTime : clientTime;
+    const fallbackTime = cases.reduce((sum, c) => sum + caseDuration(c.difficulty, c.durationMax), 0);
+    const totalTime = stored.length > 0 ? serverTime : fallbackTime;
 
     const updateData: any = isRequester
       ? { requesterAnswers: detailedAnswers, requesterScore: score, requesterTime: totalTime, requesterCompleted: true, requesterCompletedAt: new Date() }

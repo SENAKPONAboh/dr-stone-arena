@@ -33,22 +33,36 @@ export async function POST(request: Request) {
 
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
-      const duelsToday = await prisma.duel.count({
-        where: {
-          OR: [{ requesterId: user.id }, { opponentId: user.id }],
-          status: { in: ['ACCEPTE', 'TERMINE'] },
-          acceptedAt: { gte: todayStart }
+      const playDeadline = new Date(Date.now() + PLAY_DEADLINE_HOURS * 60 * 60 * 1000);
+
+      // Verrou par étudiant : accepter plusieurs duels au même instant ne permet plus de dépasser le quota du jour,
+      // et un même duel ne peut être accepté qu'une fois (updateMany sur le statut EN_ATTENTE).
+      const outcome = await prisma.$transaction(async (tx) => {
+        try {
+          await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'duel-accept' + user.id}))`;
+        } catch (lockErr) {
+          console.error('Verrou advisory indisponible (non bloquant) :', lockErr);
         }
+        const duelsToday = await tx.duel.count({
+          where: {
+            OR: [{ requesterId: user.id }, { opponentId: user.id }],
+            status: { in: ['ACCEPTE', 'TERMINE'] },
+            acceptedAt: { gte: todayStart }
+          }
+        });
+        if (duelsToday >= quota) return 'QUOTA' as const;
+        const changed = await tx.duel.updateMany({
+          where: { id: duel.id, status: 'EN_ATTENTE' },
+          data: { status: 'ACCEPTE', acceptedAt: new Date(), playDeadline }
+        });
+        return changed.count === 0 ? 'GONE' as const : 'OK' as const;
       });
-      if (duelsToday >= quota) {
+      if (outcome === 'QUOTA') {
         return NextResponse.json({ error: `Tu as atteint ta limite de ${quota} duels aujourd'hui.` }, { status: 429 });
       }
-
-      const playDeadline = new Date(Date.now() + PLAY_DEADLINE_HOURS * 60 * 60 * 1000);
-      await prisma.duel.update({
-        where: { id: duel.id },
-        data: { status: 'ACCEPTE', acceptedAt: new Date(), playDeadline }
-      });
+      if (outcome === 'GONE') {
+        return NextResponse.json({ error: "Ce duel n'est plus en attente." }, { status: 400 });
+      }
 
       await prisma.notification.create({
         data: {
