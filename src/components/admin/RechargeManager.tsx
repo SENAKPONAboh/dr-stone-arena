@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import ReceiptImage from '@/components/admin/ReceiptImage';
 
 type Recharge = {
-  id: string; amountUA: number; amountFCFA: number; receiptUrl: string;
+  id: string; amountUA: number; amountFCFA: number; receiptUrl: string; displayUrl?: string | null;
   status: string; note: string | null; createdAt: string; validatedAt: string | null;
   user: { prenom: string; nom: string; pseudo: string | null; email: string };
   paymentMethod: { name: string; icon: string | null } | null;
@@ -115,7 +115,7 @@ export default function RechargeManager() {
               {/* 🧾 Reçu — même système que les Pass/Premium (aperçu + clic pour agrandir) */}
               {r.receiptUrl && (
                 <div className="mt-4 w-full sm:w-48">
-                  <ReceiptImage src={r.receiptUrl} />
+                  {r.displayUrl ? <ReceiptImage src={r.displayUrl} /> : <p className="text-xs text-red-400">Reçu introuvable dans le stockage.</p>}
                 </div>
               )}
 

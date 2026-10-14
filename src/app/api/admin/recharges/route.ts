@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { getReceiptSignedUrl } from '@/lib/supabase-storage';
 
 // ⚠️ Hypothèse : rôle admin = 'ADMIN' (une ligne à changer sinon)
 const ADMIN_ROLE = 'ADMIN';
@@ -23,7 +24,14 @@ export async function GET(request: Request) {
     },
   });
 
-  return NextResponse.json({ recharges });
+  // Le reçu est rangé dans un espace PRIVÉ : receiptUrl n'est qu'un chemin (« user-x/171717.jpg »), pas une adresse
+  // d'image. On fabrique un lien sécurisé valable 1 h, comme pour les reçus Premium et Pass (sinon : image vide).
+  const withLinks = await Promise.all(recharges.map(async r => ({
+    ...r,
+    displayUrl: !r.receiptUrl ? null : r.receiptUrl.startsWith('data:') || r.receiptUrl.startsWith('http') ? r.receiptUrl : await getReceiptSignedUrl(r.receiptUrl),
+  })));
+
+  return NextResponse.json({ recharges: withLinks });
 }
 
 export async function POST(request: Request) {
