@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { NIVEAU_OPTIONS } from '@/lib/niveau';
 
 // Photo de profil : on la réduit à 256×256 (WebP) avant de la stocker.
 // Sans ça, une photo de 2 Mo était enregistrée telle quelle et rechargée par TOUTES les pages de classement.
@@ -27,7 +26,6 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const pseudoRaw = formData.get('pseudo');
-    const anneeRaw = formData.get('anneeEtude');
     const imageFile = formData.get('image');
 
     // ===== Pseudo =====
@@ -43,15 +41,8 @@ export async function POST(request: Request) {
       if (taken) return NextResponse.json({ error: "Ce pseudo est déjà pris." }, { status: 400 });
     }
 
-    // ===== Niveau d'étude : uniquement une valeur existante (1 à 7) =====
-    let anneeEtude = user.anneeEtude;
-    if (typeof anneeRaw === 'string' && anneeRaw !== '') {
-      const n = Number.parseInt(anneeRaw, 10);
-      if (!NIVEAU_OPTIONS.some(o => o.value === n)) {
-        return NextResponse.json({ error: "Niveau d'étude invalide." }, { status: 400 });
-      }
-      anneeEtude = n;
-    }
+    // Niveau d'étude : NON modifiable par l'étudiant (sinon un EM6 pouvait passer en EM1 pour des cas faciles
+    // et dominer le classement EM1). Seul l'administrateur le change, depuis le panel (Utilisateurs).
 
     // ===== Photo =====
     let imageUrl = user.imageUrl; // On garde l'ancienne image par défaut
@@ -71,7 +62,7 @@ export async function POST(request: Request) {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { pseudo: pseudo || null, imageUrl, anneeEtude },
+      data: { pseudo: pseudo || null, imageUrl },
     });
 
     return NextResponse.json({ success: true });

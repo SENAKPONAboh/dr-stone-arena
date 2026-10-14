@@ -1,0 +1,25 @@
+// Nationalités proposées à l'inscription. L'étudiant voit la NATIONALITÉ ; on enregistre le PAYS correspondant
+// dans User.pays, pour que les drapeaux (country-flags) et l'onglet « Mon pays » du classement restent cohérents.
+export const NATIONALITES: { label: string; pays: string }[] = [
+  { label: 'Nigérienne', pays: 'Niger' },
+  { label: 'Béninoise', pays: 'Bénin' },
+  { label: 'Togolaise', pays: 'Togo' },
+  { label: 'Burkinabè', pays: 'Burkina Faso' },
+  { label: 'Malienne', pays: 'Mali' },
+  { label: 'Ivoirienne', pays: "Côte d'Ivoire" },
+  { label: 'Sénégalaise', pays: 'Sénégal' },
+  { label: 'Nigériane', pays: 'Nigeria' },
+  { label: 'Tchadienne', pays: 'Tchad' },
+  { label: 'Camerounaise', pays: 'Cameroun' },
+  { label: 'Guinéenne', pays: 'Guinée' },
+  { label: 'Gabonaise', pays: 'Gabon' },
+  { label: 'Congolaise (Brazzaville)', pays: 'Congo' },
+  { label: 'Congolaise (RDC)', pays: 'RD Congo' },
+  { label: 'Centrafricaine', pays: 'Centrafrique' },
+  { label: 'Mauritanienne', pays: 'Mauritanie' },
+  { label: 'Ghanéenne', pays: 'Ghana' },
+  { label: 'Marocaine', pays: 'Maroc' },
+  { label: 'Algérienne', pays: 'Algérie' },
+  { label: 'Tunisienne', pays: 'Tunisie' },
+  { label: 'Française', pays: 'France' },
+];

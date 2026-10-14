@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import ResetPasswordButton from '@/components/admin/ResetPasswordButton';
 import BanButton from '@/components/admin/BanButton';
+import LevelSelect from '@/components/admin/LevelSelect';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 
@@ -144,6 +145,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                   </div>
 
                   <div className="flex flex-col md:flex-row gap-2 items-end">
+                    <LevelSelect userId={u.id} current={u.anneeEtude} />
                     <ResetPasswordButton userId={u.id} />
                     <BanButton userId={u.id} isBanned={u.statut === 'BANNI'} />
                   </div>

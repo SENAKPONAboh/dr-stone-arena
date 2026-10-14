@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
 import PasswordInput from '@/components/ui/PasswordInput';
+import NationalitySelect from '@/components/ui/NationalitySelect';
 import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
 
 export default function RegisterPage() {
@@ -77,8 +78,8 @@ export default function RegisterPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={AUTH_LABEL}>Pays</label>
-            <input id="pays" name="pays" type="text" required className={AUTH_INPUT} placeholder="Bénin" />
+            <label className={AUTH_LABEL} htmlFor="nationalite">Nationalité</label>
+            <NationalitySelect inputClassName={AUTH_INPUT} />
           </div>
           <div>
             <label className={AUTH_LABEL}>Université</label>
