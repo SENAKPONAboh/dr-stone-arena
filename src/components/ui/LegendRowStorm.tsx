@@ -8,11 +8,14 @@ const BOLTS: { pts: string; t: string; d: string }[] = [
   { pts: '340,-4 352,16 334,36 356,54 342,78 360,104', t: '2.6s', d: '1.7s' },
 ];
 
-export default function LegendRowStorm() {
+// `offset` (rang dans la liste) : décale les éclairs d'une ligne à l'autre, sinon toutes les Légendes
+// d'un classement s'allumaient exactement en même temps (effet mécanique).
+export default function LegendRowStorm({ offset = 0 }: { offset?: number }) {
+  const shift = (offset * 0.37) % 2.3;
   return (
     <svg className="legend-storm" viewBox="0 0 400 100" preserveAspectRatio="none" aria-hidden>
       {BOLTS.map((b, i) => (
-        <g key={i} style={{ '--t': b.t, '--d': b.d } as CSSProperties}>
+        <g key={i} style={{ '--t': b.t, '--d': `${(parseFloat(b.d) + shift).toFixed(2)}s` } as CSSProperties}>
           <rect className="ls-flash" x="0" y="0" width="400" height="100" fill="#8b5cf6" />
           <polyline className="ls-bolt" points={b.pts} fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
         </g>

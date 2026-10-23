@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { takeEarnedFirst } from '@/lib/ua-split';
 import { getCurrentUserCore } from '@/lib/auth';
+import { pushOnly } from '@/lib/notify';
 
 // ===== CORRECTION DE SOLDE (ADMIN_CORRECTION) =====
 // Opération administrative DIRECTE : créditer ou retirer des UA à n'importe quel compte.
@@ -24,6 +25,8 @@ export async function POST(request: Request) {
     if (!Number.isInteger(amount) || amount === 0) return NextResponse.json({ error: "Montant invalide (entier non nul, positif ou négatif)." }, { status: 400 });
     if (Math.abs(amount) > 10_000_000) return NextResponse.json({ error: "Montant trop élevé (plafond de sécurité : 10 000 000 UA)." }, { status: 400 });
 
+    // Copie sur le téléphone de la notification écrite dans la cloche (envoyée APRÈS la transaction)
+    let push: { userId: string; message: string } | null = null;
     const result = await prisma.$transaction(async (tx) => {
       const target = await tx.user.findUnique({ where: { email: mail }, select: { id: true, prenom: true, nom: true, pseudo: true, uaBalance: true, uaRecharged: true } });
       if (!target) throw new Error('USER_NOT_FOUND');
@@ -52,13 +55,15 @@ export async function POST(request: Request) {
           balanceBefore: target.uaBalance, balanceAfter: updated.uaBalance,
         },
       });
+      const msg = `🛠️ Ton solde a été ajusté : ${applied > 0 ? '+' : ''}${applied.toLocaleString('fr-FR')} UA. Motif : ${motif}`;
       await tx.notification.create({
         data: {
           userId: target.id,
-          message: `🛠️ Ton solde a été ajusté : ${applied > 0 ? '+' : ''}${applied.toLocaleString('fr-FR')} UA. Motif : ${motif}`,
+          message: msg,
           icon: '🛠️',
         },
       });
+      push = { userId: target.id, message: msg };
 
       return {
         userName: target.pseudo || `${target.prenom} ${target.nom}`,
@@ -66,6 +71,9 @@ export async function POST(request: Request) {
         balanceAfter: updated.uaBalance,
       };
     });
+
+    const p = push as { userId: string; message: string } | null;
+    if (p) await pushOnly(p.userId, p.message, '🛠️', { url: '/etudiant/monetise' });
 
     return NextResponse.json({ success: true, ...result });
   } catch (e: any) {

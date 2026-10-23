@@ -1,6 +1,7 @@
 // ===== LOGIQUE SERVEUR DES DUELS — ne pas importer depuis un composant client =====
 import prisma from '@/lib/prisma';
 import { POINTS_PER_WIN } from '@/lib/duel';
+import { pushOnly } from '@/lib/notify';
 
 // Expiration "paresseuse" (même pattern que l'expiration Premium du dashboard)
 export async function expireStaleDuels(userId: string) {
@@ -22,13 +23,13 @@ export async function expireStaleDuels(userId: string) {
   });
 
   for (const duel of overdue) {
-    await prisma.$transaction(async (tx) => {
+    const forfeit = await prisma.$transaction(async (tx) => {
       // Passage à TERMINE atomique — un seul des deux joueurs peut finaliser
       const updated = await tx.duel.updateMany({
         where: { id: duel.id, status: 'ACCEPTE' },
         data: { status: 'TERMINE', finalizedAt: new Date() }
       });
-      if (updated.count === 0) return;
+      if (updated.count === 0) return null;
 
       // Règle validée : celui qui n'a pas joué PERD (quota consommé car accepté).
       // Si aucun n'a joué : duel consommé, sans vainqueur ni stats.
@@ -44,8 +45,15 @@ export async function expireStaleDuels(userId: string) {
         await tx.user.update({ where: { id: loserId }, data: { duelsLost: { increment: 1 } } });
         await tx.notification.create({ data: { userId: winnerId, message: "Victoire par forfait : ton adversaire n'a pas joué à temps ! ⚔️", icon: '🏆' } });
         await tx.notification.create({ data: { userId: loserId, message: "Défaite par forfait : tu n'as pas joué ton duel dans les 24h. ❌", icon: '⚔️' } });
+        return { winnerId, loserId };
       }
+      return null;
     });
+    // Même message sur le téléphone (après la transaction : rien n'est envoyé si elle est annulée)
+    if (forfeit) {
+      await pushOnly(forfeit.winnerId, "Victoire par forfait : ton adversaire n'a pas joué à temps ! ⚔️", '🏆', { url: '/etudiant/duel' });
+      await pushOnly(forfeit.loserId, "Défaite par forfait : tu n'as pas joué ton duel dans les 24h. ❌", '⚔️', { url: '/etudiant/duel' });
+    }
   }
 }
 

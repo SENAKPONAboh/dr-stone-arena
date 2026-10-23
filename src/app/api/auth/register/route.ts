@@ -32,6 +32,10 @@ export async function POST(request: Request) {
     if (!nom || !prenom || !pays || !universite || !faculte) {
       return NextResponse.json({ error: "Tous les champs sont obligatoires." }, { status: 400 });
     }
+    // Règles anti-triche : l'étudiant doit les avoir acceptées (case cochée sur le formulaire)
+    if (body?.acceptRules !== 'on' && body?.acceptRules !== true) {
+      return NextResponse.json({ error: "Tu dois accepter les règles anti-triche pour créer ton compte." }, { status: 400 });
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Adresse email invalide." }, { status: 400 });
     }

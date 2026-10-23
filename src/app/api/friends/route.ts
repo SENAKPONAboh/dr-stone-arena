@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { notifyUser } from '@/lib/notify';
 
 // ===== AMIS & INVITATIONS =====
 // GET  : amis + invitations reçues/envoyées + non-lus par ami
@@ -109,9 +110,7 @@ export async function POST(request: Request) {
         data: { status: action === 'ACCEPT' ? 'ACCEPTE' : 'REFUSE', respondedAt: new Date() },
       });
       if (action === 'ACCEPT') {
-        await prisma.notification.create({
-          data: { userId: f.requesterId, message: `🤝 ${user.pseudo || user.prenom} a accepté ton invitation ! Tu peux maintenant discuter avec lui.`, icon: '🤝' },
-        });
+        await notifyUser(f.requesterId, `🤝 ${user.pseudo || user.prenom} a accepté ton invitation ! Tu peux maintenant discuter avec lui.`, '🤝', { url: '/etudiant/messages' });
       }
       return NextResponse.json({ success: true });
     }

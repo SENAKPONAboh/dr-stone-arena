@@ -18,7 +18,7 @@ type Slide = {
   highlight?: string;       // phrase mise en avant
   from: string;             // couleur d'accent (dégradé du halo)
   to: string;
-  extra?: 'grades' | 'theme';
+  extra?: 'grades' | 'theme' | 'profile';
 };
 
 // Contenu à jour : garde de 10 cas, saisons mensuelles, 8 grades, Espace Élite / Pass Élite, Premium, thèmes, installation.
@@ -54,7 +54,7 @@ const SLIDES: Slide[] = [
     icon: '🔥', kicker: 'Régularité', title: 'La Flamme et les vies',
     paragraphs: [
       "La Flamme compte tes jours consécutifs de jeu : ne la laisse pas s'éteindre. À chaque série de 7 jours, un coffre t'attend.",
-      "Tu as jusqu'à 10 vies. Une mauvaise réponse en fait perdre une, puis elles se régénèrent avec le temps (plus vite avec Premium).",
+      "Tu as jusqu'à 10 vies. Une mauvaise réponse en fait perdre une, puis elles se régénèrent avec le temps : 1 toutes les 24 h, 18 h si tu t'es inscrit avec un code ambassadeur, et bien plus vite avec Premium.",
     ],
     points: ['🔥 1 jour de plus = Flamme plus forte', '❤️ 10 vies maximum', '🎁 Coffre tous les 7 jours'],
     from: '#ff8a3d', to: '#ff5470',
@@ -63,7 +63,7 @@ const SLIDES: Slide[] = [
     icon: '⚔️', kicker: 'Face à face', title: 'Les duels',
     paragraphs: [
       "Défie un joueur de ton niveau sur 5 cas identiques. Le meilleur résultat gagne des Points Arena et fait grimper ton grade de duel.",
-      "Les duels sont réservés aux membres Premium. Perdre un duel ne te fait jamais perdre de vie.",
+      "Les duels sont réservés aux membres Premium (et ouverts à tous pendant tes 7 jours de Découverte). Perdre un duel ne te fait jamais perdre de vie.",
     ],
     from: '#ff5470', to: '#ff8a3d',
   },
@@ -113,6 +113,36 @@ const SLIDES: Slide[] = [
     from: '#5cc8ff', to: '#a5f3fc',
   },
   {
+    icon: '🎁', kicker: 'Cadeau de bienvenue', title: '7 jours de Découverte',
+    paragraphs: [
+      "Pendant tes 7 premiers jours, tout ce qui est Premium est ouvert gratuitement : tes vies reviennent toutes les 2 heures et tu peux jouer jusqu'à 7 duels par jour.",
+      "Un bandeau sur l'accueil te montre combien de jours il te reste. (L'Espace Élite reste à part : il dépend du Pass Élite.)",
+    ],
+    points: ['❤️ 1 vie toutes les 2 h', '⚔️ 7 duels par jour', '⏳ 7 jours offerts'],
+    highlight: "Profite de ces 7 jours pour tout essayer !",
+    from: '#5cc8ff', to: '#2fd28a',
+  },
+  {
+    icon: '🛡️', kicker: 'Fair-play', title: "L'Arena te surveille",
+    paragraphs: [
+      "Un système anti-triche surveille automatiquement chaque partie : sortie de l'application pendant un cas, comptes multiples, réponses partagées, comportements anormaux.",
+      "Toute activité suspecte est signalée à l'administration et peut entraîner l'annulation de tes points, la suspension ou le bannissement définitif du compte.",
+    ],
+    points: ['👁️ Surveillance automatique', '🚫 1 seul compte par personne', '⚖️ Bannissement en cas de triche'],
+    highlight: "Joue honnête : ici, seul ton vrai niveau compte.",
+    from: '#ff5470', to: '#f2c14e',
+  },
+  {
+    icon: '😎', kicker: 'Ton identité', title: 'Choisis ton pseudo et ta photo',
+    paragraphs: [
+      "Ton pseudo et ta photo s'affichent partout : dans le classement, le Top 3 de l'accueil, les duels et ton profil public.",
+      "Un pseudo qui claque et une vraie photo, c'est ce qui te fait reconnaître dans l'Arène : tes adversaires sauront qui les a battus ! Tu peux les changer quand tu veux dans ton Profil.",
+    ],
+    points: ['🏆 Visible au classement', '⚔️ Visible en duel', '✏️ Modifiable à tout moment'],
+    highlight: "Fais-toi un nom dans l'Arène.",
+    from: '#a855f7', to: '#5cc8ff', extra: 'profile',
+  },
+  {
     icon: '🎨', kicker: 'À ta façon', title: 'Ton application',
     paragraphs: [
       "Choisis ton thème, sombre ou clair, dans Profil → Apparence (ou avec le bouton soleil/lune).",
@@ -156,12 +186,12 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [index, go]);
 
-  const finish = async () => {
+  const finish = async (dest: string = '/etudiant') => {
     setFinishing(true);
     if (!reduce) confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 }, colors: ['#2fd28a', '#5cc8ff', '#f2c14e', '#ffffff'] });
     try {
       await fetch('/api/onboarding/complete', { method: 'POST' });
-      window.location.href = '/etudiant';
+      window.location.href = dest;
     } catch (e) {
       setFinishing(false);
     }
@@ -231,6 +261,14 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                   ))}
                 </div>
               )}
+              {slide.extra === 'profile' && (
+                <p className="mt-4 text-center text-xs text-mute">
+                  Envie de le faire tout de suite ?{' '}
+                  <button type="button" onClick={() => finish('/etudiant/profil')} disabled={finishing} className="font-bold text-mala underline underline-offset-2">
+                    Terminer et personnaliser mon profil
+                  </button>
+                </p>
+              )}
               {slide.extra === 'theme' && (
                 <div className="mt-4"><ThemeSwitch variant="full" /></div>
               )}
@@ -261,7 +299,7 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
               ←
             </button>
             {isLast ? (
-              <button onClick={finish} disabled={finishing}
+              <button onClick={() => finish()} disabled={finishing}
                 className="h-12 flex-1 rounded-2xl bg-mala font-display text-sm font-extrabold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f] disabled:opacity-60">
                 {finishing ? '…' : '🚀 Commencer'}
               </button>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { pushOnly } from '@/lib/notify';
 import { getReceiptSignedUrl } from '@/lib/supabase-storage';
 
 // ⚠️ Hypothèse : rôle admin = 'ADMIN' (une ligne à changer sinon)
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
 
   try {
     const { rechargeId, action, note } = await request.json();
+    // Copie sur le téléphone de la notification écrite dans la cloche (envoyée APRÈS la transaction)
+    let push: { userId: string; message: string; icon: string } | null = null;
 
     const result = await prisma.$transaction(async (tx) => {
       // 🔒 Verrou sur la demande AVANT de lire son statut : deux clics simultanés
@@ -83,9 +86,11 @@ export async function POST(request: Request) {
             balanceBefore: fresh.uaBalance, balanceAfter: updated.uaBalance, reference: rc.id,
           },
         });
+        const okMsg = `⚡ Recharge validée : +${rc.amountUA.toLocaleString('fr-FR')} UA créditées !`;
         await tx.notification.create({
-          data: { userId: rc.userId, message: `⚡ Recharge validée : +${rc.amountUA.toLocaleString('fr-FR')} UA créditées !`, icon: '⚡' },
+          data: { userId: rc.userId, message: okMsg, icon: '⚡' },
         });
+        push = { userId: rc.userId, message: okMsg, icon: '⚡' };
         return { status: 'VALIDE', balanceAfter: updated.uaBalance };
       }
 
@@ -94,14 +99,19 @@ export async function POST(request: Request) {
           where: { id: rc.id },
           data: { status: 'REJETE', validatedAt: new Date(), note: note ?? null },
         });
+        const koMsg = `❌ Ta demande de recharge a été rejetée.${note ? ` Motif : ${note}` : ''}`;
         await tx.notification.create({
-          data: { userId: rc.userId, message: `❌ Ta demande de recharge a été rejetée.${note ? ` Motif : ${note}` : ''}`, icon: '❌' },
+          data: { userId: rc.userId, message: koMsg, icon: '❌' },
         });
+        push = { userId: rc.userId, message: koMsg, icon: '❌' };
         return { status: 'REJETE' };
       }
 
       throw new Error('UNKNOWN_ACTION');
     });
+
+    const p = push as { userId: string; message: string; icon: string } | null;
+    if (p) await pushOnly(p.userId, p.message, p.icon, { url: '/etudiant/monetise' });
 
     return NextResponse.json({ success: true, ...result });
   } catch (e: any) {

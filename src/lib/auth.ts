@@ -70,6 +70,8 @@ export async function getCurrentUser() {
       notifications: true,
       lastDailyRewardClaimedAt: true,
       premiumExpiresAt: true,
+      createdAt: true,
+      referredById: true,
     }
   });
 
@@ -119,6 +121,7 @@ export async function getCurrentUserCore() {
       streakBeforeReset: true,
       flameProtectedUntil: true,
       createdAt: true,
+      referredById: true,
     }
   });
 

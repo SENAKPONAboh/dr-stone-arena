@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { sendPushToUser } from '@/lib/push';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
-import { CASES_PER_DUEL, INVITE_EXPIRY_HOURS, getDailyDuelQuota } from '@/lib/duel';
+import { CASES_PER_DUEL, INVITE_EXPIRY_HOURS } from '@/lib/duel';
+import { getEffectiveDuelQuota } from '@/lib/decouverte';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -14,20 +15,20 @@ export async function POST(request: Request) {
     if (opponentId === user.id) return NextResponse.json({ error: "Tu ne peux pas te défier toi-même." }, { status: 400 });
 
     // 1. Premium obligatoire (demandeur)
-    const quota = getDailyDuelQuota(user.premiumTier);
+    const quota = getEffectiveDuelQuota(user); // Premium ou Découverte 7 jours
     if (quota === 0) return NextResponse.json({ error: "Les duels sont réservés aux membres Premium." }, { status: 403 });
 
     // 2. Adversaire
     const opponent = await prisma.user.findUnique({
       where: { id: opponentId },
-      select: { id: true, prenom: true, nom: true, role: true, anneeEtude: true, isPremium: true, premiumTier: true }
+      select: { id: true, prenom: true, nom: true, role: true, anneeEtude: true, isPremium: true, premiumTier: true, createdAt: true }
     });
     if (!opponent || opponent.role !== 'ETUDIANT') {
       return NextResponse.json({ error: "Utilisateur introuvable." }, { status: 404 });
     }
 
-    // 3. Adversaire Premium obligatoire (règle validée)
-    if (!opponent.isPremium || !opponent.premiumTier) {
+    // 3. Adversaire Premium (ou en Découverte 7 jours) obligatoire (règle validée)
+    if (getEffectiveDuelQuota(opponent) === 0) {
       return NextResponse.json({ error: "Cet étudiant n'a pas accès aux duels (Premium uniquement)." }, { status: 400 });
     }
 

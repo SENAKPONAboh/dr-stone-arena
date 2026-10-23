@@ -8,6 +8,7 @@ import { caseDuration } from '@/lib/case-duration';
 import Link from 'next/link';
 import BackgroundCells from '@/components/ui/BackgroundCells';
 import Icon, { type IconName } from '@/components/ui/Icon';
+import { getEffectiveRegenMs, regenLabel } from '@/lib/decouverte';
 
 const CASES_PER_DAY_TEXT = '10';
 
@@ -54,7 +55,7 @@ export default async function ChallengePage() {
   // 3. Plus de vies → le frein (le Premium régénère plus vite)
   if (user.lives <= 0) {
     return <InfoScreen icon="heart" color="text-heart" title="Plus de vies"
-      text={`Tes vies se régénèrent lentement (${user.isPremium ? '1/heure en Premium' : '1/24h en gratuit'}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`} />;
+      text={`Tes vies se régénèrent (${regenLabel(getEffectiveRegenMs(user)).replace('1/', '1 vie/')}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`} />;
   }
 
   // 4. Banque vide pour ce niveau

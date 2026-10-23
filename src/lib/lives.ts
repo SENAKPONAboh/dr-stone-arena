@@ -19,7 +19,8 @@ export function getRegenIntervalMs(premiumTier: number | null): number {
   return REGEN_INTERVALS.FREE;
 }
 
-export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: Date | null, premiumTier: number | null) {
+// `intervalMs` (facultatif) : intervalle déjà calculé par getEffectiveRegenMs (Découverte, code ambassadeur).
+export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: Date | null, premiumTier: number | null, intervalMs?: number) {
   // Si l'étudiant a déjà le max de vies, on ne change rien
   if (currentLives >= MAX_LIVES) {
     return { lives: MAX_LIVES, updatedAt: null };
@@ -31,7 +32,7 @@ export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: 
   }
 
   // On choisit le bon minuteur selon le niveau Premium
-  const regenTime = getRegenIntervalMs(premiumTier);
+  const regenTime = intervalMs ?? getRegenIntervalMs(premiumTier);
 
   const now = new Date();
   const diffMs = now.getTime() - new Date(lastLifeLostAt).getTime();

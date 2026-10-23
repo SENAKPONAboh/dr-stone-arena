@@ -10,7 +10,8 @@ import PushNotificationManager from '@/components/dashboard/PushNotificationMana
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
 import { getTodaySelection } from '@/lib/daily-cases';
-import { getDailyDuelQuota, getDuelGrade } from '@/lib/duel';
+import { getDuelGrade } from '@/lib/duel';
+import { getEffectiveDuelQuota } from '@/lib/decouverte';
 
 export default async function ArenePage() {
   const user = await getCurrentUserCore();
@@ -56,7 +57,7 @@ export default async function ArenePage() {
     ? new Date(user.lastDailyRewardClaimedAt).setHours(0, 0, 0, 0) === todayStart.getTime()
     : false;
 
-  const quotaMax = getDailyDuelQuota(user.premiumTier);
+  const quotaMax = getEffectiveDuelQuota(user); // Premium ou Découverte 7 jours
   const { current: duelGrade } = getDuelGrade(user.duelsWon);
   const nameOf = (u: { prenom: string; nom: string; pseudo: string | null }) => u.pseudo || `${u.prenom} ${u.nom}`;
 

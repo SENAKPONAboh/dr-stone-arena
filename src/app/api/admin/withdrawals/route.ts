@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { pushOnly } from '@/lib/notify';
 
 // ⚠️ Hypothèse : le rôle admin vaut 'ADMIN' dans votre base — à confirmer (une ligne à changer sinon)
 const ADMIN_ROLE = 'ADMIN';
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
 
   try {
     const { withdrawalId, action, note } = await request.json();
+    // Copie sur le téléphone de la notification écrite dans la cloche (envoyée APRÈS la transaction)
+    let push: { userId: string; message: string; icon: string } | null = null;
 
     const result = await prisma.$transaction(async (tx) => {
       // 🔒 Verrou sur la demande AVANT de lire son statut : un double clic (ou deux admins)
@@ -71,9 +74,11 @@ export async function POST(request: Request) {
             balanceBefore: u?.uaBalance ?? 0, balanceAfter: u?.uaBalance ?? 0, reference: wd.id,
           },
         });
+        const paidMsg = `Ton retrait de ${wd.amountFCFA.toLocaleString('fr-FR')} FCFA a été payé ✅`;
         await tx.notification.create({
-          data: { userId: wd.userId, message: `Ton retrait de ${wd.amountFCFA.toLocaleString('fr-FR')} FCFA a été payé ✅`, icon: '💰' },
+          data: { userId: wd.userId, message: paidMsg, icon: '💰' },
         });
+        push = { userId: wd.userId, message: paidMsg, icon: '💰' };
         return { status: 'PAYE' };
       }
 
@@ -95,18 +100,23 @@ export async function POST(request: Request) {
             balanceBefore: fresh?.uaBalance ?? 0, balanceAfter: updated.uaBalance, reference: wd.id,
           },
         });
+        const rejectMsg = `Ton retrait a été rejeté — ${wd.amountUA.toLocaleString('fr-FR')} UA te sont rendues.${note ? ` Motif : ${note}` : ''}`;
         await tx.notification.create({
           data: {
             userId: wd.userId,
-            message: `Ton retrait a été rejeté — ${wd.amountUA.toLocaleString('fr-FR')} UA te sont rendues.${note ? ` Motif : ${note}` : ''}`,
+            message: rejectMsg,
             icon: '❌',
           },
         });
+        push = { userId: wd.userId, message: rejectMsg, icon: '❌' };
         return { status: 'REJETE' };
       }
 
       throw new Error('UNKNOWN_ACTION');
     });
+
+    const p = push as { userId: string; message: string; icon: string } | null;
+    if (p) await pushOnly(p.userId, p.message, p.icon, { url: '/etudiant/monetise' });
 
     return NextResponse.json({ success: true, ...result });
   } catch (e: any) {

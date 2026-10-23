@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { notifyUser } from '@/lib/notify';
+import { getPlanLabel } from '@/lib/premium';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -55,6 +57,11 @@ export async function POST(request: Request) {
         }
       });
 
+      // Prévenir l'étudiant (cloche + téléphone)
+      await notifyUser(userId,
+        `👑 Ton ${getPlanLabel(premiumRequest.tier ?? 1)} est actif jusqu'au ${expiryDate.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}. Profite de tes avantages !`,
+        '👑', { url: '/etudiant/premium' });
+
       // ============================================================
       // 🤝 GÉNÉRATION AUTOMATIQUE DE LA COMMISSION AMBASSADEUR
       // Conditions : payeur rattaché + ambassadeur ACTIF + montant connu
@@ -92,13 +99,9 @@ export async function POST(request: Request) {
 
               // Notification à l'ambassadeur
               const payerName = payer.pseudo || `${payer.prenom} ${payer.nom}`;
-              await prisma.notification.create({
-                data: {
-                  userId: ambassador.userId,
-                  message: `💰 Nouvelle commission de ${commissionAmount.toLocaleString('fr-FR')} FCFA ! ${payerName} vient de valider son abonnement Premium.`,
-                  icon: '💰'
-                }
-              });
+              await notifyUser(ambassador.userId,
+                `💰 Nouvelle commission de ${commissionAmount.toLocaleString('fr-FR')} FCFA ! ${payerName} vient de valider son abonnement Premium.`,
+                '💰', { url: '/ambassadeur' });
             } catch (e: any) {
               // P2002 = commission déjà existante pour cette transaction (anti-doublon structurel) → on ignore
               if (e?.code !== 'P2002') throw e;
@@ -106,6 +109,8 @@ export async function POST(request: Request) {
           }
         }
       }
+    } else if (action === 'REJETE') {
+      await notifyUser(userId, "❌ Ta demande Premium a été refusée. Vérifie ton reçu ou contacte l'administration.", '❌', { url: '/etudiant/premium' });
     }
 
     return NextResponse.json({ success: true });

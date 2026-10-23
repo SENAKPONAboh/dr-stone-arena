@@ -65,6 +65,9 @@ export default function RegisterPage() {
             <input id="nom" name="nom" type="text" required className={AUTH_INPUT} placeholder="ABOH" />
           </div>
         </div>
+        <p className="-mt-2 text-xs text-mute">
+          Mets ton <b className="text-ink">vrai nom</b> : la Prime Arena n&apos;est versée qu&apos;au nom inscrit sur ton compte Mobile Money. Ton pseudo, lui, tu le choisis après.
+        </p>
 
         <div>
           <label className={AUTH_LABEL}>Email</label>
@@ -107,6 +110,10 @@ export default function RegisterPage() {
           <label className={AUTH_LABEL}>
             Es-tu venu grâce à un ambassadeur Doctor Stone Arena ?
           </label>
+          <div className="mb-3 flex items-start gap-2 rounded-2xl border border-mala/30 bg-mala/10 px-3 py-2.5 text-xs text-ink">
+            <span aria-hidden className="mt-0.5 text-heart"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 21s-8.5-5.2-8.5-11.2A4.8 4.8 0 0 1 12 7.2a4.8 4.8 0 0 1 8.5 2.6C20.5 15.8 12 21 12 21Z" fill="currentColor" /></svg></span>
+            <span><b>Bonus code ambassadeur :</b> tes vies reviennent toutes les <b className="text-mala">18 h au lieu de 24 h</b>, pour toujours.</span>
+          </div>
           <div className="flex gap-3">
             <button type="button" onClick={() => setHasAmbassador(false)} className={choice(!hasAmbassador)}>
               ○ Non
@@ -131,6 +138,19 @@ export default function RegisterPage() {
             <p className="mt-1 text-xs text-mute">Le code t'a été communiqué par ton ambassadeur.</p>
           </div>
         )}
+
+        {/* Cadeau de bienvenue */}
+        <div className="rounded-2xl border border-sky/30 bg-sky/10 px-3 py-2.5 text-xs text-ink">
+          <b className="text-sky">Cadeau de bienvenue :</b> 7 jours de Découverte avec tout le Premium ouvert, dont <b>1 vie toutes les 2 h</b> et les duels.
+        </div>
+
+        {/* Règles anti-triche (obligatoire) */}
+        <label htmlFor="acceptRules" className="flex cursor-pointer items-start gap-3 rounded-2xl border border-line bg-slab-2 px-3 py-3 text-xs leading-relaxed text-mute">
+          <input id="acceptRules" name="acceptRules" type="checkbox" required className="mt-0.5 h-4 w-4 shrink-0 accent-[#2fd28a]" />
+          <span>
+            J&apos;ai compris : <b className="text-ink">l&apos;Arena surveille automatiquement la triche</b> (sortie de l&apos;application pendant un cas, comptes multiples, réponses partagées…). Toute activité suspecte peut entraîner la <b className="text-heart">suspension ou le bannissement</b> du compte.
+          </span>
+        </label>
 
         <button type="submit" disabled={loading} className={`${AUTH_BUTTON} mt-4`}>
           {loading ? 'Création...' : "Rejoindre l'arène"}

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { sendPushToUser } from '@/lib/push';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
-import { PLAY_DEADLINE_HOURS, getDailyDuelQuota } from '@/lib/duel';
+import { PLAY_DEADLINE_HOURS } from '@/lib/duel';
+import { getEffectiveDuelQuota } from '@/lib/decouverte';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
 
     if (accept) {
       // Quota du RÉPONDANT aussi (règle validée : les deux consomment)
-      const quota = getDailyDuelQuota(user.premiumTier);
+      const quota = getEffectiveDuelQuota(user); // Premium ou Découverte 7 jours
       if (quota === 0) return NextResponse.json({ error: "Les duels sont réservés aux membres Premium." }, { status: 403 });
 
       const todayStart = new Date();

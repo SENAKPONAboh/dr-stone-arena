@@ -21,6 +21,7 @@ import { getXpGrade, TOP_GRADE } from '@/lib/grades';
 import LegendLightning from '@/components/ui/LegendLightning';
 import { getSeasonSummary } from '@/lib/seasons';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
+import { getEffectiveDuelQuota } from '@/lib/decouverte';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +30,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     select: {
       id: true, prenom: true, nom: true, pseudo: true, imageUrl: true,
       anneeEtude: true, xp: true, streak: true,
-      isPremium: true, premiumTier: true, passActive: true,
+      isPremium: true, premiumTier: true, passActive: true, createdAt: true,
       activeTitleId: true, activeFrameId: true, activeThemeId: true,
       duelsWon: true, duelsLost: true, pointsArena: true,
       badges: { include: { badge: true } }
@@ -176,8 +177,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
               targetId={profileUser.id}
               targetName={profileUser.pseudo || `${profileUser.prenom} ${profileUser.nom}`}
               sameLevel={user.anneeEtude === profileUser.anneeEtude}
-              myTier={user.premiumTier ?? null}
-              targetPremium={profileUser.isPremium}
+              myTier={getEffectiveDuelQuota(user) > 0 ? (user.premiumTier ?? 0) : null}
+              targetPremium={getEffectiveDuelQuota(profileUser) > 0}
             />
           </div>
 

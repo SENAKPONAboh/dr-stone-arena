@@ -92,7 +92,11 @@ export function createFx(cv: HTMLCanvasElement, opts: { center?: () => [number, 
 
   const size = () => {
     const dpr = Math.min(2, window.devicePixelRatio || 1);
-    W = cv.clientWidth; H = cv.clientHeight; cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = cv.clientWidth, h = cv.clientHeight;
+    // Sur téléphone, la barre d'adresse qui apparaît/disparaît au défilement déclenche « resize » sans arrêt :
+    // on ne réalloue le canvas que si sa taille change vraiment (sinon saccades sur le profil d'une Légende).
+    if (w === W && h === H && cv.width === Math.round(w * dpr)) return;
+    W = w; H = h; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
   size();
   window.addEventListener('resize', size);

@@ -105,8 +105,11 @@
 .gi-legend { filter: drop-shadow(0 0 10px rgba(139, 92, 246, .55)); }
 
 /* Ligne d'une Légende dans le classement : éclairs qui traversent la carte */
-.legend-row { position: relative; overflow: hidden; isolation: isolate; border-color: rgba(167, 139, 250, .7) !important; box-shadow: 0 0 14px rgba(139, 92, 246, .45), inset 0 0 18px rgba(139, 92, 246, .18); animation: legendRowGlow 2.6s ease-in-out infinite; }
-@keyframes legendRowGlow { 0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, .35), inset 0 0 14px rgba(139, 92, 246, .14); } 50% { box-shadow: 0 0 20px rgba(167, 139, 250, .65), inset 0 0 22px rgba(139, 92, 246, .25); } }
+/* Halo fixe + pulsation par OPACITÉ d'un calque (::after) : animer box-shadow en boucle sur chaque ligne
+   faisait saccader le classement sur les petits Android. */
+.legend-row { position: relative; overflow: hidden; isolation: isolate; border-color: rgba(167, 139, 250, .7) !important; box-shadow: 0 0 14px rgba(139, 92, 246, .45), inset 0 0 16px rgba(139, 92, 246, .16); }
+.legend-row::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 24px rgba(167, 139, 250, .45); opacity: 0; animation: legendRowGlow 2.6s ease-in-out infinite; }
+@keyframes legendRowGlow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 .legend-row > * { position: relative; z-index: 1; }
 .legend-row > .legend-storm { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
 .legend-storm .ls-bolt { opacity: 0; filter: drop-shadow(0 0 3px #c4b5fd) drop-shadow(0 0 8px #8b5cf6); animation: giArc var(--t, 2.4s) steps(1) var(--d, 0s) infinite; }
@@ -114,7 +117,7 @@
 @keyframes lsFlash { 0%, 6% { opacity: .35; } 7%, 100% { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gi .gi-sweep, .gi .gi-breathe, .gi .gi-twk, .legend-row { animation: none; }
+  .gi .gi-sweep, .gi .gi-breathe, .gi .gi-twk, .legend-row::after { animation: none; }
   .gi .gi-ember, .legend-storm .ls-flash { animation: none; opacity: 0; }
   /* Sans animation, les éclairs de la Légende restent visibles, immobiles */
   .gi .gi-arc { animation: none; opacity: .85; }

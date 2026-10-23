@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import DuelHub from '@/components/duel/DuelHub';
 import { expireStaleDuels } from '@/lib/duel-server';
-import { getDailyDuelQuota } from '@/lib/duel';
+import { getEffectiveDuelQuota } from '@/lib/decouverte';
 
 export default async function DuelPage() {
   const user = await getCurrentUser();
@@ -27,7 +27,7 @@ export default async function DuelPage() {
   );
 
   // Non-premium : carte d'information (pas de données à charger)
-  const quotaMax = getDailyDuelQuota(user.premiumTier);
+  const quotaMax = getEffectiveDuelQuota(user); // Premium ou Découverte 7 jours
   if (quotaMax === 0) {
     return (
       <div className="min-h-screen bg-gray-50 pb-10">

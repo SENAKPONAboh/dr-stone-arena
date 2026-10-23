@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { notifyUser } from '@/lib/notify';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -41,13 +42,11 @@ export async function POST(request: Request) {
         data: { passActive: true, passExpiresAt: expiry }
       });
 
-      await prisma.notification.create({
-        data: {
-          userId,
-          message: `🪙 Ton Pass Arène Monétisé est actif jusqu'au ${expiry.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}. Bienvenue dans la plateforme monétisée !`,
-          icon: '🪙'
-        }
-      });
+      await notifyUser(userId,
+        `🪙 Ton Pass Élite est actif jusqu'au ${expiry.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}. Bienvenue dans l'Espace Élite !`,
+        '🪙', { url: '/etudiant/monetise' });
+    } else if (action === 'REJETE') {
+      await notifyUser(userId, "❌ Ta demande de Pass Élite a été refusée. Vérifie ton reçu ou contacte l'administration.", '❌', { url: '/etudiant/monetise/pass' });
     }
 
     return NextResponse.json({ success: true });

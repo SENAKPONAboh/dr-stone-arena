@@ -120,7 +120,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                 const legend = grade.index === 7; // ⚡ Légende Immortelle : les éclairs traversent sa ligne
                 return (
                   <div key={u.id} className={`flex items-center gap-3 rounded-2xl p-3 ${u.id === user.id ? 'border-2 border-mala/50 bg-mala/10' : 'border border-line bg-slab-2'} ${legend ? 'legend-row' : ''}`}>
-                    {legend && <LegendRowStorm />}
+                    {legend && <LegendRowStorm offset={index} />}
 
                     <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full font-display text-base font-extrabold ${
                       index === 0 ? 'bg-gold text-stone' :

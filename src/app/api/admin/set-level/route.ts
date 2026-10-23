@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAdminOrNull } from '@/lib/auth';
+import { notifyUser } from '@/lib/notify';
 import { NIVEAU_OPTIONS, getNiveauLabel } from '@/lib/niveau';
 
 // Changement du niveau d'études d'un étudiant : RÉSERVÉ à l'administrateur
@@ -20,9 +21,7 @@ export async function POST(request: Request) {
     if (!student || student.role !== 'ETUDIANT') return NextResponse.json({ error: 'Étudiant introuvable.' }, { status: 404 });
 
     await prisma.user.update({ where: { id: userId }, data: { anneeEtude } });
-    await prisma.notification.create({
-      data: { userId, message: `Ton niveau d'études a été mis à jour par l'administration : ${getNiveauLabel(anneeEtude)}.`, icon: '🎓' },
-    });
+    await notifyUser(userId, `Ton niveau d'études a été mis à jour par l'administration : ${getNiveauLabel(anneeEtude)}.`, '🎓', { url: '/etudiant/profil' });
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error(e);

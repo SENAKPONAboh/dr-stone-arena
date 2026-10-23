@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { getXpGrade, TOP_GRADE } from '@/lib/grades';
 import { seasonLabel } from '@/lib/seasons';
+import { pushMany } from '@/lib/notify';
 
 // 🏁 CLÔTURE DE SAISON (mensuelle) — enregistre le grade final de chaque étudiant, puis remet les XP à zéro.
 // Conservé : comptes, flamme, vies, duels, badges, UA, boutique… Seuls les XP repartent de zéro.
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
       }
       await tx.user.updateMany({ where: { role: 'ETUDIANT' }, data: { xp: 0 } });
     }, { timeout: 60000 });
+
+    // Même annonce sur les téléphones (après la clôture, jamais bloquant)
+    await pushMany(rows.map(r => r.userId), `Saison ${label} terminée ! Découvre ton grade final. Une nouvelle saison commence : à toi de jouer !`, '🏁', { url: '/etudiant/grades' });
 
     return NextResponse.json({
       success: true,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { notifyUser } from '@/lib/notify';
 
 // Génère un code unique si l'admin n'en fournit pas
 async function generateUniqueCode(): Promise<string> {
@@ -94,13 +95,9 @@ export async function PUT(request: Request) {
 
     // Notification de bienvenue quand l'ambassadeur devient ACTIF
     if (data.status === 'ACTIF' && existing.status !== 'ACTIF') {
-      await prisma.notification.create({
-        data: {
-          userId: ambassador.userId,
-          message: `🎉 Tu es maintenant Ambassadeur ! Ton code : ${ambassador.referralCode}. Accède à ton espace depuis le menu 🤝 pour suivre tes commissions.`,
-          icon: '🤝'
-        }
-      });
+      await notifyUser(ambassador.userId,
+        `🎉 Tu es maintenant Ambassadeur ! Ton code : ${ambassador.referralCode}. Accède à ton espace depuis le menu 🤝 pour suivre tes commissions.`,
+        '🤝', { url: '/ambassadeur' });
     }
 
     return NextResponse.json({ ambassador });

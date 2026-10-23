@@ -1,7 +1,10 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import { calculateRegeneratedLives, getRegenIntervalMs } from '@/lib/lives';
+import { calculateRegeneratedLives } from '@/lib/lives';
+import { getEffectiveRegenMs, regenLabel, discoveryDaysLeft } from '@/lib/decouverte';
+import DiscoveryBanner from '@/components/dashboard/DiscoveryBanner';
+import { notifyUser } from '@/lib/notify';
 import Link from 'next/link';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
@@ -28,8 +31,6 @@ export default async function EtudiantDashboard() {
   if (user.role !== 'ETUDIANT') redirect('/login');
   if (user.statut !== 'VALIDE') redirect('/api/auth/logout');
 
-  const premium = user.isPremium;
-
   // === LOGIQUE MÉTIER (conservée à l'identique) ===
 
   // Expiration Premium
@@ -43,7 +44,9 @@ export default async function EtudiantDashboard() {
   }
 
   // Régénération des vies
-  const lifeData = calculateRegeneratedLives(user.lives, user.lastLifeLostAt, user.premiumTier);
+  // (vitesse : la plus rapide entre Premium, Découverte 7 jours et code ambassadeur)
+  const regenMs = getEffectiveRegenMs(user);
+  const lifeData = calculateRegeneratedLives(user.lives, user.lastLifeLostAt, user.premiumTier, regenMs);
   if (lifeData.lives !== user.lives) {
     await prisma.user.update({
       where: { id: user.id },
@@ -62,7 +65,7 @@ export default async function EtudiantDashboard() {
   // === Compte à rebours de la prochaine vie (affichage) ===
   let nextLifeAt: string | null = null;
   if (user.lives < 10 && user.lastLifeLostAt) {
-    const interval = getRegenIntervalMs(user.premiumTier);
+    const interval = regenMs;
     const base = new Date(user.lastLifeLostAt).getTime();
     const elapsed = Date.now() - base;
     const nextPalier = (Math.floor(elapsed / interval) + 1) * interval;
@@ -130,6 +133,21 @@ export default async function EtudiantDashboard() {
     }
   }
 
+  // Découverte 7 jours : rappel la veille de la fin, puis annonce de la fin (une seule fois chacun, cloche + téléphone)
+  const discoveryLeft = discoveryDaysLeft(user);
+  if (!user.isPremium) {
+    const accountAgeDays = (Date.now() - new Date(user.createdAt).getTime()) / 86400000;
+    const discoveryNotice = discoveryLeft === 1
+      ? { tag: 'découverte se termine demain', message: "⏳ Ta découverte se termine demain : profite encore de 1 vie toutes les 2 h et des duels !", icon: '⏳' }
+      : discoveryLeft === 0 && accountAgeDays < 10
+        ? { tag: 'découverte est terminée', message: "🎁 Ta découverte est terminée. Garde tes vies rapides et tes duels avec le Premium !", icon: '🎁' }
+        : null;
+    if (discoveryNotice) {
+      const sent = await prisma.notification.findFirst({ where: { userId: user.id, message: { contains: discoveryNotice.tag } }, select: { id: true } });
+      if (!sent) await notifyUser(user.id, discoveryNotice.message, discoveryNotice.icon, { url: '/etudiant/premium' });
+    }
+  }
+
   // === PRÉSENTATION (charte Arena Malachite) ===
   const doneToday = Math.min(attemptsToday, dailyTotal);
   const gradePct = gradeProgress(user.xp);
@@ -150,6 +168,21 @@ export default async function EtudiantDashboard() {
       )}
 
       <HomeStagger>
+        {/* Découverte 7 jours (seulement pendant la Découverte, inutile pour un Premium III déjà plus rapide) */}
+        {discoveryLeft > 0 && user.premiumTier !== 3 && <DiscoveryBanner daysLeft={discoveryLeft} />}
+
+        {/* Pas encore de pseudo : on invite à se faire un nom */}
+        {!user.pseudo && (
+          <Link href="/etudiant/profil" className={`${card} flex items-center gap-3 border-sky/30 p-4 transition-transform active:scale-[0.98]`}>
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-sky/15 text-sky"><Icon name="user" size={22} /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-sm font-bold text-ink">Choisis ton pseudo et ta photo</span>
+              <span className="block text-xs text-mute">Ils s&apos;affichent au classement, au Top 3 et en duel : fais-toi reconnaître !</span>
+            </span>
+            <span className="font-display text-lg font-extrabold text-sky">→</span>
+          </Link>
+        )}
+
         {/* Salutation + grade */}
         <div className={`${card} p-5`}>
           <h1 className="font-display text-xl font-extrabold text-ink">Bonjour {user.prenom}</h1>
@@ -176,7 +209,7 @@ export default async function EtudiantDashboard() {
             </p>
             {nextLifeAt && (
               <p className="mt-1 text-[10px] font-bold text-mute">
-                {premium ? (user.premiumTier === 3 ? "1/h" : user.premiumTier === 2 ? "1/6h" : "1/12h") : "1/24h"} · dans {formatDelay(nextLifeAt)}
+                {regenLabel(regenMs)} · dans {formatDelay(nextLifeAt)}
               </p>
             )}
           </div>
@@ -208,7 +241,7 @@ export default async function EtudiantDashboard() {
           ) : (
             <div className="mt-3 rounded-2xl bg-heart/10 p-4 text-center">
               <p className="font-display text-sm font-bold text-heart">Plus de vies</p>
-              <p className="mt-1 text-xs text-mute">Régénération en cours — {premium ? '1 vie/heure' : '1 vie/24h'}</p>
+              <p className="mt-1 text-xs text-mute">Régénération en cours — {regenLabel(regenMs).replace('1/', '1 vie/')}</p>
               {nextLifeAt && <p className="mt-1 text-xs font-bold text-heart">Prochaine vie dans {formatDelay(nextLifeAt)}</p>}
             </div>
           )}
@@ -249,7 +282,7 @@ export default async function EtudiantDashboard() {
               {topUsers.map((u, i) => (
                 <Link key={u.id} href={`/etudiant/profil/${u.id}`}
                   className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${u.id === user.id ? 'bg-mala/10' : 'hover:bg-slab-2'} ${getXpGrade(u.xp).current.index === 7 ? 'legend-row border' : ''}`}>
-                  {getXpGrade(u.xp).current.index === 7 && <LegendRowStorm />}
+                  {getXpGrade(u.xp).current.index === 7 && <LegendRowStorm offset={i} />}
                   <span className={`w-6 font-display text-sm font-extrabold ${i === 0 ? 'text-gold' : i === 1 ? 'text-mute' : 'text-flame'}`}>{i + 1}</span>
                   <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} frameKey={u.activeFrameId} size={32} />
                   <div className="min-w-0 flex-1">

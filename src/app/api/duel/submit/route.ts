@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { POINTS_PER_WIN } from '@/lib/duel';
 import { checkDuelBadges } from '@/lib/duel-server';
+import { notifyUser } from '@/lib/notify';
 import { readStoredAnswers } from '@/lib/duel-answers';
 import { caseDuration } from '@/lib/case-duration';
 
@@ -122,27 +123,19 @@ export async function POST(request: Request) {
       });
 
       if (wasFinalized) {
-        // Notifications de résultat + badges (hors transaction, non critiques)
-        await prisma.notification.create({
-          data: {
-            userId: fresh.requesterId,
-            message: winnerId === fresh.requesterId
-              ? `Victoire contre ${nameOf(opponent)} ! ⚔️ +${POINTS_PER_WIN} Points Arena`
-              : winnerId === null ? `Égalité contre ${nameOf(opponent)}. 🤝`
-              : `Défaite contre ${nameOf(opponent)}. ❌`,
-            icon: winnerId === fresh.requesterId ? '🏆' : '⚔️'
-          }
-        });
-        await prisma.notification.create({
-          data: {
-            userId: fresh.opponentId,
-            message: winnerId === fresh.opponentId
-              ? `Victoire contre ${nameOf(requester)} ! ⚔️ +${POINTS_PER_WIN} Points Arena`
-              : winnerId === null ? `Égalité contre ${nameOf(requester)}. 🤝`
-              : `Défaite contre ${nameOf(requester)}. ❌`,
-            icon: winnerId === fresh.opponentId ? '🏆' : '⚔️'
-          }
-        });
+        // Notifications de résultat (cloche + téléphone) + badges (hors transaction, non critiques)
+        await notifyUser(fresh.requesterId,
+          winnerId === fresh.requesterId
+            ? `Victoire contre ${nameOf(opponent)} ! ⚔️ +${POINTS_PER_WIN} Points Arena`
+            : winnerId === null ? `Égalité contre ${nameOf(opponent)}. 🤝`
+            : `Défaite contre ${nameOf(opponent)}. ❌`,
+          winnerId === fresh.requesterId ? '🏆' : '⚔️', { url: `/etudiant/duel/${duel.id}` });
+        await notifyUser(fresh.opponentId,
+          winnerId === fresh.opponentId
+            ? `Victoire contre ${nameOf(requester)} ! ⚔️ +${POINTS_PER_WIN} Points Arena`
+            : winnerId === null ? `Égalité contre ${nameOf(requester)}. 🤝`
+            : `Défaite contre ${nameOf(requester)}. ❌`,
+          winnerId === fresh.opponentId ? '🏆' : '⚔️', { url: `/etudiant/duel/${duel.id}` });
 
         await checkDuelBadges(fresh.requesterId);
         await checkDuelBadges(fresh.opponentId);
