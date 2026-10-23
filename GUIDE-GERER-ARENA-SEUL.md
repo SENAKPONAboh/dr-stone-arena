@@ -20,7 +20,7 @@ Règle d'or des paiements : **ne valide jamais un reçu sans avoir vu l'argent a
 
 1. **Sauvegarde de la base** (voir §5). Le dimanche par exemple.
 2. **Vérifier les limites gratuites** (voir §4).
-3. **Ajouter des cas** si la banque s'épuise : *Importer des cas en masse* ou *Import QCM structurés* (les formats sont expliqués sur la page).
+3. **Ajouter des cas** avec la Fabrique de cas (voir §10).
 4. Envoyer une **Notification Push** (accueil du panel) pour motiver : défi du jour, Top 3 de la semaine…
 
 ## 3. Chaque fin de mois
@@ -86,7 +86,37 @@ Important :
 - **Un ami développeur** : le fichier `CLAUDE.md` du projet décrit toute l'application et les règles à respecter. Donne-lui ce fichier avant qu'il touche à quoi que ce soit.
 - **Sans aide**, tu peux toujours : valider les paiements, ajouter des cas, gérer les étudiants, envoyer des notifications, revenir à une version précédente sur Vercel, réveiller Supabase, faire une sauvegarde. C'est tout ce qu'il faut pour faire tourner Arena.
 
-## 9. Quand l'argent rentre, dans cet ordre
+## 9. Le jour du lancement : remplacer l'ancienne banque par les 1 890 cas
+
+Les 1 890 cas sont dans `Claude outputs\Cas_lancement` (27 fichiers de 70 cas). Les anciens chapitres ont d'autres noms (« MP » au lieu de « 1. MP (membrane plasmique) ») : il faut donc effacer **aussi** les matières et chapitres, sinon tu aurais chaque chapitre en double.
+
+1. **Sauvegarde** (§5).
+2. Panel admin → **Zone dangereuse → Accéder**.
+3. Coche **« Supprimer AUSSI toute la banque de cas cliniques »**, puis **« Supprimer aussi les matières et chapitres »**. Tape le mot de confirmation demandé et valide.
+4. Panel admin → **Import QCM structurés**. Ouvre `Lot_01_cas_1-70.txt` dans le Bloc-notes, Ctrl+A, Ctrl+C, colle dans la page, importe. Le rapport doit dire **70 créés**.
+5. Recommence pour les 27 lots, dans l'ordre. Note sur un papier le numéro du dernier lot importé (en cas de coupure de courant, tu sais où reprendre ; un lot importé deux fois ne crée pas de doublons).
+6. Vérifie avec un compte étudiant que les 10 cas du jour s'affichent.
+
+Attention : ce bouton remet aussi à zéro les XP, Flammes, duels, badges, demandes Premium et notifications de tout le monde. C'est voulu pour le lancement, pas après.
+
+## 10. Créer de nouveaux cas sans Claude Code (Fabrique de cas)
+
+La page `Claude outputs\Fabrique_de_cas.html` fonctionne **sans Internet** (double-clic pour l'ouvrir dans ton navigateur). Elle connaît tes 379 chapitres et tes 1 890 cas.
+
+1. Choisis l'**année**, la **matière**, le **chapitre** (les chapitres qui ont le moins de cas sont en haut : prends le premier pour faire tourner le programme). Pour un chapitre qui n'existe pas encore (ex. au S2), écris son nom dans « nouveau chapitre », avec son numéro, et garde toujours ce même nom.
+2. Clique **Copier la demande pour l'IA**. La demande contient les règles de Dr Stone Arena, 2 vrais cas de ce chapitre comme modèle et la liste des cas déjà faits.
+3. Colle-la dans une IA gratuite : **claude.ai** (le meilleur en médecine), sinon **ChatGPT** ou **Gemini**. Un chapitre de 10 cas par message.
+4. Copie toute la réponse de l'IA, colle-la dans l'étape 2 de la page, clique **Nettoyer et vérifier**. La page enlève le gras et les titres, remet les bons noms de matière et de chapitre, écarte les cas incomplets ou déjà existants.
+5. **Lis chaque cas et sa justification.** L'IA peut se tromper : tu es le dernier contrôle médical.
+6. **Copier les cas propres** → panel admin → **Import QCM structurés** → colle → importe.
+
+Conseils :
+- 10 cas par chapitre et par séance, c'est le bon rythme : par exemple 1 chapitre par jour et par année.
+- La page retient les cas que tu as fabriqués **dans ce navigateur** : utilise toujours le même navigateur.
+- Garde une copie de `Fabrique_de_cas.html` et du dossier `Cas_lancement` sur ta clé USB. Ne les publie pas : c'est ta banque de cas.
+- Pour mettre la page à jour avec de nouveaux lots (avec de l'aide) : `node scripts/fabrique-de-cas.cjs`.
+
+## 11. Quand l'argent rentre, dans cet ordre
 
 1. **Supabase Pro** (25 $/mois) : sauvegardes automatiques chaque jour, plus de place.
 2. **Vercel Pro** (20 $/mois) : usage commercial autorisé, plus de marge.
