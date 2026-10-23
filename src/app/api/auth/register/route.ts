@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { MAX_LIVES } from '@/lib/lives';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
+import { formatWhatsapp } from '@/lib/indicatifs';
 import { checkRateLimit, recordFailure, clientIp } from '@/lib/rate-limit';
 
 const clean = (v: unknown, max = 120) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
@@ -49,6 +50,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Niveau d'étude invalide." }, { status: 400 });
     }
 
+    // ===== Numéro WhatsApp (obligatoire, international, un numéro = un compte) =====
+    const whatsapp = formatWhatsapp(clean(body?.phoneCode, 8), clean(body?.phoneLocal, 30));
+    if (!whatsapp) {
+      return NextResponse.json({ error: "Numéro WhatsApp invalide. Choisis ton pays puis tape ton numéro." }, { status: 400 });
+    }
+    // Si la table n'existe pas encore (SQL pas encore exécuté), l'inscription fonctionne quand même sans enregistrer le numéro.
+    let phoneTableReady = true;
+    try {
+      const taken = await prisma.userPhone.findUnique({ where: { phone: whatsapp }, select: { userId: true } });
+      if (taken) {
+        return NextResponse.json({ error: "Ce numéro WhatsApp est déjà utilisé par un autre compte." }, { status: 400 });
+      }
+    } catch (e: any) {
+      if (e?.code === 'P2021' || /UserPhone/.test(String(e?.message))) phoneTableReady = false;
+      else throw e;
+    }
+
     // Vérifier si l'email existe déjà
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -72,8 +90,7 @@ export async function POST(request: Request) {
     // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
+    const userData = {
         nom,
         prenom,
         email,
@@ -86,8 +103,25 @@ export async function POST(request: Request) {
         lives: MAX_LIVES, // 10 vies dès l'inscription (le @default(5) du schéma reste documentaire)
         referredById, // attribution ambassadeur — VERROUILLÉE (jamais modifiable côté client)
         statut: "VALIDE", // L'étudiant est validé automatiquement
-      },
-    });
+    };
+
+    // Compte + numéro créés ENSEMBLE : si le numéro vient d'être pris par une inscription simultanée,
+    // rien n'est créé (l'index unique de "UserPhone" refuse le doublon).
+    let user;
+    try {
+      user = phoneTableReady
+        ? await prisma.$transaction(async (tx) => {
+            const u = await tx.user.create({ data: userData });
+            await tx.userPhone.create({ data: { userId: u.id, phone: whatsapp } });
+            return u;
+          })
+        : await prisma.user.create({ data: userData });
+    } catch (e: any) {
+      if (e?.code === 'P2002' && String(e?.meta?.target ?? '').includes('phone')) {
+        return NextResponse.json({ error: "Ce numéro WhatsApp est déjà utilisé par un autre compte." }, { status: 400 });
+      }
+      throw e;
+    }
 
     // On ne renvoie jamais le mot de passe
     const { password: _, ...userWithoutPassword } = user;

@@ -291,6 +291,15 @@ model AmbassadorPanelAccess {
   updatedAt    DateTime  @default(now()) @updatedAt
 }
 
+// Numéro WhatsApp de l'étudiant (table à part pour ne pas toucher à User) : un numéro = un compte.
+// verifiedAt : rempli plus tard par la vérification WhatsApp (message envoyé par l'étudiant au numéro d'Arena).
+model UserPhone {
+  userId     String    @id
+  phone      String    @unique   // format international « +22790123456 »
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
 model AmbassadorCommission {
   id                String   @id @default(cuid())
   ambassadorId      String

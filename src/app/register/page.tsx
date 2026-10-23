@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
 import PasswordInput from '@/components/ui/PasswordInput';
 import NationalitySelect from '@/components/ui/NationalitySelect';
+import { INDICATIFS } from '@/lib/indicatifs';
 import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
 
 export default function RegisterPage() {
@@ -13,6 +14,8 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [hasAmbassador, setHasAmbassador] = useState(false);
+  const [phoneCode, setPhoneCode] = useState(INDICATIFS[0].code); // Niger par défaut
+  const [customCode, setCustomCode] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -72,6 +75,26 @@ export default function RegisterPage() {
         <div>
           <label className={AUTH_LABEL}>Email</label>
           <input id="email" name="email" type="email" required className={AUTH_INPUT} placeholder="exemple@fac-medecine.com" />
+        </div>
+
+        <div>
+          <label className={AUTH_LABEL} htmlFor="phoneLocal">Numéro WhatsApp</label>
+          <div className={`grid gap-2 ${phoneCode === 'autre' ? 'grid-cols-[minmax(0,1fr)_4.5rem_minmax(0,1.2fr)]' : 'grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]'}`}>
+            <select aria-label="Pays de ton numéro" value={phoneCode} onChange={e => setPhoneCode(e.target.value)}
+              className={`${AUTH_INPUT} min-w-0 font-medium`}>
+              {INDICATIFS.map(i => <option key={i.pays} value={i.code}>+{i.code} {i.pays}</option>)}
+              <option value="autre">Autre pays…</option>
+            </select>
+            {phoneCode === 'autre' && (
+              <input aria-label="Indicatif" inputMode="numeric" required placeholder="+…" value={customCode}
+                onChange={e => setCustomCode(e.target.value.replace(/[^\d+]/g, '').slice(0, 5))}
+                className={`${AUTH_INPUT} min-w-0`} />
+            )}
+            <input id="phoneLocal" name="phoneLocal" type="tel" inputMode="tel" required autoComplete="tel-national"
+              placeholder="90 12 34 56" className={`${AUTH_INPUT} min-w-0`} />
+          </div>
+          <input type="hidden" name="phoneCode" value={phoneCode === 'autre' ? customCode.replace(/\D/g, '') : phoneCode} />
+          <p className="mt-1 text-xs text-mute">Un numéro <b className="text-ink">WhatsApp actif</b> : il servira à vérifier ton compte et à te joindre pour la Prime Arena. Un seul compte par numéro.</p>
         </div>
 
         <div>
