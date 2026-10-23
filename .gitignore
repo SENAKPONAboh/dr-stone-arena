@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# sauvegardes de la base (données personnelles, jamais sur GitHub)
+/sauvegardes
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
