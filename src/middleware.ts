@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifySession } from '@/lib/auth';
 
-const publicRoutes = ['/login', '/register', '/forgot-password'];
+const publicRoutes = ['/login', '/register', '/forgot-password', '/confidentialite'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -20,7 +20,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // Rediriger vers le bon dashboard si déjà connecté et sur une route publique
-  if (isPublicRoute && session) {
+  // (la politique de confidentialité reste lisible même connecté)
+  if (isPublicRoute && session && !pathname.startsWith('/confidentialite')) {
     if (session.role === 'ADMIN') return NextResponse.redirect(new URL('/admin', request.url));
     if (session.role === 'CORRECTEUR') return NextResponse.redirect(new URL('/correcteur', request.url));
     return NextResponse.redirect(new URL('/etudiant', request.url));
