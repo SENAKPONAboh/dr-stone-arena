@@ -53,11 +53,11 @@ export default function SuspectsManager() {
   const students = (data?.students ?? []).filter(s => !onlyFlagged || s.level !== 'OK');
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+    <div className="adm-card p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="font-extrabold text-gray-800 dark:text-white">🔍 Comportements suspects</h2>
         <button onClick={() => setOnlyFlagged(v => !v)}
-          className="text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+          className="adm-tab">
           {onlyFlagged ? 'Voir tous les étudiants' : 'Suspects uniquement'}
         </button>
       </div>
@@ -97,7 +97,7 @@ export default function SuspectsManager() {
                 const badge = LEVEL_BADGE[s.level] ?? LEVEL_BADGE.OK;
                 return (
                   <motion.div key={s.userId} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.04, 0.5) }}
-                    className="bg-gray-50 dark:bg-slate-700/50 rounded-2xl p-5 border border-gray-100 dark:border-slate-600">
+                    className="adm-card-2 p-4">
                     <div className="flex justify-between items-start gap-3 mb-3">
                       <div>
                         <p className="font-bold text-gray-800 dark:text-white">{s.name}</p>

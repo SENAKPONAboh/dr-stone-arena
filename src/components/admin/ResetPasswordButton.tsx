@@ -39,7 +39,7 @@ export default function ResetPasswordButton({ userId }: { userId: string }) {
       <button 
         onClick={handleReset}
         disabled={loading}
-        className="text-xs bg-orange-50 text-orange-600 font-bold py-1 px-3 rounded-lg border border-orange-100 hover:bg-orange-100 transition-all disabled:opacity-50"
+        className="adm-btn adm-btn-ghost adm-btn-sm"
       >
         {loading ? '⏳ Réinitialisation...' : '🔑 Reset MDP'}
       </button>

@@ -146,7 +146,7 @@ export default function BulkCaseImporter() {
           </div>
 
           {report.ignored.length > 0 && (
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+            <div className="adm-card p-4">
               <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">⚠️ Blocs ignorés</h3>
               <div className="space-y-2">
                 {report.ignored.map((ig, i) => (
@@ -163,7 +163,7 @@ export default function BulkCaseImporter() {
           )}
 
           {report.created > 0 && report.createdTitles.length > 0 && report.createdTitles.length <= 20 && (
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+            <div className="adm-card p-4">
               <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wide mb-3">✅ Cas créés</h3>
               <ul className="text-sm text-gray-500 space-y-1 list-disc list-inside">
                 {report.createdTitles.map((t, i) => <li key={i} className="truncate">{t}</li>)}

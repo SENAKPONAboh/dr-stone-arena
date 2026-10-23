@@ -1,7 +1,7 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import Link from 'next/link';
+import AdminHeader from '@/components/admin/ui/AdminHeader';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 
@@ -42,47 +42,38 @@ export default async function AmbassadorDetailPage({ params }: { params: Promise
   const caGenere = commissions.reduce((s, c) => s + (c.premiumRequest?.amount ?? 0), 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-      <header className="bg-white border-b-2 border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/admin/ambassadors" className="text-gray-600 hover:text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </Link>
-          <h1 className="font-extrabold text-xl text-gray-800">🤝 {ambassador.user.prenom} {ambassador.user.nom}</h1>
-        </div>
-      </header>
+    <div className="min-h-screen pb-12">
+      <AdminHeader title={`${ambassador.user.prenom} ${ambassador.user.nom}`} subtitle={`Ambassadeur · code ${ambassador.referralCode}`} icon="handshake" back="/admin/ambassadors" />
 
       <main className="max-w-6xl mx-auto px-4 mt-6 space-y-8">
 
         {/* Résumé */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+          <div className="adm-card p-4">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">Code</p>
             <p className="text-lg font-extrabold text-emerald-600">{ambassador.referralCode}</p>
-            <p className="text-xs text-gray-400 mt-1">{ambassador.status}</p>
+            <p className="text-xs text-gray-400 mt-1">{ambassador.status === 'ACTIF' ? 'Actif' : ambassador.status === 'SUSPENDU' ? 'Suspendu' : 'En attente'} · {ambassador.commissionRate} %</p>
           </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+          <div className="adm-card p-4">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">👥 Utilisateurs</p>
             <p className="text-2xl font-extrabold text-blue-600">{referredUsers.length}</p>
           </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+          <div className="adm-card p-4">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">CA généré</p>
             <p className="text-2xl font-extrabold text-emerald-600">{fmt(caGenere)}</p>
           </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+          <div className="adm-card p-4">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">⏳ En attente</p>
             <p className="text-2xl font-extrabold text-orange-500">{fmt(enAttente)}</p>
           </div>
-          <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
+          <div className="adm-card p-4">
             <p className="text-xs font-bold text-gray-400 uppercase mb-1">✅ Versées</p>
             <p className="text-2xl font-extrabold text-purple-600">{fmt(payee)}</p>
           </div>
         </div>
 
         {/* Utilisateurs apportés */}
-        <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <section className="adm-card p-4 sm:p-6">
           <h2 className="font-extrabold text-gray-800 mb-4">👥 Utilisateurs apportés ({referredUsers.length})</h2>
           {referredUsers.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-2xl">Aucun utilisateur pour l'instant.</p>
@@ -107,10 +98,10 @@ export default async function AmbassadorDetailPage({ params }: { params: Promise
         </section>
 
         {/* Commissions */}
-        <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <section className="adm-card p-4 sm:p-6">
           <h2 className="font-extrabold text-gray-800 mb-4">💰 Commissions ({commissions.length})</h2>
           {commissions.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-2xl">Aucune commission (le branchement des paiements arrive en Phase 8).</p>
+            <p className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-2xl">Aucune commission : elles apparaissent dès qu'un filleul paie un Premium.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -139,7 +130,7 @@ export default async function AmbassadorDetailPage({ params }: { params: Promise
         </section>
 
         {/* Versements */}
-        <section className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+        <section className="adm-card p-4 sm:p-6">
           <h2 className="font-extrabold text-gray-800 mb-4">📤 Versements enregistrés ({payouts.length})</h2>
           {payouts.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-2xl">Aucun versement pour l'instant.</p>

@@ -35,11 +35,11 @@ export default function ValidateButton({ userId }: { userId: string }) {
       <button
         onClick={handleValidate}
         disabled={loading}
-        className="bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold py-2 px-4 rounded-xl transition-all disabled:opacity-50"
+        className="adm-btn adm-btn-mala adm-btn-sm"
       >
-        {loading ? '⏳ Validation...' : '✅ Valider'}
+        {loading ? 'Validation…' : 'Valider le compte'}
       </button>
-      {error && <span className="text-xs text-red-500 font-bold">{error}</span>}
+      {error && <span className="text-xs font-bold text-heart">{error}</span>}
     </div>
   );
 }

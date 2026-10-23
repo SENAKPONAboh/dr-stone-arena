@@ -69,11 +69,11 @@ export default function RechargeManager() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+    <div className="adm-card p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="font-extrabold text-gray-800 dark:text-white">⚡ Recharges UA</h2>
+        <h2 className="adm-title">Recharges UA</h2>
         <button onClick={() => setShowAll(v => !v)}
-          className="text-xs font-bold px-3 py-1.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300">
+          className="adm-tab">
           {showAll ? 'À valider uniquement' : 'Voir tout l\'historique'}
         </button>
       </div>
@@ -90,7 +90,7 @@ export default function RechargeManager() {
           const pending = r.status === 'EN_ATTENTE';
           return (
             <motion.div key={r.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-50 dark:bg-slate-700/50 rounded-2xl p-5 border border-gray-100 dark:border-slate-600">
+              className="adm-card-2 p-4">
               <div className="flex justify-between items-start gap-3">
                 <div className="min-w-0">
                   <p className="font-bold text-gray-800 dark:text-white">
@@ -122,12 +122,12 @@ export default function RechargeManager() {
               {pending && (
                 <div className="flex flex-wrap gap-2 mt-4">
                   <button onClick={() => act(r.id, 'VALIDE')} disabled={busyId === r.id}
-                    className="px-4 py-2 rounded-xl bg-emerald-500 text-white text-xs font-bold disabled:opacity-40">
-                    ✅ Valider (+{r.amountUA.toLocaleString('fr-FR')} UA)
+                    className="adm-btn adm-btn-mala adm-btn-sm">
+                    Valider (+{r.amountUA.toLocaleString('fr-FR')} UA)
                   </button>
                   <button onClick={() => act(r.id, 'REJETE')} disabled={busyId === r.id}
-                    className="px-4 py-2 rounded-xl bg-red-500 text-white text-xs font-bold disabled:opacity-40">
-                    ❌ Rejeter
+                    className="adm-btn adm-btn-danger adm-btn-sm">
+                    Rejeter
                   </button>
                 </div>
               )}

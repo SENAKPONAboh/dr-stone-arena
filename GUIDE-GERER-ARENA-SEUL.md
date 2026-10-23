@@ -6,13 +6,15 @@ Ce guide sert pendant les mois où tu n'as pas d'abonnement. **Tout le travail c
 
 ## 1. Chaque jour (10 minutes)
 
+Commence par le bloc **« À traiter aujourd'hui »** en haut de l'accueil du panel : il montre avec une pastille orange tout ce qui attend (reçus Premium, Pass Élite, recharges, Primes à payer, commissions, comptes à valider). Clique sur une ligne pour aller directement à la bonne page.
+
 | Où (panel admin) | Quoi faire |
 |---|---|
 | **Validation Premium** | Ouvre chaque reçu, compare avec ton relevé mobile money (montant + numéro), puis valide ou rejette. |
-| **Pass Monétisé** | Pareil pour les Pass Élite (2 000 FCFA). |
-| **Trésorerie UA** | Recharges à valider ; **retraits** à payer : envoie l'argent par mobile money **d'abord**, puis clique **✅ Marquer payé**. |
+| **Pass Élite** | Pareil pour les Pass Élite (2 000 FCFA) : bouton **Activer le Pass Élite**. |
+| **Trésorerie UA** | Recharges à valider ; **Primes Arena à payer** (retraits) : envoie l'argent par mobile money **d'abord**, au moyen de paiement et au numéro affichés sur la demande, puis clique **Marquer payé**. |
 | **Journal des suspects** | Coup d'œil : réponses trop rapides ou précision anormale = triche probable. Bannis seulement si c'est répété. |
-| **Gérer les étudiants** | Un étudiant a oublié son mot de passe : bouton de réinitialisation sur sa ligne. |
+| **Gestion des étudiants** | Tape son nom ou son e-mail dans la barre de recherche. Mot de passe oublié : bouton de réinitialisation sur sa ligne. |
 
 Règle d'or des paiements : **ne valide jamais un reçu sans avoir vu l'argent arriver** sur ton téléphone. Une capture d'écran peut être fausse.
 
@@ -28,7 +30,7 @@ Règle d'or des paiements : **ne valide jamais un reçu sans avoir vu l'argent a
 1. **Tournoi mensuel** : clôturer celui du mois, créer et publier le suivant.
 2. **Saison mensuelle** : clôturer le mois (enregistre les grades puis remet les XP à zéro). À faire **une seule fois**, le dernier jour ou le 1er au matin.
 3. **Ambassadeurs** : envoie la commission en attente par mobile money, puis clique **💰 Verser** sur la ligne de l'ambassadeur.
-4. **Centre Financier** : noter les dépenses du mois (ex. abonnements quand tu les reprends).
+4. **Centre financier** : onglet **Dépenses** pour noter les dépenses du mois (ex. abonnements quand tu les reprends). L'onglet **Résumé** montre l'argent encaissé (Premium + Pass Élite + recharges), l'argent sorti (dépenses, ambassadeurs, Primes) et **ce que tu dois encore payer**. L'onglet **Transactions** retrouve n'importe quel paiement.
 
 ## 4. Surveiller les offres gratuites
 
@@ -69,7 +71,7 @@ Important :
 | **Ça marchait hier, plus aujourd'hui après une mise à jour** | Vercel → **Deployments** → choisis la dernière version qui marchait → menu **⋯** → **Instant Rollback** (ou **Promote to Production**). Le site revient à cette version en 1 minute. |
 | **Le site affiche une erreur de base de données** | Supabase → **Usage** : si la base est pleine (500 Mo), il faut payer Pro ou demander de l'aide pour faire du ménage. |
 | **La vérification WhatsApp ne répond plus** | Pas grave : après 2 minutes, l'étudiant a un bouton « continuer ». Les clés Meta sont peut-être expirées ; ce sera à refaire avec de l'aide. |
-| **Un étudiant dit qu'il a payé mais rien n'est arrivé** | Cherche son reçu dans Validation Premium / Pass / Trésorerie UA. Pas de reçu = il ne l'a pas envoyé : demande-lui de recommencer. |
+| **Un étudiant dit qu'il a payé mais rien n'est arrivé** | Cherche son nom dans Centre financier → **Transactions**, ou son reçu dans Validation Premium / Pass Élite / Trésorerie UA. Pas de reçu = il ne l'a pas envoyé : demande-lui de recommencer. |
 | **Le Rush redémarre si on ferme l'application** | Problème connu, ce n'est pas une panne. À corriger plus tard. |
 
 ## 7. Ce qu'il ne faut JAMAIS faire seul

@@ -81,7 +81,7 @@ export default function ExpenseManager({ expenses }: { expenses: Expense[] }) {
   };
 
   return (
-    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+    <div className="adm-card p-4 sm:p-6 space-y-6">
 
       <h3 className="font-extrabold text-gray-800">➕ Enregistrer une dépense</h3>
 

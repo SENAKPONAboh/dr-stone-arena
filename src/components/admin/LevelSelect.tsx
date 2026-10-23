@@ -42,7 +42,7 @@ export default function LevelSelect({ userId, current }: { userId: string; curre
         value={value}
         disabled={busy}
         onChange={e => change(Number(e.target.value))}
-        className="rounded-xl border-2 border-gray-200 bg-white px-2 py-1.5 text-sm font-bold text-gray-700 disabled:opacity-50"
+        className="adm-input min-h-[36px] w-auto py-1.5 text-sm font-bold disabled:opacity-50"
       >
         {current === null && <option value="">—</option>}
         {NIVEAU_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

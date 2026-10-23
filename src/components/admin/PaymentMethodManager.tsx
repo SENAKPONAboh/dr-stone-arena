@@ -151,7 +151,7 @@ export default function PaymentMethodManager({ initialMethods }: { initialMethod
       {methods.map(m => {
         const busy = loadingId === m.id;
         return (
-          <form key={m.id} onSubmit={(e) => handleSave(e, m)} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-4">
+          <form key={m.id} onSubmit={(e) => handleSave(e, m)} className="adm-card p-4 sm:p-6 space-y-4">
 
             {/* En-tête : statut + toggle */}
             <div className="flex justify-between items-center">

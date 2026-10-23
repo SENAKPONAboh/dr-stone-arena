@@ -1,7 +1,7 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import Link from 'next/link';
+import AdminHeader from '@/components/admin/ui/AdminHeader';
 import AmbassadorManager from '@/components/admin/AmbassadorManager';
 
 export default async function AdminAmbassadorsPage() {
@@ -62,22 +62,13 @@ export default async function AdminAmbassadorsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-      <header className="bg-white border-b-2 border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/admin" className="text-gray-600 hover:text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </Link>
-          <h1 className="font-extrabold text-xl text-gray-800">🤝 Gestion des Ambassadeurs</h1>
-        </div>
-      </header>
+    <div className="min-h-screen pb-12">
+      <AdminHeader title="Ambassadeurs" subtitle="Codes, filleuls et commissions" icon="handshake" tone="mala" />
 
       <main className="max-w-6xl mx-auto px-4 mt-6">
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <div className="adm-card p-4 sm:p-6">
           <p className="text-sm text-gray-500 mb-6">
-            Crée et gère le réseau d'ambassadeurs. Un ambassadeur <b>Actif</b> peut faire utiliser son code à l'inscription ; chaque paiement Premium validé de ses référés génère une commission de <b>10%</b> (récurrente). Les versements basculent les commissions en attente en "Payées".
+            Crée et gère le réseau d'ambassadeurs. Un ambassadeur <b>actif</b> peut faire utiliser son code à l'inscription ; chaque paiement Premium validé de ses filleuls lui rapporte une commission (son pourcentage est affiché sur sa fiche, 10 % par défaut), à chaque renouvellement. Les versements basculent les commissions en attente en « payées ».
           </p>
           <AmbassadorManager ambassadors={ambassadorsWithStats} students={students} />
         </div>

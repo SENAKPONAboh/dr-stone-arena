@@ -1,10 +1,12 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import ValidateButton from '@/components/admin/ValidateButton';
 import Link from 'next/link';
-import LogoutButton from '@/components/dashboard/LogoutButton';
+import ValidateButton from '@/components/admin/ValidateButton';
 import SendPushButton from '@/components/admin/SendPushButton';
+import AdminHeader, { Stat, SectionTitle, TONE_CHIP, type Tone } from '@/components/admin/ui/AdminHeader';
+import AdminIcon, { type AdminIconName } from '@/components/admin/ui/AdminIcon';
+import AdminLogoutButton from '@/components/admin/ui/AdminLogoutButton';
 
 export default async function AdminDashboard() {
   const user = await getCurrentUserCore();
@@ -12,88 +14,111 @@ export default async function AdminDashboard() {
   if (user.role !== 'ADMIN') redirect('/login');
 
   const now = new Date();
-  const [pendingUsers, totalUsers, totalCases, premiumActifs, totalSubjects] = await Promise.all([
-    prisma.user.findMany({
-      where: { statut: 'EN_ATTENTE', role: 'ETUDIANT' },
-      orderBy: { createdAt: 'desc' }
-    }),
+  const [pendingUsers, totalUsers, totalCases, premiumActifs, passActifs, totalSubjects,
+    pendingPremium, pendingPass, pendingRecharges, pendingPrimes, pendingCommissions, activeMethods] = await Promise.all([
+    prisma.user.findMany({ where: { statut: 'EN_ATTENTE', role: 'ETUDIANT' }, orderBy: { createdAt: 'desc' } }),
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
     prisma.clinicalCase.count(),
     prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true, premiumExpiresAt: { gt: now } } }),
+    prisma.user.count({ where: { role: 'ETUDIANT', passActive: true, passExpiresAt: { gt: now } } }),
     prisma.subject.count(),
+    prisma.premiumRequest.count({ where: { status: 'EN_ATTENTE' } }),
+    prisma.passRequest.count({ where: { status: 'EN_ATTENTE' } }),
+    prisma.rechargeRequest.count({ where: { status: 'EN_ATTENTE' } }),
+    prisma.withdrawalRequest.count({ where: { status: { in: ['EN_ATTENTE', 'EN_TRAITEMENT'] } } }),
+    prisma.ambassadorCommission.aggregate({ where: { status: 'EN_ATTENTE' }, _sum: { amount: true } }),
+    prisma.paymentMethod.count({ where: { isActive: true } }),
   ]);
+  const commissionsDue = pendingCommissions._sum.amount ?? 0;
 
-  // Carte d'action réutilisable
-  const actionCard = (href: string, icon: string, title: string, desc: string, colorClasses: string) => (
-    <Link href={href} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md hover:scale-[1.02] transition-all">
-      <div className="flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 ${colorClasses}`}>{icon}</div>
-        <div className="min-w-0">
-          <p className="font-extrabold text-gray-800">{title}</p>
-          <p className="text-xs text-gray-400 mt-1 leading-relaxed">{desc}</p>
-        </div>
-      </div>
-    </Link>
-  );
+  // Ce qui attend une action, dans l'ordre de la routine admin
+  const todo = [
+    { href: '/admin/premium', icon: 'crown', label: 'Reçus Premium', count: pendingPremium },
+    { href: '/admin/monetise', icon: 'gem', label: 'Reçus Pass Élite', count: pendingPass },
+    { href: '/admin/ua', icon: 'coins', label: 'Recharges UA', count: pendingRecharges },
+    { href: '/admin/ua', icon: 'wallet', label: 'Primes Arena à payer', count: pendingPrimes },
+    { href: '/admin/ambassadors', icon: 'handshake', label: 'Commissions à verser', count: commissionsDue > 0 ? 1 : 0, text: commissionsDue > 0 ? `${commissionsDue.toLocaleString('fr-FR')} F` : undefined },
+  ] satisfies { href: string; icon: AdminIconName; label: string; count: number; text?: string }[];
+  const todoCount = todo.reduce((s, t) => s + (t.count > 0 ? 1 : 0), 0) + (pendingUsers.length > 0 ? 1 : 0);
 
-  const sectionTitle = (icon: string, label: string) => (
-    <h2 className="text-sm font-extrabold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-      <span className="text-base">{icon}</span> {label}
-    </h2>
-  );
+  type Card = { href: string; icon: AdminIconName; tone: Tone; title: string; desc: string; badge?: number };
+  const groups: { title: string; icon: AdminIconName; cards: Card[] }[] = [
+    {
+      title: 'Paiements', icon: 'receipt', cards: [
+        { href: '/admin/premium', icon: 'crown', tone: 'sky', title: 'Validation Premium', desc: 'Vérifier les reçus et activer Premium I, II ou III', badge: pendingPremium },
+        { href: '/admin/monetise', icon: 'gem', tone: 'gold', title: 'Pass Élite', desc: "Vérifier les reçus et ouvrir l'Espace Élite (30 jours)", badge: pendingPass },
+        { href: '/admin/ua', icon: 'bank', tone: 'gold', title: 'Trésorerie UA', desc: 'Payer les Primes Arena, valider les recharges, corriger un solde', badge: pendingRecharges + pendingPrimes },
+        { href: '/admin/payment-methods', icon: 'card', tone: 'mala', title: 'Moyens de paiement', desc: `${activeMethods} actif${activeMethods > 1 ? 's' : ''} : numéros, bénéficiaires et instructions` },
+        { href: '/admin/finance', icon: 'chart', tone: 'gold', title: 'Centre financier', desc: "Tout l'argent qui entre et qui sort, ce qu'il reste à payer" },
+      ],
+    },
+    {
+      title: 'Étudiants et communauté', icon: 'users', cards: [
+        { href: '/admin/users', icon: 'users', tone: 'sky', title: 'Gestion des étudiants', desc: 'Rechercher un compte, niveau, mot de passe, bannissement' },
+        { href: '/admin/ambassadors', icon: 'handshake', tone: 'mala', title: 'Ambassadeurs', desc: 'Codes, filleuls, commissions et versements' },
+        { href: '/admin/saison', icon: 'flag', tone: 'flame', title: 'Saison mensuelle', desc: 'Fin du mois : garder les grades puis remettre les XP à zéro' },
+        { href: '/admin/tournoi', icon: 'trophy', tone: 'gold', title: 'Tournoi mensuel', desc: 'Créer, publier et clôturer le tournoi des meilleurs' },
+        { href: '/admin/suspects', icon: 'shield', tone: 'heart', title: 'Journal des suspects', desc: 'Réponses trop rapides, précision anormale : triche possible' },
+      ],
+    },
+    {
+      title: 'Banque de cas', icon: 'book', cards: [
+        { href: '/admin/cases', icon: 'plus', tone: 'mala', title: 'Créer un cas', desc: 'Rédiger un cas clinique (QCM A/B/C/D)' },
+        { href: '/admin/cases/bulk', icon: 'upload', tone: 'sky', title: 'Import en masse', desc: 'Coller 10, 50 ou 200 cas au format « CAS N° »' },
+        { href: '/admin/cases-structured', icon: 'file', tone: 'sky', title: 'Import QCM structurés', desc: 'Format détaillé : titre, année, matière, chapitre, justification' },
+        { href: '/admin/content', icon: 'layers', tone: 'mala', title: 'Matières et chapitres', desc: `${totalSubjects} matières : le programme et le nombre de cas` },
+      ],
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen pb-12">
+      <AdminHeader title="Panel administrateur" subtitle="Dr. Stone Arena" icon="shield" back={null} right={<AdminLogoutButton />} />
 
-      <header className="bg-white border-b-2 border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-blue-500 rounded-2xl flex items-center justify-center text-xl shadow-lg">⚙️</div>
-            <div>
-              <h1 className="font-extrabold text-lg text-gray-800">Panel Administrateur</h1>
-              <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest">Dr. Stone Arena</p>
-            </div>
-          </div>
-          <LogoutButton />
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-4 mt-6 space-y-8">
-
-        {/* ===== STATISTIQUES ===== */}
-        <section>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">👥 Étudiants</p>
-              <p className="text-3xl font-extrabold text-blue-600">{totalUsers}</p>
-            </div>
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">👑 Premium actifs</p>
-              <p className="text-3xl font-extrabold text-yellow-500">{premiumActifs}</p>
-            </div>
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">🧠 Cas cliniques</p>
-              <p className="text-3xl font-extrabold text-emerald-600">{totalCases}</p>
-              <p className="text-[10px] text-gray-400 mt-1">{totalSubjects} matières</p>
-            </div>
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">⏳ En attente</p>
-              <p className={`text-3xl font-extrabold ${pendingUsers.length > 0 ? "text-orange-500" : "text-gray-300"}`}>{pendingUsers.length}</p>
-              <p className="text-[10px] text-gray-400 mt-1">comptes à valider</p>
-            </div>
-          </div>
+      <main className="mx-auto mt-5 max-w-6xl space-y-7 px-4">
+        <section className="adm-rise grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat label="Étudiants" value={totalUsers.toLocaleString('fr-FR')} tone="sky" />
+          <Stat label="Premium actifs" value={premiumActifs} tone="sky" />
+          <Stat label="Pass Élite actifs" value={passActifs} tone="gold" />
+          <Stat label="Cas cliniques" value={totalCases.toLocaleString('fr-FR')} tone="mala" sub={`${totalSubjects} matières`} />
         </section>
 
-        {/* ===== VALIDATIONS EN ATTENTE ===== */}
+        <section className="adm-rise">
+          <SectionTitle icon="clock">À traiter aujourd'hui</SectionTitle>
+          {todoCount === 0 ? (
+            <div className="adm-card flex items-center gap-3 p-4">
+              <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${TONE_CHIP.mala}`}><AdminIcon name="check" /></span>
+              <p className="text-sm font-bold">Rien en attente. Tout est à jour.</p>
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {todo.filter(t => t.count > 0).map(t => (
+                <Link key={t.label} href={t.href} className="adm-card adm-link-card flex items-center gap-3 p-3">
+                  <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${TONE_CHIP.flame}`}><AdminIcon name={t.icon} /></span>
+                  <span className="min-w-0 flex-1 text-sm font-bold">{t.label}</span>
+                  <span className="adm-dot">{t.text ?? t.count}</span>
+                </Link>
+              ))}
+              {pendingUsers.length > 0 && (
+                <a href="#comptes" className="adm-card adm-link-card flex items-center gap-3 p-3">
+                  <span className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${TONE_CHIP.flame}`}><AdminIcon name="users" /></span>
+                  <span className="min-w-0 flex-1 text-sm font-bold">Comptes à valider</span>
+                  <span className="adm-dot">{pendingUsers.length}</span>
+                </a>
+              )}
+            </div>
+          )}
+        </section>
+
         {pendingUsers.length > 0 && (
-          <section>
-            {sectionTitle('⏳', 'Étudiants en attente de validation')}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
+          <section id="comptes" className="adm-rise scroll-mt-20">
+            <SectionTitle icon="users">Comptes en attente de validation</SectionTitle>
+            <div className="adm-card divide-y divide-line">
               {pendingUsers.map(u => (
-                <div key={u.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-2xl gap-4">
-                  <div>
-                    <p className="font-bold text-gray-800">{u.prenom} {u.nom}</p>
-                    <p className="text-sm text-gray-500">{u.email} • {u.universite} - {u.faculte}</p>
+                <div key={u.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="font-bold">{u.prenom} {u.nom}</p>
+                    <p className="truncate text-sm text-mute">{u.email} · {u.universite} · {u.faculte}</p>
                   </div>
                   <ValidateButton userId={u.id} />
                 </div>
@@ -102,70 +127,52 @@ export default async function AdminDashboard() {
           </section>
         )}
 
-        {/* ===== CONTENU PÉDAGOGIQUE ===== */}
-        <section>
-          {sectionTitle('📚', 'Contenu pédagogique')}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {actionCard('/admin/cases', '📝', 'Créer un cas clinique', 'Rédiger et publier un cas individuel (QCM A/B/C/D)', 'bg-blue-50')}
-            {actionCard('/admin/cases/bulk', '📥', 'Importer des cas en masse', "Coller 10, 50 ou 200 cas d'un coup (format CAS N°, EM1-EM6, Médecin)", 'bg-cyan-50')}
-            {actionCard('/admin/cases-structured', '🧬', 'Import QCM structurés', 'Format détaillé : Titre, Année, Matière, Chapitre, Énoncé, Question, Propositions, Réponse, Justification', 'bg-violet-50')}
-            {actionCard('/admin/content', '📚', 'Matières et chapitres', 'Gérer le programme : matières, chapitres, niveaux', 'bg-emerald-50')}
-          </div>
-        </section>
-
-        {/* ===== UTILISATEURS ET MONÉTISATION ===== */}
-        <section>
-          {sectionTitle('👥', 'Utilisateurs et Monétisation')}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            {actionCard('/admin/users', '👥', 'Gérer les étudiants', 'Comptes, statut Premium restant, bannissement, reset', 'bg-indigo-50')}
-            {actionCard('/admin/premium', '👑', 'Validation Premium', 'Vérifier les reçus et activer les abonnements I/II/III', 'bg-yellow-50')}
-            {actionCard('/admin/ambassadors', '🤝', 'Ambassadeurs', 'Codes, statuts, commissions et versements', 'bg-teal-50')}
-            {actionCard('/admin/payment-methods', '💳', 'Moyens de paiement', 'Wave, Nita, Amanata, MTN MoMo — numéros et instructions', 'bg-purple-50')}
-            {actionCard('/admin/monetise', '🪙', 'Pass Monétisé', 'Validation des demandes de Pass Arène (2 000 FCFA/mois)', 'bg-yellow-50')}
-            {actionCard('/admin/ua', '🏦', 'Trésorerie UA', 'Retraits mobile money · validation des recharges · correction des soldes', 'bg-amber-50')}
-            {actionCard('/admin/tournoi', '🏆', 'Tournoi mensuel', 'Créer, publier et clôturer le tournoi des 10 premiers de chaque promotion', 'bg-purple-50')}
-            {actionCard('/admin/saison', '🏁', 'Saison mensuelle', 'Clôturer le mois : enregistre les grades finaux de chaque étudiant puis remet les XP à zéro', 'bg-amber-50')}
-            {actionCard('/admin/suspects', '🔍', 'Journal des suspects', 'Réponses ultra-rapides, précision anormale, cas annulés — détection triche IA', 'bg-rose-50')}
-          </div>
-        </section>
-
-        {/* ===== FINANCES ET COMMUNICATION ===== */}
-        <section>
-          {sectionTitle('💰', 'Finances et Communication')}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            {actionCard('/admin/finance', '💰', 'Centre Financier', 'CA, MRR, abonnés, commissions, dépenses, projections, alertes', 'bg-amber-50')}
-            <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 bg-sky-50">📣</div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-extrabold text-gray-800">Notification Push</p>
-                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">Envoyer une annonce à tous les étudiants</p>
-                  <div className="mt-3"><SendPushButton /></div>
-                </div>
-              </div>
+        {groups.map(g => (
+          <section key={g.title} className="adm-rise">
+            <SectionTitle icon={g.icon}>{g.title}</SectionTitle>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {g.cards.map(c => (
+                <Link key={c.href + c.title} href={c.href} className="adm-card adm-link-card flex items-start gap-3 p-4">
+                  <span className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${TONE_CHIP[c.tone]}`}><AdminIcon name={c.icon} size={22} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-extrabold text-ink">{c.title}</span>
+                      {!!c.badge && <span className="adm-dot">{c.badge}</span>}
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-mute">{c.desc}</span>
+                  </span>
+                </Link>
+              ))}
             </div>
+          </section>
+        ))}
+
+        <section className="adm-rise">
+          <SectionTitle icon="megaphone">Communication</SectionTitle>
+          <div className="adm-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-extrabold">Notification push</p>
+              <p className="text-xs text-mute">Une annonce envoyée sur le téléphone de tous les étudiants abonnés aux notifications.</p>
+            </div>
+            <SendPushButton />
           </div>
         </section>
 
-        {/* ===== ZONE DANGEREUSE ===== */}
-        <section>
-          {sectionTitle('⚠️', 'Zone dangereuse')}
-          <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0 bg-red-100">🧨</div>
+        <section className="adm-rise">
+          <SectionTitle icon="alert">Zone dangereuse</SectionTitle>
+          <div className="flex flex-col gap-4 rounded-[20px] border border-heart/40 bg-heart/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className={`flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl ${TONE_CHIP.heart}`}><AdminIcon name="bomb" size={22} /></span>
               <div>
-                <p className="font-extrabold text-gray-800">Initialiser toutes les données</p>
-                <p className="text-xs text-red-500 mt-1 leading-relaxed max-w-md">
+                <p className="font-extrabold">Initialiser toutes les données</p>
+                <p className="mt-1 max-w-md text-xs leading-relaxed text-mute">
                   Remet XP, grades, duels, badges, paiements à zéro (lancement officiel). Conserve la banque de cas et les comptes. Double confirmation requise.
                 </p>
               </div>
             </div>
-            <Link href="/admin/reset" className="py-3 px-6 bg-red-600 hover:bg-red-700 text-white font-extrabold rounded-2xl text-sm uppercase tracking-wide shadow-md transition-all flex-shrink-0">
-              ⚠️ Accéder
-            </Link>
+            <Link href="/admin/reset" className="adm-btn adm-btn-danger">Accéder</Link>
           </div>
         </section>
-
       </main>
     </div>
   );

@@ -2,7 +2,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import ContentManagerForm from '@/components/admin/ContentManagerForm';
-import Link from 'next/link';
+import AdminHeader from '@/components/admin/ui/AdminHeader';
 import { getNiveauLabel } from '@/lib/niveau';
 
 export default async function AdminContentPage() {
@@ -13,7 +13,8 @@ export default async function AdminContentPage() {
   }
 
   const subjects = await prisma.subject.findMany({
-    orderBy: { anneeEtude: 'asc' }
+    orderBy: [{ anneeEtude: 'asc' }, { name: 'asc' }],
+    include: { chapters: { orderBy: { name: 'asc' }, select: { id: true, name: true, _count: { select: { cases: true } } } } },
   });
 
   // Regrouper les matières par année pour l'affichage
@@ -24,48 +25,49 @@ export default async function AdminContentPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen pb-12">
       
-      <header className="bg-white border-b-2 border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/admin" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <h1 className="font-extrabold text-xl text-gray-800">Gestion du Contenu</h1>
-          </Link>
-        </div>
-      </header>
+      <AdminHeader title="Matières et chapitres" subtitle="Le programme et ses cas" icon="layers" tone="mala" />
 
       <main className="max-w-6xl mx-auto px-4 mt-6">
         
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-8">
+        <div className="adm-card mb-8 p-4 sm:p-6">
           <ContentManagerForm subjects={subjects} />
         </div>
 
-        <h2 className="text-xl font-extrabold text-gray-800 mb-4">📋 Matières et Chapitres actuels</h2>
+        <h2 className="adm-title mb-4 text-lg">Programme actuel</h2>
         <div className="space-y-6">
           {Object.entries(subjectsByYear).map(([year, subs]) => (
-            <div key={year} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-              <h3 className="font-bold text-blue-600 mb-4">{getNiveauLabel(Number(year))}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {subs.map(s => (
-                  <div key={s.id} className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                    <p className="font-bold text-gray-800">{s.name}</p>
-                    <ul className="mt-2 space-y-1 text-sm text-gray-500">
-                      {/* On récupère les chapitres de chaque matière */}
-                      {/* Pour éviter trop de requêtes SQL ici, on le fera simplement si nécessaire, 
-                          mais pour l'exemple on affiche juste l'ID pour l'instant */}
-                      <li className="flex items-center gap-1">
-                        <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
-                        Voir les chapitres (ID: {s.id.substring(0,8)}...)
-                      </li>
-                    </ul>
-                  </div>
-                ))}
+            <section key={year}>
+              <h3 className="adm-label mb-2">{getNiveauLabel(Number(year))} · {subs.reduce((n, s) => n + s.chapters.reduce((m, c) => m + c._count.cases, 0), 0).toLocaleString('fr-FR')} cas</h3>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {subs.map(s => {
+                  const cases = s.chapters.reduce((m, c) => m + c._count.cases, 0);
+                  return (
+                    <details key={s.id} className="adm-card group p-4">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate font-bold text-ink">{s.name}</span>
+                          <span className="text-xs text-mute">{s.chapters.length} chapitre{s.chapters.length > 1 ? 's' : ''} · {cases} cas</span>
+                        </span>
+                        <span className="text-mute transition-transform group-open:rotate-90">›</span>
+                      </summary>
+                      <ul className="mt-3 space-y-1 border-t border-line pt-3 text-sm">
+                        {s.chapters.length === 0 && <li className="text-mute">Aucun chapitre.</li>}
+                        {s.chapters.map(c => (
+                          <li key={c.id} className="flex justify-between gap-2">
+                            <span className="truncate text-ink">{c.name}</span>
+                            <span className={`adm-num flex-shrink-0 text-xs ${c._count.cases ? 'text-mala' : 'text-heart'}`}>{c._count.cases}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  );
+                })}
               </div>
-            </div>
+            </section>
           ))}
+          {subjects.length === 0 && <p className="adm-card p-6 text-center text-sm text-mute">Aucune matière pour l'instant.</p>}
         </div>
 
       </main>

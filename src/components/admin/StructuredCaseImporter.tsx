@@ -43,7 +43,7 @@ export default function StructuredCaseImporter() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+    <div className="adm-card p-4 sm:p-6">
       <h2 className="font-extrabold text-gray-800 dark:text-white mb-1">🧬 Import de QCM structurés</h2>
       <p className="text-xs text-gray-400 mb-4">
         Collez vos QCM (séparés par des tirets ou enchaînés) — Titre, Année, Matière, Chapitre, Difficulté, Énoncé, Question, Propositions A-D, Réponse, Justification. Matières et chapitres absents sont créés automatiquement.

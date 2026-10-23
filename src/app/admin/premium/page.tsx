@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
-import Link from 'next/link';
+import AdminHeader from '@/components/admin/ui/AdminHeader';
 import ValidatePremiumButton from '@/components/admin/ValidatePremiumButton';
 import { getPlan, getPlanLabel } from '@/lib/premium';
 import { getReceiptSignedUrl } from '@/lib/supabase-storage';
@@ -35,23 +35,14 @@ export default async function AdminPremiumPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen pb-12">
       
-      <header className="bg-white border-b-2 border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/admin" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <h1 className="font-extrabold text-xl text-gray-800">Validation Premium</h1>
-          </Link>
-        </div>
-      </header>
+      <AdminHeader title="Validation Premium" subtitle="Reçus en attente" icon="crown" tone="sky" />
 
       <main className="max-w-6xl mx-auto px-4 mt-6">
         
         {requestsWithUrls.length === 0 ? (
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
+          <div className="adm-card p-8 text-center">
             <div className="text-5xl mb-4">✅</div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">Aucune demande en attente</h2>
             <p className="text-gray-500">Toutes les demandes Premium ont été traitées.</p>
@@ -59,7 +50,7 @@ export default async function AdminPremiumPage() {
         ) : (
           <div className="space-y-6">
             {requestsWithUrls.map((req) => (
-              <div key={req.id} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row gap-6">
+              <div key={req.id} className="adm-card p-4 sm:p-6 flex flex-col md:flex-row gap-6">
                 <div className="md:w-1/3">
                   {req.displayUrl ? (
                     <ReceiptImage src={req.displayUrl} />

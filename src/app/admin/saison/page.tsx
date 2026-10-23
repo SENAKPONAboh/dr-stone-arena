@@ -1,6 +1,6 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import AdminHeader from '@/components/admin/ui/AdminHeader';
 import prisma from '@/lib/prisma';
 import SeasonCloser from '@/components/admin/SeasonCloser';
 import { defaultSeasonToClose, seasonLabel } from '@/lib/seasons';
@@ -31,17 +31,8 @@ export default async function AdminSeasonPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
-      <header className="border-b-2 border-gray-100 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
-          <Link href="/admin" className="text-gray-600 hover:text-gray-800" aria-label="Retour">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </Link>
-          <h1 className="text-xl font-extrabold text-gray-800">🏁 Saison mensuelle</h1>
-        </div>
-      </header>
+    <div className="min-h-screen pb-12">
+      <AdminHeader title="Saison mensuelle" subtitle="Clôture du mois" icon="flag" tone="flame" />
 
       <main className="mx-auto mt-6 max-w-3xl space-y-6 px-4">
         {!tableReady && (

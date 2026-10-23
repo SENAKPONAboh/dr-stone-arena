@@ -38,7 +38,7 @@ export default function UaCorrectionManager() {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+    <div className="adm-card p-4 sm:p-6">
       <h2 className="font-extrabold text-gray-800 dark:text-white mb-1">🛠️ Correction de solde UA</h2>
       <p className="text-xs text-gray-400 mb-4">Créditer (+) ou retirer (−) des UA sur n'importe quel compte. Motif obligatoire — tout est inscrit au registre et l'utilisateur est notifié.</p>
 

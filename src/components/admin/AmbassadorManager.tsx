@@ -170,7 +170,7 @@ export default function AmbassadorManager({ ambassadors, students }: { ambassado
               const badge = statusBadge(a.status);
               const busy = busyId === a.id;
               return (
-                <div key={a.id} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+                <div key={a.id} className="adm-card p-4 space-y-4">
                   {/* En-tête */}
                   <div className="flex flex-wrap justify-between items-start gap-3">
                     <div className="min-w-0">

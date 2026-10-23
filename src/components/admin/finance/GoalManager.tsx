@@ -90,7 +90,7 @@ export default function GoalManager({ goals }: { goals: GoalWithProgress[] }) {
     <div className="space-y-6">
 
       {/* Formulaire */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+      <div className="adm-card p-4 sm:p-6 space-y-4">
         <h3 className="font-extrabold text-gray-800">➕ Définir un objectif</h3>
 
         {error && <div className="bg-red-50 border-2 border-red-100 text-red-600 px-4 py-3 rounded-2xl text-sm font-medium text-center">{error}</div>}
@@ -124,7 +124,7 @@ export default function GoalManager({ goals }: { goals: GoalWithProgress[] }) {
       </div>
 
       {/* Liste des objectifs */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+      <div className="adm-card p-4 sm:p-6">
         <h3 className="font-extrabold text-gray-800 mb-4">🎯 Objectifs définis ({goals.length})</h3>
         {goals.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-6 bg-gray-50 rounded-2xl">Aucun objectif défini pour le moment.</p>
