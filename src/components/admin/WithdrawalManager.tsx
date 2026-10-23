@@ -18,6 +18,10 @@ const STATUS_BADGE: Record<string, { cls: string; label: string }> = {
   ANNULE: { cls: 'bg-gray-100 text-gray-500', label: 'Annulé' },
 };
 
+// Les anciens retraits gardaient un code d'opérateur ; les nouveaux enregistrent le nom du moyen de paiement choisi.
+const LEGACY_OPERATORS: Record<string, string> = { ORANGE_MONEY: 'Orange Money', MOOV_MONEY: 'Moov Money' };
+const operatorLabel = (op: string) => LEGACY_OPERATORS[op] ?? op;
+
 export default function WithdrawalManager() {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +105,7 @@ export default function WithdrawalManager() {
                     {w.amountUA.toLocaleString('fr-FR')} UA → <span className="text-emerald-600 dark:text-emerald-400">{w.amountFCFA.toLocaleString('fr-FR')} FCFA</span>
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {w.operator === 'ORANGE_MONEY' ? '🟠 Orange Money' : '🔵 Moov Money'} · <span className="font-bold">{w.phoneNumber}</span>
+                    {operatorLabel(w.operator)} · <span className="font-bold">{w.phoneNumber}</span>
                     {w.accountName ? ` · ${w.accountName}` : ''}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">

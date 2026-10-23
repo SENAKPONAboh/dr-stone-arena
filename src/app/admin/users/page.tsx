@@ -37,7 +37,8 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       }
     }),
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
-    prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true } }),
+    // Même règle que l'accueil : un Premium expiré n'est plus actif
+    prisma.user.count({ where: { role: 'ETUDIANT', isPremium: true, premiumExpiresAt: { gt: new Date() } } }),
   ]);
 
   // Numéros WhatsApp (table "UserPhone" ; vide tant que le SQL n'a pas été exécuté)

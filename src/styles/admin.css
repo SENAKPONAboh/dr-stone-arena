@@ -1,0 +1,86 @@
+/* ===== PANEL ADMIN — charte Arena Malachite =====
+   Classes « adm-* » propres au panel : elles lisent les variables de globals.css,
+   donc elles suivent aussi le thème clair. Seules transform et opacity sont animées. */
+
+.adm-card { background: var(--slab); border: 1px solid var(--line); border-radius: 20px; }
+.adm-card-2 { background: var(--slab-2); border: 1px solid var(--line); border-radius: 16px; }
+.adm-label { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--mute); }
+.adm-num { font-family: var(--font-unbounded), system-ui, sans-serif; font-variant-numeric: tabular-nums; font-weight: 700; letter-spacing: -.01em; }
+.adm-title { font-family: var(--font-unbounded), system-ui, sans-serif; font-weight: 700; color: var(--ink); }
+.adm-sub { color: var(--mute); }
+.adm-link-card { transition: transform .15s ease; }
+.adm-link-card:hover { transform: translateY(-2px); }
+.adm-link-card:active { transform: translateY(1px); }
+
+/* Boutons en relief (ombre pleine dessous, s'enfoncent au toucher) */
+.adm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  min-height: 44px; padding: .6rem 1.1rem; border-radius: 14px;
+  font-family: var(--font-unbounded), system-ui, sans-serif; font-weight: 700; font-size: 13px;
+  transition: transform .08s ease, box-shadow .08s ease, opacity .15s; cursor: pointer; white-space: nowrap;
+}
+.adm-btn:active:not(:disabled) { transform: translateY(3px); }
+.adm-btn:disabled { opacity: .45; cursor: not-allowed; }
+.adm-btn-sm { min-height: 36px; padding: .4rem .8rem; font-size: 12px; border-radius: 12px; }
+.adm-btn-mala { background: var(--mala); color: #06130d; box-shadow: 0 4px 0 var(--mala-deep); }
+.adm-btn-mala:active:not(:disabled) { box-shadow: 0 1px 0 var(--mala-deep); }
+.adm-btn-gold { background: var(--gold); color: #1a1204; box-shadow: 0 4px 0 var(--gold-deep); }
+.adm-btn-gold:active:not(:disabled) { box-shadow: 0 1px 0 var(--gold-deep); }
+.adm-btn-danger { background: rgb(var(--heart-rgb) / .14); color: var(--heart); border: 1px solid rgb(var(--heart-rgb) / .4); box-shadow: 0 4px 0 rgb(var(--heart-rgb) / .25); }
+.adm-btn-danger:active:not(:disabled) { box-shadow: 0 1px 0 rgb(var(--heart-rgb) / .25); }
+.adm-btn-ghost { background: var(--slab-2); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 4px 0 rgb(0 0 0 / .25); }
+.adm-btn-ghost:active:not(:disabled) { box-shadow: 0 1px 0 rgb(0 0 0 / .25); }
+.adm-btn-sky { background: rgb(var(--sky-rgb) / .14); color: var(--sky); border: 1px solid rgb(var(--sky-rgb) / .4); box-shadow: 0 4px 0 rgb(var(--sky-rgb) / .2); }
+
+/* Onglets / filtres en pastilles */
+.adm-tab {
+  display: inline-flex; align-items: center; gap: .4rem; min-height: 38px; padding: .45rem .9rem; border-radius: 999px;
+  font-size: 13px; font-weight: 800; color: var(--mute); background: var(--slab-2); border: 1px solid var(--line); white-space: nowrap;
+}
+.adm-tab:hover { color: var(--ink); }
+.adm-tab-on { color: #06130d; background: var(--mala); border-color: var(--mala); }
+.adm-tab-on:hover { color: #06130d; }
+
+/* Étiquettes de statut */
+.adm-badge { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.adm-badge-mala { color: var(--mala); background: rgb(var(--mala-rgb) / .14); }
+.adm-badge-gold { color: var(--gold); background: rgb(var(--gold-rgb) / .14); }
+.adm-badge-heart { color: var(--heart); background: rgb(var(--heart-rgb) / .14); }
+.adm-badge-flame { color: var(--flame); background: rgb(var(--flame-rgb) / .14); }
+.adm-badge-sky { color: var(--sky); background: rgb(var(--sky-rgb) / .14); }
+.adm-badge-mute { color: var(--mute); background: var(--slab-2); }
+
+/* Champs */
+.adm-input {
+  width: 100%; min-height: 44px; padding: .6rem .9rem; border-radius: 14px;
+  background: var(--slab-2); color: var(--ink); border: 1px solid var(--line); outline: none;
+}
+.adm-input:focus { border-color: var(--mala); }
+.adm-input::placeholder { color: var(--mute); opacity: .7; }
+
+/* Tableaux */
+.adm-table { width: 100%; font-size: 14px; }
+.adm-table th { text-align: left; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); padding: .5rem .75rem .5rem 0; border-bottom: 1px solid var(--line); }
+.adm-table td { padding: .65rem .75rem .65rem 0; border-bottom: 1px solid rgb(var(--line-rgb) / .6); color: var(--ink); }
+
+/* Barres de progression */
+.adm-track { width: 100%; height: 8px; border-radius: 999px; background: var(--slab-2); overflow: hidden; }
+.adm-fill { height: 100%; border-radius: 999px; transform-origin: left; animation: adm-grow .7s cubic-bezier(.2,.8,.2,1) both; }
+
+/* Pastille « à traiter » qui pulse doucement */
+.adm-dot { position: relative; display: inline-flex; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; color: #1a0606; background: var(--flame); font-variant-numeric: tabular-nums; }
+.adm-dot::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--flame); animation: adm-ping 1.8s ease-out infinite; z-index: -1; }
+
+/* Entrée des blocs en cascade */
+.adm-rise { animation: adm-rise .45s cubic-bezier(.2,.8,.2,1) both; }
+
+@keyframes adm-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes adm-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes adm-ping { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(1.9); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-rise, .adm-fill { animation: none; }
+  .adm-dot::after { animation: none; display: none; }
+  .adm-link-card, .adm-link-card:hover { transform: none; }
+}

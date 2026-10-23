@@ -80,9 +80,8 @@ export default async function AdminPremiumPage() {
                   )}
                   <p className="text-sm text-gray-500 mb-4">Date : {new Date(req.createdAt).toLocaleString('fr-FR')}</p>
                   
-                  <div className="mt-auto flex gap-3">
-                    <ValidatePremiumButton requestId={req.id} userId={req.user.id} action="VALIDE" />
-                    <ValidatePremiumButton requestId={req.id} userId={req.user.id} action="REJETE" />
+                  <div className="mt-auto">
+                    <ValidatePremiumButton requestId={req.id} userId={req.user.id} name={`${req.user.prenom} ${req.user.nom}`} />
                   </div>
                 </div>
               </div>
