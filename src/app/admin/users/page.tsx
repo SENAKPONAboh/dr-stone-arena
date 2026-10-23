@@ -42,9 +42,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
 
   // Numéros WhatsApp (table "UserPhone" ; vide tant que le SQL n'a pas été exécuté)
   const phones = new Map<string, string>();
+  const verifiedPhones = new Set<string>();
   try {
-    const rows = await prisma.userPhone.findMany({ where: { userId: { in: students.map(s => s.id) } }, select: { userId: true, phone: true } });
-    for (const r of rows) phones.set(r.userId, r.phone);
+    const rows = await prisma.userPhone.findMany({ where: { userId: { in: students.map(s => s.id) } }, select: { userId: true, phone: true, verifiedAt: true } });
+    for (const r of rows) { phones.set(r.userId, r.phone); if (r.verifiedAt) verifiedPhones.add(r.userId); }
   } catch { /* table pas encore créée */ }
 
   const now = Date.now();
@@ -143,7 +144,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                     {phones.get(u.id) && (
                       <a href={`https://wa.me/${phones.get(u.id)!.replace('+', '')}`} target="_blank" rel="noopener noreferrer"
                         className="mt-1 inline-block text-xs font-bold text-emerald-600 hover:underline">
-                        WhatsApp : {phones.get(u.id)}
+                        WhatsApp : {phones.get(u.id)} {verifiedPhones.has(u.id) ? "✓ vérifié" : "(non vérifié)"}
                       </a>
                     )}
 

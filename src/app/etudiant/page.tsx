@@ -6,6 +6,7 @@ import { getEffectiveRegenMs, regenLabel, discoveryDaysLeft } from '@/lib/decouv
 import DiscoveryBanner from '@/components/dashboard/DiscoveryBanner';
 import { notifyUser } from '@/lib/notify';
 import { WHATSAPP_COMMUNITY_URL } from '@/lib/community';
+import WhatsappVerifyCard from '@/components/dashboard/WhatsappVerifyCard';
 import Link from 'next/link';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
@@ -167,6 +168,9 @@ export default async function EtudiantDashboard() {
           expiresAt: d.expiresAt.toISOString()
         }))} />
       )}
+
+      {/* Vérification du numéro WhatsApp (ne rend rien tant que Meta n'est pas branché, ni une fois vérifié) */}
+      <WhatsappVerifyCard />
 
       <HomeStagger>
         {/* Découverte 7 jours (seulement pendant la Découverte, inutile pour un Premium III déjà plus rapide) */}
