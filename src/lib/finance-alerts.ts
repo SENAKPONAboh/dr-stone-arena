@@ -1,6 +1,6 @@
 // ===== SEUILS DES ALERTES FINANCIÈRES — Dr. Stone Arena =====
 // Modifie ces valeurs pour ajuster la sensibilité des alertes.
-// Volontairement centralisés ici, SANS base de données (phase F6 validée).
+// Volontairement centralisés ici, sans base de données.
 
 export const ALERT_THRESHOLDS = {
   // 📉 Baisse de CA mensuel alarmante (en % par rapport au mois précédent)
@@ -24,4 +24,5 @@ export type FinanceAlert = {
   level: 'danger' | 'warning' | 'info';
   title: string;
   message: string;
+  href?: string; // page du panel où agir
 };
