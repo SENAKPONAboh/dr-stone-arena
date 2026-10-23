@@ -8,6 +8,8 @@ import BackgroundCells from '@/components/ui/BackgroundCells';
 import GradeEmblem from '@/components/ui/GradeEmblem';
 import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import { XP_GRADES } from '@/lib/grades';
+import { WHATSAPP_COMMUNITY_URL } from '@/lib/community';
+import PushNotificationManager, { type PushStatus } from '@/components/dashboard/PushNotificationManager';
 
 type Slide = {
   icon: string;
@@ -18,7 +20,7 @@ type Slide = {
   highlight?: string;       // phrase mise en avant
   from: string;             // couleur d'accent (dégradé du halo)
   to: string;
-  extra?: 'grades' | 'theme' | 'profile';
+  extra?: 'grades' | 'theme' | 'profile' | 'whatsapp' | 'notifs';
 };
 
 // Contenu à jour : garde de 10 cas, saisons mensuelles, 8 grades, Espace Élite / Pass Élite, Premium, thèmes, installation.
@@ -44,10 +46,11 @@ const SLIDES: Slide[] = [
   {
     icon: '⭐', kicker: 'Progression', title: 'XP, grades et saisons',
     paragraphs: [
-      "Chaque bonne réponse rapporte de l'XP (bonus de rapidité, bonus de série). Ton grade dépend de tes XP du mois, de Novice de l'Arène jusqu'à Légende Immortelle.",
+      "Chaque bonne réponse rapporte de l'XP (bonus de rapidité, bonus de série), chaque erreur en retire. Ton grade dépend de tes XP du mois, de Novice de l'Arène jusqu'à Légende Immortelle.",
       "Chaque mois est une saison : les XP repartent à zéro pour que tout le monde puisse rattraper les autres. Ton grade final est gardé dans ton profil, avec le nombre de fois où tu l'as atteint.",
     ],
-    highlight: "Un joueur régulier et sérieux peut atteindre le sommet en un seul mois.",
+    points: ['✅ Bonne réponse : +10 à +35 XP', '❌ Erreur : −5 à −15 XP', '⚡ Légende : 5 000 XP'],
+    highlight: "Attention : une erreur te fait perdre des XP, et tu peux redescendre de grade. Seuls les plus réguliers atteignent la Légende.",
     from: '#8b5cf6', to: '#fde047', extra: 'grades',
   },
   {
@@ -151,6 +154,21 @@ const SLIDES: Slide[] = [
     from: '#2fd28a', to: '#f2c14e', extra: 'theme',
   },
   {
+    icon: '💬', kicker: 'Étape obligatoire', title: 'Rejoins la communauté WhatsApp',
+    paragraphs: [
+      "Toutes les annonces de l'Arena passent par la communauté WhatsApp : nouveaux cas, tournois, Rush, résultats, Prime Arena, aide en cas de problème.",
+      "Touche le bouton vert, rejoins la communauté, puis reviens ici pour continuer.",
+    ],
+    from: '#25d366', to: '#2fd28a', extra: 'whatsapp',
+  },
+  {
+    icon: '🔔', kicker: 'Étape obligatoire', title: 'Active tes notifications',
+    paragraphs: [
+      "Sans notifications, tu rates les défis de duel, la fin de ta Découverte, la validation de ton Premium ou de ton Pass et les annonces importantes.",
+    ],
+    from: '#5cc8ff', to: '#2fd28a', extra: 'notifs',
+  },
+  {
     icon: '🚀', kicker: "C'est parti", title: "Entre dans l'Arena",
     paragraphs: [
       "Analyse les cas. Apprends de tes erreurs. Reviens chaque jour.",
@@ -168,13 +186,27 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
   const slide = SLIDES[index];
   const isLast = index === SLIDES.length - 1;
 
+  // ===== Étapes obligatoires : communauté WhatsApp + notifications =====
+  const [waOpened, setWaOpened] = useState(false);   // a touché « Rejoindre »
+  const [waJoined, setWaJoined] = useState(false);   // a confirmé « J'ai rejoint »
+  const [pushStatus, setPushStatus] = useState<PushStatus>('loading');
+  const [pushTries, setPushTries] = useState(0);     // vérifications ratées (permission bloquée, iPhone…)
+  const pushImpossible = pushStatus === 'unsupported' || pushStatus === 'no-key';
+  const pushDone = pushStatus === 'on' || pushImpossible || pushTries >= 2;
+  const onPushStatus = useCallback((s: PushStatus) => setPushStatus(s), []);
+  const slideOk = (s: Slide) => s.extra === 'whatsapp' ? waJoined : s.extra === 'notifs' ? pushDone : true;
+  // On ne peut pas dépasser la première étape obligatoire non faite (boutons, swipe, flèches, barre).
+  const firstBlocked = SLIDES.findIndex(s => !slideOk(s));
+  const blocked = !slideOk(slide);
+
   const go = useCallback((to: number) => {
     setIndex(i => {
-      const next = Math.max(0, Math.min(SLIDES.length - 1, to));
+      let next = Math.max(0, Math.min(SLIDES.length - 1, to));
+      if (firstBlocked !== -1 && next > firstBlocked) next = Math.max(i, firstBlocked);
       setDir(next >= i ? 1 : -1);
       return next;
     });
-  }, []);
+  }, [firstBlocked]);
 
   // Flèches du clavier (PC)
   useEffect(() => {
@@ -261,13 +293,46 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                   ))}
                 </div>
               )}
+              {slide.extra === 'whatsapp' && (
+                <div className="mt-5 space-y-3">
+                  <a href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noopener noreferrer" onClick={() => setWaOpened(true)}
+                    className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#25d366] font-display text-sm font-extrabold uppercase tracking-wide text-stone shadow-[0_5px_0_#128c4a] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#128c4a]">
+                    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.6-.1 1.2Z" /></svg>
+                    Rejoindre la communauté
+                  </a>
+                  <button type="button" onClick={() => { setWaJoined(true); setDir(1); setIndex(i => i + 1); }} disabled={!waOpened}
+                    className="h-11 w-full rounded-2xl border-2 border-mala/50 bg-mala/10 font-display text-xs font-extrabold uppercase tracking-wide text-mala transition-opacity disabled:opacity-35">
+                    {waJoined ? '✓ Communauté rejointe' : "J'ai rejoint, continuer"}
+                  </button>
+                  {!waOpened && <p className="text-center text-[11px] text-mute">Touche d&apos;abord le bouton vert pour ouvrir WhatsApp.</p>}
+                </div>
+              )}
+              {slide.extra === 'notifs' && (
+                <div className="mt-5 space-y-3 rounded-2xl border border-line bg-slab-2 p-4">
+                  {/* key : « vérifier à nouveau » recrée le gestionnaire, qui relit l'autorisation du téléphone */}
+                  <PushNotificationManager key={pushTries} onStatus={onPushStatus} />
+                  {!pushDone && (pushStatus === 'denied' || pushStatus === 'ios-install') && (
+                    <button type="button" onClick={() => setPushTries(t => t + 1)}
+                      className="w-full rounded-xl border border-line px-3 py-2 text-xs font-bold text-mute">
+                      J&apos;ai suivi les instructions, vérifier à nouveau
+                    </button>
+                  )}
+                  {pushStatus === 'on' && <p className="text-center text-xs font-bold text-mala">Parfait, tu ne rateras rien !</p>}
+                  {pushStatus !== 'on' && pushDone && (
+                    <p className="text-center text-[11px] text-mute">Tu pourras les activer plus tard depuis la cloche.</p>
+                  )}
+                </div>
+              )}
               {slide.extra === 'profile' && (
                 <p className="mt-4 text-center text-xs text-mute">
-                  Envie de le faire tout de suite ?{' '}
-                  <button type="button" onClick={() => finish('/etudiant/profil')} disabled={finishing} className="font-bold text-mala underline underline-offset-2">
-                    Terminer et personnaliser mon profil
-                  </button>
+                  À la fin de cette présentation, un bouton t&apos;emmène directement à ton profil.
                 </p>
+              )}
+              {isLast && (
+                <button type="button" onClick={() => finish('/etudiant/profil')} disabled={finishing}
+                  className="mt-4 w-full rounded-2xl border-2 border-sky/40 bg-sky/10 py-3 font-display text-xs font-extrabold uppercase tracking-wide text-sky disabled:opacity-60">
+                  😎 Choisir mon pseudo et ma photo
+                </button>
               )}
               {slide.extra === 'theme' && (
                 <div className="mt-4"><ThemeSwitch variant="full" /></div>
@@ -304,9 +369,9 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                 {finishing ? '…' : '🚀 Commencer'}
               </button>
             ) : (
-              <button onClick={() => go(index + 1)}
-                className="h-12 flex-1 rounded-2xl bg-mala font-display text-sm font-extrabold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
-                Suivant →
+              <button onClick={() => go(index + 1)} disabled={blocked}
+                className="h-12 flex-1 rounded-2xl bg-mala font-display text-sm font-extrabold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f] disabled:opacity-40 disabled:shadow-none">
+                {blocked ? (slide.extra === 'whatsapp' ? 'Rejoins la communauté' : 'Active les notifications') : 'Suivant →'}
               </button>
             )}
           </div>

@@ -111,7 +111,7 @@ export async function GET(request: Request) {
             </div>
             <div style={{ display: 'flex', fontSize: 34, color: C.ink, marginTop: 6 }}>diagnostics posés</div>
             <div style={{ display: 'flex', gap: 22, marginTop: 30 }}>
-              <div style={{ display: 'flex', padding: '14px 30px', borderRadius: 999, background: 'rgba(47,210,138,0.15)', color: C.mala, fontSize: 34, fontWeight: 800 }}>{`+${fmt(dayXp)} XP`}</div>
+              <div style={{ display: 'flex', padding: '14px 30px', borderRadius: 999, background: 'rgba(47,210,138,0.15)', color: C.mala, fontSize: 34, fontWeight: 800 }}>{`${dayXp >= 0 ? '+' : '−'}${fmt(Math.abs(dayXp))} XP`}</div>
               <div style={{ display: 'flex', padding: '14px 30px', borderRadius: 999, background: 'rgba(255,138,61,0.15)', color: C.flame, fontSize: 34, fontWeight: 800 }}>{`Flamme ${user.streak} j`}</div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { MAX_LIVES } from '@/lib/lives';
 import { getTodaySelection } from '@/lib/daily-cases';
 import { caseDuration } from '@/lib/case-duration';
 import { elapsedSinceStart } from '@/lib/challenge-token';
+import { xpLossFor } from '@/lib/grades';
 
 // Marge de réseau (secondes) tolérée au-delà du chrono avant de considérer la réponse comme hors délai
 const LATE_GRACE = 12;
@@ -74,11 +75,17 @@ export async function POST(request: Request) {
       // --- Calcul de l'XP ---
       let xpEarned = 0;
       let streakBonus = 0;
+      let xpLost = 0;
       if (isCorrect) {
         xpEarned = clinicalCase.xp;
         if (timeSpent < maxTime / 2) {
           xpEarned += 5; // Bonus de vitesse
         }
+      } else {
+        // Mauvaise réponse (ou temps écoulé, ou cas annulé) : perte d'XP selon la difficulté,
+        // sans jamais descendre sous 0 XP. Enregistrée en négatif dans la tentative (bilans du jour/du mois justes).
+        xpLost = Math.min(xpLossFor(clinicalCase.difficulty), Math.max(0, fresh.xp));
+        xpEarned = -xpLost;
       }
 
       await tx.attempt.create({
@@ -186,13 +193,14 @@ export async function POST(request: Request) {
         newBadges.push(badge);
       }
 
-      return { xpEarned, streakBonus, newLives, newBadges, chestUnlocked, xpBefore: fresh.xp };
+      return { xpEarned, streakBonus, xpLost, newLives, newBadges, chestUnlocked, xpBefore: fresh.xp };
     }, { timeout: 20000 });
 
     return NextResponse.json({
       isCorrect,
       xpEarned: result.xpEarned,
       streakBonus: result.streakBonus,
+      xpLost: result.xpLost,
       livesLeft: result.newLives,
       newBadges: result.newBadges,
       chestUnlocked: result.chestUnlocked,

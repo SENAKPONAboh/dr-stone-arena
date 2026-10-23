@@ -36,7 +36,7 @@ export default function DayRecap({ total, correct, xp, streak, nextBatch }: Prop
 
         <p className="mt-6 font-display text-5xl font-extrabold tabular-nums text-mala">{score}<span className="text-2xl text-mute">/{total}</span></p>
         <p className="text-xs font-bold uppercase tracking-wider text-mute">diagnostics posés</p>
-        <p className="mt-3 inline-block rounded-full bg-mala/15 px-4 py-1.5 font-display text-sm font-bold text-mala">+{xp} XP aujourd'hui</p>
+        <p className="mt-3 inline-block rounded-full bg-mala/15 px-4 py-1.5 font-display text-sm font-bold text-mala">{xp >= 0 ? '+' : '−'}{Math.abs(xp)} XP aujourd'hui</p>
 
         <div className="mt-5 flex justify-center">
           <ShareButton type="jour" />

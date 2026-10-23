@@ -11,6 +11,7 @@ function urlBase64ToUint8Array(base64: string) {
   return out;
 }
 
+export type PushStatus = Status;
 type Status =
   | 'loading'
   | 'unsupported'      // navigateur sans notifications push
@@ -20,8 +21,10 @@ type Status =
   | 'off'              // prêt à activer
   | 'on';              // activé sur cet appareil
 
-export default function PushNotificationManager() {
+// `onStatus` (facultatif) : prévient le parent de l'état (utilisé par l'accueil des nouveaux, étape obligatoire).
+export default function PushNotificationManager({ onStatus }: { onStatus?: (s: Status) => void } = {}) {
   const [status, setStatus] = useState<Status>('loading');
+  useEffect(() => { onStatus?.(status); }, [status, onStatus]);
   const [busy, setBusy] = useState<'' | 'enable' | 'test' | 'disable'>('');
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   // Clé publique lue auprès du serveur (et non figée dans le code au moment de la construction du site)

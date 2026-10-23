@@ -5,6 +5,7 @@ import { calculateRegeneratedLives } from '@/lib/lives';
 import { getEffectiveRegenMs, regenLabel, discoveryDaysLeft } from '@/lib/decouverte';
 import DiscoveryBanner from '@/components/dashboard/DiscoveryBanner';
 import { notifyUser } from '@/lib/notify';
+import { WHATSAPP_COMMUNITY_URL } from '@/lib/community';
 import Link from 'next/link';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import { expireStaleDuels } from '@/lib/duel-server';
@@ -318,7 +319,7 @@ export default async function EtudiantDashboard() {
         </Link>
 
         {/* WhatsApp discret */}
-        <a href="https://chat.whatsapp.com/I1LXEVHIA9d0YFRCzw2umk?s=cl&p=a&ilr=4" target="_blank" rel="noopener noreferrer"
+        <a href={WHATSAPP_COMMUNITY_URL} target="_blank" rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 rounded-2xl bg-slab py-2.5 text-xs font-bold text-mute transition-colors hover:text-mala">
           <Icon name="chat" size={16} /> Rejoins la communauté WhatsApp
         </a>

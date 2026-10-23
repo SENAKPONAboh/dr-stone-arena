@@ -13,7 +13,7 @@ import EcgLine from '@/components/ui/EcgLine';
 import Icon from '@/components/ui/Icon';
 import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 import GradeUpOverlay from '@/components/ui/GradeUpOverlay';
-import { getXpGrade, type XpGrade } from '@/lib/grades';
+import { getXpGrade, xpLossFor, type XpGrade } from '@/lib/grades';
 
 // ⚠️ correctAnswer et explanation ne sont JAMAIS transmis au navigateur avant la réponse :
 // le serveur les renvoie dans la réponse de /api/challenge/submit.
@@ -32,9 +32,19 @@ type ClinicalCaseProps = {
   };
 };
 
+// Meilleur grade déjà fêté dans la saison (mois en cours), gardé sur l'appareil.
+const seasonKey = () => { const d = new Date(); return `arena-grade-best-${d.getFullYear()}-${d.getMonth() + 1}`; };
+function readSeasonBest(fallback: number): number {
+  try { const v = localStorage.getItem(seasonKey()); return v === null ? fallback : Math.max(fallback, Number(v) || 0); } catch { return fallback; }
+}
+function writeSeasonBest(index: number) {
+  try { localStorage.setItem(seasonKey(), String(index)); } catch { /* stockage indisponible : sans gravité */ }
+}
+
 type SubmitResult = {
   isCorrect: boolean;
   xpEarned: number;
+  xpLost?: number;
   livesLeft?: number;
   xpBefore?: number;
   xpAfter?: number;
@@ -53,6 +63,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
   const [guardReady, setGuardReady] = useState(false);
   const [wasViolation, setWasViolation] = useState(false);
   const [gradeUp, setGradeUp] = useState<{ from: XpGrade; to: XpGrade } | null>(null);
+  const [gradeNote, setGradeNote] = useState<{ up: boolean; text: string } | null>(null);
   // Montée de grade en attente (pendant les 1,5 s du +XP) et action à lancer une fois l'animation fermée :
   // « Continuer le défi » charge le cas suivant, ce qui démonte cet écran (et coupait l'animation).
   const pendingGradeRef = useRef<{ from: XpGrade; to: XpGrade } | null>(null);
@@ -131,8 +142,17 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
           const from = getXpGrade(data.xpBefore).current;
           const to = getXpGrade(data.xpAfter).current;
           if (to.index > from.index) {
-            pendingGradeRef.current = { from, to };
-            gradeTimerRef.current = setTimeout(() => setGradeUp({ from, to }), 1500);
+            // La grande animation ne se joue que la PREMIÈRE fois qu'un grade est atteint dans la saison :
+            // après une rétrogradation, remonter affiche seulement un petit message.
+            if (to.index > readSeasonBest(from.index)) {
+              writeSeasonBest(to.index);
+              pendingGradeRef.current = { from, to };
+              gradeTimerRef.current = setTimeout(() => setGradeUp({ from, to }), 1500);
+            } else {
+              setGradeNote({ up: true, text: `Tu reprends ta place : ${to.icon} ${to.name} !` });
+            }
+          } else if (to.index < from.index) {
+            setGradeNote({ up: false, text: `Rétrogradé : ${to.icon} ${to.name}. Reprends ta place !` });
           }
         }
         if (data.isCorrect) {
@@ -173,7 +193,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
       rules={
         <>
           <p>🔒 Si tu quittes cette page (changement d'application, d'onglet, écran d'accueil) pendant le cas → <b>le cas est immédiatement annulé</b>.</p>
-          <p>📉 Cas annulé = réponse fausse : <b>0 XP</b> et <b>une vie perdue</b>.</p>
+          <p>📉 Cas annulé = réponse fausse : <b>des XP en moins</b> et <b>une vie perdue</b>.</p>
         </>
       }
     >
@@ -208,6 +228,7 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
             <div className="mb-4 flex gap-2">
               <span className={`rounded-full px-3 py-1 text-xs font-bold ${difficultyColors[clinicalCase.difficulty] ?? 'bg-slab-2 text-mute'}`}>{clinicalCase.difficulty}</span>
               <span className="inline-flex items-center gap-1 rounded-full bg-mala/15 px-3 py-1 text-xs font-bold text-mala"><Icon name="star" size={12} /> +{clinicalCase.xp} XP</span>
+              <span className="inline-flex items-center rounded-full bg-heart/10 px-3 py-1 text-xs font-bold text-heart">−{xpLossFor(clinicalCase.difficulty)} si raté</span>
             </div>
             <p className="whitespace-pre-line font-body text-[16px] leading-relaxed text-ink">{clinicalCase.statement}</p>
           </motion.div>
@@ -259,13 +280,20 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
           +{result.xpEarned} XP
         </motion.div>
       )}
+      {/* −XP qui tombe (mauvaise réponse) */}
+      {result && !result.isCorrect && (result.xpLost ?? 0) > 0 && (
+        <motion.div initial={{ opacity: 1, y: 0, scale: 1.1 }} animate={{ opacity: 0, y: 110, scale: 0.9 }} transition={{ duration: 1.3, ease: 'easeIn' }}
+          className="pointer-events-none fixed inset-x-0 top-1/2 z-[95] text-center font-display text-3xl font-extrabold text-heart">
+          −{result.xpLost} XP
+        </motion.div>
+      )}
 
       {gradeUp && <GradeUpOverlay from={gradeUp.from} to={gradeUp.to} onClose={closeGradeUp} />}
 
       <ResultSheet
         open={!!result}
         correct={!!result?.isCorrect}
-        title={wasViolation ? "Cas annulé — sortie de l'application" : result?.isCorrect ? `Diagnostic posé ! +${result.xpEarned} XP` : 'Pas grave, voici le raisonnement'}
+        title={wasViolation ? `Cas annulé — sortie de l'application${result?.xpLost ? ` (−${result.xpLost} XP)` : ''}` : result?.isCorrect ? `Diagnostic posé ! +${result.xpEarned} XP` : `Pas grave, voici le raisonnement${result?.xpLost ? ` (−${result.xpLost} XP)` : ''}`}
         action={
           <div className="space-y-2">
             <ArenaButton full onClick={() => leaveCase(() => router.refresh())}>Continuer le défi</ArenaButton>
@@ -275,6 +303,9 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
           </div>
         }
       >
+        {gradeNote && (
+          <p className={`mb-3 rounded-xl px-3 py-2 text-sm font-bold ${gradeNote.up ? 'bg-mala/15 text-mala' : 'bg-heart/15 text-heart'}`}>{gradeNote.text}</p>
+        )}
         <p className="mb-1 font-bold">💡 Explication</p>
         {result?.explanation}
       </ResultSheet>

@@ -44,6 +44,7 @@ export default async function GradesPage() {
           <p className="grade-color relative mt-4 text-sm font-extrabold" style={{ '--gt': current.to, '--gf': current.from } as React.CSSProperties}>🌌 Tu es au sommet de la saison. Garde-le jusqu'à la clôture !</p>
         )}
         <p className="relative mx-auto mt-4 max-w-md text-[11px] leading-relaxed text-mute">
+          Bonne réponse : +10 (facile), +20 (moyen), +35 (difficile). Erreur, temps écoulé ou cas annulé : −5, −10 ou −15 XP. Tu peux donc redescendre de grade !
           Les XP repartent à zéro à la fin de chaque mois : tout le monde peut rattraper les autres. Termine un mois en Légende Immortelle et un « ⚡×1 » s'inscrit pour toujours dans ton profil, qui augmente à chaque nouveau mois au sommet.
         </p>
       </section>
