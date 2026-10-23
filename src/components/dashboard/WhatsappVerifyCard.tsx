@@ -7,7 +7,9 @@ type State = { enabled: boolean; phone: string | null; verified: boolean; link: 
 
 // Carte « Vérifie ton numéro WhatsApp » (accueil). Invisible tant que la vérification n'est pas branchée chez Meta,
 // et une fois le numéro vérifié. Après le clic, elle surveille la vérification et se transforme toute seule.
-export default function WhatsappVerifyCard() {
+// `onDone` (accueil des nouveaux) : appelé quand il n'y a plus rien à faire (numéro vérifié, ou vérification non branchée).
+// `inline` : affichage dans l'accueil des nouveaux (pas de cadre, succès toujours visible).
+export default function WhatsappVerifyCard({ onDone, inline = false }: { onDone?: () => void; inline?: boolean } = {}) {
   const [st, setSt] = useState<State | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [justVerified, setJustVerified] = useState(false);
@@ -31,6 +33,7 @@ export default function WhatsappVerifyCard() {
   }, []);
 
   useEffect(() => { load(); return () => { if (timer.current) clearInterval(timer.current); }; }, [load]);
+  useEffect(() => { if (st && (!st.enabled || st.verified)) onDone?.(); }, [st, onDone]);
 
   // Retour dans l'application après l'envoi du message : on revérifie tout de suite
   useEffect(() => {
@@ -53,10 +56,11 @@ export default function WhatsappVerifyCard() {
     setSt(d); setEditing(false);
   };
 
-  if (!st || !st.enabled) return null;
+  if (!st) return inline ? <p className="text-center text-xs text-mute">Chargement…</p> : null;
+  if (!st.enabled) return null;
 
   if (st.verified) {
-    if (!justVerified) return null;
+    if (!justVerified && !inline) return null;
     return (
       <div className="rounded-3xl border-2 border-mala/50 bg-mala/10 p-4 text-center">
         <p className="font-display text-sm font-extrabold text-mala">✓ Numéro WhatsApp vérifié !</p>
@@ -68,8 +72,8 @@ export default function WhatsappVerifyCard() {
   const input = 'w-full min-w-0 rounded-xl border border-line bg-slab-2 px-3 py-2.5 text-sm text-ink';
 
   return (
-    <div className="rounded-3xl border-2 border-[#25d366]/50 bg-slab p-5">
-      <p className="font-display text-sm font-extrabold text-ink">Vérifie ton numéro WhatsApp</p>
+    <div className={inline ? '' : 'rounded-3xl border-2 border-[#25d366]/50 bg-slab p-5'}>
+      {!inline && <p className="font-display text-sm font-extrabold text-ink">Vérifie ton numéro WhatsApp</p>}
       {!st.phone || editing ? (
         <>
           <p className="mt-1 text-xs text-mute">Indique ton numéro WhatsApp actif (un seul compte par numéro).</p>

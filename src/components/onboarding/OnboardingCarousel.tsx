@@ -10,6 +10,7 @@ import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import { XP_GRADES } from '@/lib/grades';
 import { WHATSAPP_COMMUNITY_URL } from '@/lib/community';
 import PushNotificationManager, { type PushStatus } from '@/components/dashboard/PushNotificationManager';
+import WhatsappVerifyCard from '@/components/dashboard/WhatsappVerifyCard';
 
 type Slide = {
   icon: string;
@@ -20,7 +21,7 @@ type Slide = {
   highlight?: string;       // phrase mise en avant
   from: string;             // couleur d'accent (dégradé du halo)
   to: string;
-  extra?: 'grades' | 'theme' | 'profile' | 'whatsapp' | 'notifs';
+  extra?: 'grades' | 'theme' | 'profile' | 'whatsapp' | 'notifs' | 'verify';
 };
 
 // Contenu à jour : garde de 10 cas, saisons mensuelles, 8 grades, Espace Élite / Pass Élite, Premium, thèmes, installation.
@@ -169,6 +170,14 @@ const SLIDES: Slide[] = [
     from: '#5cc8ff', to: '#2fd28a', extra: 'notifs',
   },
   {
+    icon: '✅', kicker: 'Étape obligatoire', title: 'Vérifie ton numéro WhatsApp',
+    paragraphs: [
+      "10 secondes : 1) touche le bouton vert, 2) WhatsApp s'ouvre avec ton code déjà écrit, 3) appuie sur Envoyer, puis reviens ici.",
+      "Tu reçois aussitôt « Numéro vérifié » sur WhatsApp et tu peux continuer. Un seul compte par numéro : c'est ce qui protège l'Arena des faux comptes.",
+    ],
+    from: '#25d366', to: '#5cc8ff', extra: 'verify',
+  },
+  {
     icon: '🚀', kicker: "C'est parti", title: "Entre dans l'Arena",
     paragraphs: [
       "Analyse les cas. Apprends de tes erreurs. Reviens chaque jour.",
@@ -194,7 +203,17 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
   const pushImpossible = pushStatus === 'unsupported' || pushStatus === 'no-key';
   const pushDone = pushStatus === 'on' || pushImpossible || pushTries >= 2;
   const onPushStatus = useCallback((s: PushStatus) => setPushStatus(s), []);
-  const slideOk = (s: Slide) => s.extra === 'whatsapp' ? waJoined : s.extra === 'notifs' ? pushDone : true;
+  // Vérification du numéro : faite (ou non branchée) → on avance. Secours : « Plus tard » après 2 minutes sur l'étape
+  // (problème de réseau, pas WhatsApp sur ce téléphone…) — la carte reste ensuite sur l'accueil.
+  const [verifyDone, setVerifyDone] = useState(false);
+  const [verifySkippable, setVerifySkippable] = useState(false);
+  const onVerifyDone = useCallback(() => setVerifyDone(true), []);
+  useEffect(() => {
+    if (SLIDES[index].extra !== 'verify' || verifySkippable) return;
+    const t = setTimeout(() => setVerifySkippable(true), 120_000);
+    return () => clearTimeout(t);
+  }, [index, verifySkippable]);
+  const slideOk = (s: Slide) => s.extra === 'whatsapp' ? waJoined : s.extra === 'notifs' ? pushDone : s.extra === 'verify' ? (verifyDone || verifySkippable) : true;
   // On ne peut pas dépasser la première étape obligatoire non faite (boutons, swipe, flèches, barre).
   const firstBlocked = SLIDES.findIndex(s => !slideOk(s));
   const blocked = !slideOk(slide);
@@ -323,6 +342,14 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                   )}
                 </div>
               )}
+              {slide.extra === 'verify' && (
+                <div className="mt-5 rounded-2xl border border-[#25d366]/40 bg-slab-2 p-4">
+                  <WhatsappVerifyCard inline onDone={onVerifyDone} />
+                  {!verifyDone && verifySkippable && (
+                    <p className="mt-3 text-center text-[11px] text-mute">Un souci ? Tu peux continuer : la vérification restera proposée sur ton accueil.</p>
+                  )}
+                </div>
+              )}
               {slide.extra === 'profile' && (
                 <p className="mt-4 text-center text-xs text-mute">
                   À la fin de cette présentation, un bouton t&apos;emmène directement à ton profil.
@@ -371,7 +398,7 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
             ) : (
               <button onClick={() => go(index + 1)} disabled={blocked}
                 className="h-12 flex-1 rounded-2xl bg-mala font-display text-sm font-extrabold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f] disabled:opacity-40 disabled:shadow-none">
-                {blocked ? (slide.extra === 'whatsapp' ? 'Rejoins la communauté' : 'Active les notifications') : 'Suivant →'}
+                {blocked ? (slide.extra === 'whatsapp' ? 'Rejoins la communauté' : slide.extra === 'verify' ? 'Vérifie ton numéro' : 'Active les notifications') : 'Suivant →'}
               </button>
             )}
           </div>
