@@ -50,7 +50,7 @@ const SLIDES: Slide[] = [
       "Chaque bonne réponse rapporte de l'XP (bonus de rapidité, bonus de série), chaque erreur en retire. Ton grade dépend de tes XP du mois, de Novice de l'Arène jusqu'à Légende Immortelle.",
       "Chaque mois est une saison : les XP repartent à zéro pour que tout le monde puisse rattraper les autres. Ton grade final est gardé dans ton profil, avec le nombre de fois où tu l'as atteint.",
     ],
-    points: ['✅ Bonne réponse : +10 à +35 XP', '❌ Erreur : −5 à −15 XP', '⚡ Légende : 5 000 XP'],
+    points: ['✅ Bonne réponse : +10 à +35 XP', '❌ Erreur : −5 à −15 XP', '⚡ Légende : 4 000 XP'],
     highlight: "Attention : une erreur te fait perdre des XP, et tu peux redescendre de grade. Seuls les plus réguliers atteignent la Légende.",
     from: '#8b5cf6', to: '#fde047', extra: 'grades',
   },
