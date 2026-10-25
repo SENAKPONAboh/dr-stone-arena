@@ -29,8 +29,22 @@ export async function GET(request: Request) {
     const unreadMap: Record<string, number> = {};
     unread.forEach(g => { unreadMap[g.senderId] = g._count._all; });
 
+    // Dernier message de chaque discussion (aperçu façon WhatsApp dans la liste)
+    const lasts = await Promise.all(friends.map(f => prisma.directMessage.findFirst({
+      where: { OR: [{ senderId: user.id, recipientId: f.id }, { senderId: f.id, recipientId: user.id }] },
+      orderBy: { createdAt: 'desc' },
+      select: { senderId: true, message: true, createdAt: true, isRead: true },
+    })));
+
     return NextResponse.json({
-      friends: friends.map(f => ({ ...f, unread: unreadMap[f.id] ?? 0 })),
+      friends: friends.map((f, i) => {
+        const l = lasts[i];
+        return {
+          ...f,
+          unread: unreadMap[f.id] ?? 0,
+          last: l ? { message: l.message, createdAt: l.createdAt, mine: l.senderId === user.id, isRead: l.isRead } : null,
+        };
+      }),
       incoming: incoming.map(f => ({ friendshipId: f.id, user: f.requester, createdAt: f.createdAt })),
       outgoing: outgoing.map(f => ({ friendshipId: f.id, user: f.addressee, createdAt: f.createdAt })),
     });
