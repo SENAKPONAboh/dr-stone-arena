@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { MAX_LIVES } from '@/lib/lives';
@@ -6,6 +6,7 @@ import { getTodaySelection } from '@/lib/daily-cases';
 import { caseDuration } from '@/lib/case-duration';
 import { elapsedSinceStart } from '@/lib/challenge-token';
 import { xpLossFor } from '@/lib/grades';
+import { notifyOvertaken } from '@/lib/overtake';
 
 // Marge de réseau (secondes) tolérée au-delà du chrono avant de considérer la réponse comme hors délai
 const LATE_GRACE = 12;
@@ -195,6 +196,9 @@ export async function POST(request: Request) {
 
       return { xpEarned, streakBonus, xpLost, newLives, newBadges, chestUnlocked, xpBefore: fresh.xp };
     }, { timeout: 20000 });
+
+    // Préviens ceux que l'étudiant vient de dépasser au classement (après la réponse, jamais bloquant)
+    if (result.xpEarned > 0) after(() => notifyOvertaken(user, result.xpBefore, result.xpBefore + result.xpEarned));
 
     return NextResponse.json({
       isCorrect,

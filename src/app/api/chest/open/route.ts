@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { MAX_LIVES } from '@/lib/lives';
+import { notifyOvertaken } from '@/lib/overtake';
 
 export async function POST() {
   const user = await getCurrentUserCore();
@@ -23,10 +24,12 @@ export async function POST() {
     : { type: 'LIFE', amount: 1, icon: '❤️', message: '1 vie gratuite !' };
 
   if (reward.type === 'XP') {
-    await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: user.id },
       data: { xp: { increment: reward.amount } },
+      select: { xp: true },
     });
+    after(() => notifyOvertaken(user, updated.xp - reward.amount, updated.xp));
   } else {
     // Plafonnement serveur : le coffre ne peut jamais faire dépasser MAX_LIVES (lecture fraîche)
     const fresh = await prisma.user.findUnique({ where: { id: user.id }, select: { lives: true } });

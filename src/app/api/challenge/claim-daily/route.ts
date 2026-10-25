@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { notifyOvertaken } from '@/lib/overtake';
 
 export async function POST() {
   const user = await getCurrentUserCore();
@@ -51,6 +52,10 @@ export async function POST() {
     if (claimed.count === 0) {
       return NextResponse.json({ error: "Récompense déjà réclamée aujourd'hui" }, { status: 400 });
     }
+    after(async () => {
+      const now = await prisma.user.findUnique({ where: { id: user.id }, select: { xp: true } });
+      if (now) await notifyOvertaken(user, now.xp - 20, now.xp);
+    });
 
     return NextResponse.json({ success: true, message: "20 XP bonus gagnés !" });
   } catch (error) {

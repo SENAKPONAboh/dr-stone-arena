@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { ARENA_THRESHOLDS } from '@/lib/duel';
+import { notifyOvertaken } from '@/lib/overtake';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -18,15 +19,17 @@ export async function POST(request: Request) {
 
     // Unicité userId+threshold en base = impossible de réclamer deux fois
     try {
-      await prisma.$transaction([
+      const [, updated] = await prisma.$transaction([
         prisma.arenaRewardClaim.create({
           data: { userId: user.id, threshold: reward.threshold, xpGranted: reward.xp }
         }),
         prisma.user.update({
           where: { id: user.id },
-          data: { xp: { increment: reward.xp } }
+          data: { xp: { increment: reward.xp } },
+          select: { xp: true },
         })
       ]);
+      after(() => notifyOvertaken(user, updated.xp - reward.xp, updated.xp));
     } catch (e: any) {
       if (e?.code === 'P2002') {
         return NextResponse.json({ error: "Cette récompense a déjà été réclamée." }, { status: 400 });
