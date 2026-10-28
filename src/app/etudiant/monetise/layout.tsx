@@ -14,7 +14,7 @@ export default async function MonetiseLayout({ children }: { children: React.Rea
   if (user.role === 'CORRECTEUR') redirect('/correcteur');
 
   // Purge d'expiration du Pass (même pattern que le Premium au dashboard)
-  if (user.passActive && user.passExpiresAt && new Date(user.passExpiresAt) < new Date()) {
+  if (user.passExpiresAt && new Date(user.passExpiresAt) < new Date()) { // (passActive peut déjà être masqué par auth.ts)
     await prisma.user.update({
       where: { id: user.id },
       data: { passActive: false, passExpiresAt: null }

@@ -36,7 +36,7 @@ export default async function EtudiantDashboard() {
   // === LOGIQUE MÉTIER (conservée à l'identique) ===
 
   // Expiration Premium
-  if (user.isPremium && user.premiumExpiresAt && new Date(user.premiumExpiresAt) < new Date()) {
+  if (user.premiumExpiresAt && new Date(user.premiumExpiresAt) < new Date()) { // (isPremium peut déjà être masqué par auth.ts)
     await prisma.user.update({
       where: { id: user.id },
       data: { isPremium: false, premiumTier: null, premiumExpiresAt: null }

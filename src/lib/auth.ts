@@ -31,6 +31,19 @@ export async function verifySession(token: string) {
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
 
+// Premium ou Pass Élite dont la date est dépassée : traités comme inactifs PARTOUT (routes API comprises),
+// même si la purge en base (accueil / layout Élite) n'a pas encore eu lieu. Lecture seule, rien n'est écrit.
+function withExpiredAccessRemoved<T extends { isPremium?: boolean; premiumTier?: number | null; premiumExpiresAt?: Date | null; passActive?: boolean; passExpiresAt?: Date | null }>(user: T): T {
+  const now = Date.now();
+  if (user.isPremium && user.premiumExpiresAt && new Date(user.premiumExpiresAt).getTime() < now) {
+    user = { ...user, isPremium: false, premiumTier: null };
+  }
+  if (user.passActive && user.passExpiresAt && new Date(user.passExpiresAt).getTime() < now) {
+    user = { ...user, passActive: false };
+  }
+  return user;
+}
+
 // Récupérer l'utilisateur connecté (côté serveur)
 export async function getCurrentUser() {
   const sessionCookie = (await cookies()).get('session')?.value;
@@ -77,7 +90,7 @@ export async function getCurrentUser() {
 
   // Compte banni : la session (même encore valide) ne donne plus accès à rien.
   if (user?.statut === 'BANNI') return null;
-  return user;
+  return user ? withExpiredAccessRemoved(user) : user;
 }
 // Version allégée pour les routes API et layouts : mêmes vérifications de session,
 // mais SANS les relations (badges, notifications) ni les champs lourds (imageUrl, pushSubscription).
@@ -127,7 +140,7 @@ export async function getCurrentUserCore() {
 
   // Compte banni : la session (même encore valide) ne donne plus accès à rien.
   if (user?.statut === 'BANNI') return null;
-  return user;
+  return user ? withExpiredAccessRemoved(user) : user;
 }
 
 // Garde des routes réservées à l'administrateur (seed, diagnostic…) : renvoie l'admin ou null.
