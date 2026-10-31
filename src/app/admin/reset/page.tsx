@@ -1,12 +1,25 @@
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import prisma from '@/lib/prisma';
 import AdminHeader from '@/components/admin/ui/AdminHeader';
 import ResetDataManager from '@/components/admin/ResetDataManager';
+import DeleteTestAccountsManager, { type CleanupAccount } from '@/components/admin/DeleteTestAccountsManager';
+import { LAUNCH_PROTECTION_DATE } from '@/lib/launch-protection';
 
 export default async function AdminResetPage() {
   const user = await getCurrentUserCore();
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ADMIN') redirect('/login');
+
+  const rows = await prisma.user.findMany({
+    orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+    select: { id: true, prenom: true, nom: true, pseudo: true, email: true, role: true, xp: true, createdAt: true },
+  });
+  const accounts: CleanupAccount[] = rows.map(r => ({
+    ...r,
+    createdAt: r.createdAt.toISOString(),
+    protectedReason: r.id === user.id ? 'MOI' : r.role === 'ADMIN' ? 'ADMIN' : r.createdAt >= LAUNCH_PROTECTION_DATE ? 'RECENT' : null,
+  }));
 
   return (
     <div className="min-h-screen pb-12">
@@ -20,6 +33,10 @@ export default async function AdminResetPage() {
           </p>
         </div>
         <ResetDataManager />
+
+        <div className="mt-10">
+          <DeleteTestAccountsManager accounts={accounts} />
+        </div>
       </main>
     </div>
   );
