@@ -2,6 +2,7 @@ import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import AppShell from '@/components/layout/AppShell';
+import { persistLostFlame } from '@/lib/flame';
 
 export default async function EtudiantLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUserCore();
@@ -13,7 +14,7 @@ export default async function EtudiantLayout({ children }: { children: React.Rea
   if (!user.onboardingCompleted) redirect('/onboarding');
 
   const [avatar, notifications, ambassadorProfile, unreadMessages] = await Promise.all([
-    prisma.user.findUnique({ where: { id: user.id }, select: { imageUrl: true } }),
+    prisma.user.findUnique({ where: { id: user.id }, select: { imageUrl: true, streak: true, lastActive: true, flameProtectedUntil: true } }),
     prisma.notification.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
@@ -22,6 +23,8 @@ export default async function EtudiantLayout({ children }: { children: React.Rea
     prisma.ambassador.findUnique({ where: { userId: user.id }, select: { status: true } }),
     prisma.directMessage.count({ where: { recipientId: user.id, isRead: false } })
   ]);
+  // Jour manqué sans protection : la Flamme s'éteint aussi en base (classements, profils, Restaure-Flamme 48 h)
+  if (avatar) await persistLostFlame({ id: user.id, ...avatar }).catch(e => console.error('Extinction de Flamme :', e));
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const isAmbassador = ambassadorProfile?.status === 'ACTIF';
 

@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { UA_PER_CASE } from '@/lib/monetise';
 import { isWeekdayWAT } from '@/lib/wat-time';
+import { streakAfterPlay } from '@/lib/flame';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
@@ -90,34 +91,8 @@ export async function POST(request: Request) {
         });
       }
 
-      // === Flamme PARTAGÉE — même logique que le classique + protection (Gel/Assurance) ===
-      const protectionActive = fresh.flameProtectedUntil ? new Date(fresh.flameProtectedUntil) > new Date() : false;
-      const lastActive = fresh.lastActive ? new Date(fresh.lastActive) : null;
-      let newStreak = fresh.streak;
-      let streakIncreased = false;
-      let flameLost = false;
-
-      if (lastActive) {
-        lastActive.setHours(0, 0, 0, 0);
-        const diffDays = Math.round((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
-        if (diffDays === 1) {
-          newStreak += 1;
-          streakIncreased = true;
-        } else if (diffDays > 1) {
-          if (protectionActive) {
-            // Flamme protégée : l'absence est sautée, la série continue
-            newStreak += 1;
-            streakIncreased = true;
-          } else {
-            newStreak = 1;
-            streakIncreased = true;
-            flameLost = true; // mémorisée pour le Restaure-Flamme (fenêtre 48 h)
-          }
-        }
-      } else {
-        newStreak = 1;
-        streakIncreased = true;
-      }
+      // === Flamme PARTAGÉE — même règle que le classique (heure de Niamey + protection Gel/Assurance) ===
+      const { newStreak, increased: streakIncreased, flameLost } = streakAfterPlay(fresh);
 
       const chestUnlocked = streakIncreased && newStreak % 7 === 0;
 

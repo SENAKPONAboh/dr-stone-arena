@@ -9,6 +9,7 @@ import Icon, { type IconName } from '@/components/ui/Icon';
 import Logo from '@/components/ui/Logo';
 import ThemeSwitch from '@/components/ui/ThemeSwitch';
 import BackgroundCells from '@/components/ui/BackgroundCells';
+import { FlameUpWatcher } from '@/components/ui/FlameUpOverlay';
 import { getPlanLabel } from '@/lib/premium';
 import { getNiveauLabel } from '@/lib/niveau';
 
@@ -58,6 +59,7 @@ export default function AppShell({
   return (
     <div className="arena-skin relative min-h-screen bg-stone font-body text-ink">
       <BackgroundCells />
+      <FlameUpWatcher streak={user.streak} storageKey={`${user.prenom}-${user.nom}`} />
 
       {/* ===== SIDEBAR (desktop) ===== */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r border-line bg-stone/95 backdrop-blur md:flex">

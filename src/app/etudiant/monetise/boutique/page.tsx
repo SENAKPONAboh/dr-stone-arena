@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import BoutiqueClient from '@/components/monetise/BoutiqueClient';
 import MonetiseNav from '@/components/monetise/MonetiseNav';
+import { persistLostFlame } from '@/lib/flame';
 import { getOrCreateShopCatalog } from '@/lib/monetise-shop';
 import { getOrCreatePersonalisationCatalog } from '@/lib/personnalisation';
 
@@ -21,6 +22,10 @@ export default async function BoutiquePage() {
     where: { userId: user.id },
     include: { item: true },
   });
+
+  // Flamme éteinte pas encore enregistrée : on l'enregistre avant de lire l'état (Restaure-Flamme disponible tout de suite)
+  const flame = await prisma.user.findUnique({ where: { id: user.id }, select: { streak: true, lastActive: true, flameProtectedUntil: true } });
+  if (flame) await persistLostFlame({ id: user.id, ...flame }).catch(() => {});
 
   const state = await prisma.user.findUnique({
     where: { id: user.id },

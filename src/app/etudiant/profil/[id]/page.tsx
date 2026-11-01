@@ -22,6 +22,7 @@ import LegendLightning from '@/components/ui/LegendLightning';
 import { getSeasonSummary } from '@/lib/seasons';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 import { getEffectiveDuelQuota } from '@/lib/decouverte';
+import { effectiveStreak } from '@/lib/flame';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +30,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     where: { id: (await params).id },
     select: {
       id: true, prenom: true, nom: true, pseudo: true, imageUrl: true,
-      anneeEtude: true, xp: true, streak: true,
+      anneeEtude: true, xp: true, streak: true, lastActive: true, flameProtectedUntil: true,
       isPremium: true, premiumTier: true, passActive: true, createdAt: true,
       activeTitleId: true, activeFrameId: true, activeThemeId: true,
       duelsWon: true, duelsLost: true, pointsArena: true,
@@ -154,7 +155,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           <div className="flex justify-center gap-2 mt-4">
             <span {...badgeProps('bg-blue-500/20 text-blue-300', 'bg-blue-50 text-blue-600')}>{getNiveauLabel(profileUser.anneeEtude)}</span>
             <span {...badgeProps('bg-emerald-500/20 text-emerald-300', 'bg-emerald-50 text-emerald-600')}>⭐ {profileUser.xp} XP</span>
-            <span {...badgeProps('bg-orange-500/20 text-orange-300', 'bg-orange-50 text-orange-600')}>🔥 {profileUser.streak} Jours</span>
+            <span {...badgeProps('bg-orange-500/20 text-orange-300', 'bg-orange-50 text-orange-600')}>🔥 {effectiveStreak(profileUser)} Jours</span>
           </div>
 
           <div className={`mt-6 p-4 rounded-2xl ${themeDef ? 'bg-white/5' : 'bg-slab-2'}`}>

@@ -7,6 +7,7 @@ import { caseDuration } from '@/lib/case-duration';
 import { elapsedSinceStart } from '@/lib/challenge-token';
 import { xpLossFor } from '@/lib/grades';
 import { notifyOvertaken } from '@/lib/overtake';
+import { streakAfterPlay } from '@/lib/flame';
 
 // Marge de réseau (secondes) tolérée au-delà du chrono avant de considérer la réponse comme hors délai
 const LATE_GRACE = 12;
@@ -100,41 +101,8 @@ export async function POST(request: Request) {
         }
       });
 
-      // --- Gestion du Streak ---
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // Protection Flamme (Gel/Assurance) : uniquement utilisée si une protection est active
-      const protectionActive = fresh.flameProtectedUntil
-        ? new Date(fresh.flameProtectedUntil) > new Date()
-        : false;
-
-      const lastActive = fresh.lastActive ? new Date(fresh.lastActive) : null;
-      let newStreak = fresh.streak;
-      let streakIncreased = false;
-      let flameLost = false; // mémorisation de la perte (Restaure-Flamme, 48 h)
-
-      if (lastActive) {
-        lastActive.setHours(0, 0, 0, 0);
-        const diffDays = Math.round((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 1) {
-          newStreak += 1;
-          streakIncreased = true;
-        } else if (diffDays > 1) {
-          if (protectionActive) {
-            newStreak += 1;
-            streakIncreased = true;
-          } else {
-            newStreak = 1;
-            streakIncreased = true;
-            flameLost = true;
-          }
-        }
-      } else {
-        newStreak = 1;
-        streakIncreased = true;
-      }
+      // --- Gestion de la Flamme (jours à l'heure de Niamey, protection Gel/Assurance) ---
+      const { newStreak, increased: streakIncreased, flameLost } = streakAfterPlay(fresh);
 
       // Bonus de série : +5 XP si la série a augmenté aujourd'hui
       if (streakIncreased) {
@@ -166,7 +134,7 @@ export async function POST(request: Request) {
           lives: newLives,
           lastLifeLostAt: newLastLifeLostAt,
           chestAvailable: chestUnlocked ? true : fresh.chestAvailable,
-          ...(flameLost ? { streakBeforeReset: fresh.streak, flameLostAt: new Date() } : {}),
+          ...(flameLost ? { streakBeforeReset: fresh.streak, flameLostAt: new Date() } : {}), // mémorisée pour le Restaure-Flamme (48 h)
         },
       });
 

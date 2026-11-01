@@ -30,11 +30,16 @@ export async function verifySession(token: string) {
 
 import { cookies } from 'next/headers';
 import prisma from '@/lib/prisma';
+import { effectiveStreak } from '@/lib/flame';
 
 // Premium ou Pass Élite dont la date est dépassée : traités comme inactifs PARTOUT (routes API comprises),
 // même si la purge en base (accueil / layout Élite) n'a pas encore eu lieu. Lecture seule, rien n'est écrit.
-function withExpiredAccessRemoved<T extends { isPremium?: boolean; premiumTier?: number | null; premiumExpiresAt?: Date | null; passActive?: boolean; passExpiresAt?: Date | null }>(user: T): T {
+// Même principe pour la Flamme : un jour manqué sans protection = Flamme à 0 à l'écran (l'extinction en base se fait dans le layout étudiant).
+function withExpiredAccessRemoved<T extends { isPremium?: boolean; premiumTier?: number | null; premiumExpiresAt?: Date | null; passActive?: boolean; passExpiresAt?: Date | null; streak?: number; lastActive?: Date | null; flameProtectedUntil?: Date | null }>(user: T): T {
   const now = Date.now();
+  if (typeof user.streak === 'number' && user.streak > 0 && effectiveStreak({ streak: user.streak, lastActive: user.lastActive ?? null, flameProtectedUntil: user.flameProtectedUntil }) === 0) {
+    user = { ...user, streak: 0 };
+  }
   if (user.isPremium && user.premiumExpiresAt && new Date(user.premiumExpiresAt).getTime() < now) {
     user = { ...user, isPremium: false, premiumTier: null };
   }
@@ -71,6 +76,7 @@ export async function getCurrentUser() {
       pseudo: true,
       imageUrl: true,
       lastActive: true,
+      flameProtectedUntil: true,
       lives: true,
       chestAvailable: true,
            isPremium: true,

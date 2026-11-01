@@ -24,6 +24,7 @@ import { getXpGrade, gradeProgress } from '@/lib/grades';
 import { getTitleDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
 import EcgLine from '@/components/ui/EcgLine';
+import { flameStatus } from '@/lib/flame';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
 
@@ -127,7 +128,7 @@ export default async function EtudiantDashboard() {
       await prisma.notification.create({
         data: { userId: user.id, message: "Ton défi quotidien est disponible. Joue maintenant pour gagner des XP !", icon: "🧠" }
       });
-      if (user.streak > 0) {
+      if (flameStatus(user) === 'atRisk') {
         await prisma.notification.create({
           data: { userId: user.id, message: `Attention, tu risques de perdre ta série de ${user.streak} jours si tu ne joues pas aujourd'hui !`, icon: "🔥" }
         });
