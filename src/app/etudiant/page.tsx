@@ -111,7 +111,7 @@ export default async function EtudiantDashboard() {
 
   const userRank = usersAhead + 1;
   const userRankLevel = aheadInLevel !== null ? aheadInLevel + 1 : null;
-  const dailyTotal = dailyCaseIds?.length ?? 10;
+  const dailyTotal = dailyCaseIds?.length || 10; // sélection vide (banque vide au tirage) : complétée à l'ouverture du défi
 
   // Grade de la saison (XP du mois)
   const { current: xpGrade, next: xpNextGrade } = getXpGrade(user.xp);

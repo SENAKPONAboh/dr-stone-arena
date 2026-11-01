@@ -32,7 +32,11 @@ export async function getOrCreateMonetiseSelection(userId: string, anneeEtude: n
   const existing = await prisma.monetiseSelection.findFirst({
     where: { userId, date: { gte: today, lt: tomorrow } },
   });
-  if (existing) return existing.caseIds;
+  // Une sélection vide ou incomplète (banque encore vide au moment du tirage) est complétée
+  // dès que des cas sont disponibles ; les cas déjà tirés restent en place.
+  if (existing && existing.caseIds.length >= CASES_PER_DAY) return existing.caseIds;
+  const kept = existing?.caseIds ?? [];
+  const need = CASES_PER_DAY - kept.length;
 
   // 2. Cas jamais tentés PAR CET UTILISATEUR côté monétisé (MonetiseAttempt — pas Attempt classique)
   const attemptsAsc = await prisma.monetiseAttempt.findMany({
@@ -50,24 +54,40 @@ export async function getOrCreateMonetiseSelection(userId: string, anneeEtude: n
   const reserved = new Set(await getReservedCaseIds());
   const notReserved = everyCase.filter(c => !reserved.has(c.id));
   const allCases = notReserved.length >= CASES_PER_DAY ? notReserved : everyCase;
-  const neverSeen = allCases.filter(c => !attemptedIds.has(c.id));
+  const pool = allCases.filter(c => !kept.includes(c.id));
+  const neverSeen = pool.filter(c => !attemptedIds.has(c.id));
 
   let selected: string[];
-  if (neverSeen.length >= CASES_PER_DAY) {
-    selected = shuffle(neverSeen).slice(0, CASES_PER_DAY).map(c => c.id);
-  } else if (allCases.length === 0) {
+  if (neverSeen.length >= need) {
+    selected = shuffle(neverSeen).slice(0, need).map(c => c.id);
+  } else if (pool.length === 0) {
     selected = [];
   } else {
     // Révision : jamais-vus d'abord + les plus anciennement tentés
     const lastAttempt = new Map<string, number>();
     for (const a of attemptsAsc) lastAttempt.set(a.clinicalCaseId, a.createdAt.getTime());
-    const seenSorted = allCases
+    const seenSorted = pool
       .filter(c => attemptedIds.has(c.id))
       .sort((a, b) => (lastAttempt.get(a.id) ?? 0) - (lastAttempt.get(b.id) ?? 0));
     selected = shuffle([
       ...neverSeen.map(c => c.id),
-      ...seenSorted.slice(0, CASES_PER_DAY - neverSeen.length).map(c => c.id),
+      ...seenSorted.slice(0, need - neverSeen.length).map(c => c.id),
     ]);
+  }
+
+  if (existing) {
+    if (selected.length === 0) return kept;
+    const merged = [...kept, ...selected];
+    // Ne complète que si personne ne l'a fait entre-temps (double-clic/refresh simultané)
+    const res = await prisma.monetiseSelection.updateMany({
+      where: { id: existing.id, caseIds: { equals: kept } },
+      data: { caseIds: merged },
+    });
+    if (res.count === 0) {
+      const saved = await prisma.monetiseSelection.findFirst({ where: { id: existing.id } });
+      return saved?.caseIds ?? kept;
+    }
+    return merged;
   }
 
   try {

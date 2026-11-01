@@ -51,7 +51,7 @@ export default async function ArenePage() {
     getTodaySelection(user.id),
   ]);
 
-  const dailyTotal = dailyCaseIds?.length ?? 10;
+  const dailyTotal = dailyCaseIds?.length || 10; // sélection vide (banque vide au tirage) : complétée à l'ouverture du défi
   const monthlyXp = monthlyAttempts.reduce((sum, a) => sum + a.xpEarned, 0);
   const dailyClaimed = user.lastDailyRewardClaimedAt
     ? new Date(user.lastDailyRewardClaimedAt).setHours(0, 0, 0, 0) === todayStart.getTime()
