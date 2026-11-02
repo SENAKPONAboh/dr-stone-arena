@@ -11,6 +11,16 @@ function urlBase64ToUint8Array(base64: string) {
   return out;
 }
 
+// Une clé publique VAPID valide = point P-256 non compressé : 65 octets commençant par 0x04
+function isValidVapidKey(base64: string) {
+  try {
+    const k = urlBase64ToUint8Array(base64);
+    return k.length === 65 && k[0] === 4;
+  } catch {
+    return false;
+  }
+}
+
 export type PushStatus = Status;
 type Status =
   | 'loading'
@@ -67,6 +77,13 @@ export default function PushNotificationManager({ onStatus }: { onStatus?: (s: S
           setStatus('no-key');
           return;
         }
+        // Clé mal copiée dans Vercel : le téléphone la refuserait (« applicationServerKey is not valid »).
+        // Ce n'est pas la faute de l'étudiant → statut « indisponible », l'accueil des nouveaux le laisse continuer.
+        if (!isValidVapidKey(cfg.publicKey)) {
+          setKeyProblem('clé publique (NEXT_PUBLIC_VAPID_PUBLIC_KEY) invalide');
+          setStatus('no-key');
+          return;
+        }
         setPublicKey(cfg.publicKey);
         const reg = await getRegistration();
         const sub = await reg.pushManager.getSubscription();
@@ -109,6 +126,11 @@ export default function PushNotificationManager({ onStatus }: { onStatus?: (s: S
       setStatus('on');
       setMessage({ type: 'ok', text: 'Notifications activées ! Appuie sur « Tester » pour vérifier.' });
     } catch (e: any) {
+      if (/applicationServerKey/i.test(String(e?.message))) {
+        setKeyProblem('clé publique (NEXT_PUBLIC_VAPID_PUBLIC_KEY) refusée par le téléphone');
+        setStatus('no-key');
+        return;
+      }
       setMessage({ type: 'err', text: `Activation impossible : ${e?.message ?? 'erreur inconnue'}` });
     } finally {
       setBusy('');
@@ -170,7 +192,10 @@ export default function PushNotificationManager({ onStatus }: { onStatus?: (s: S
       )}
 
       {status === 'no-key' && (
-        <p className={help}>🔧 Notifications indisponibles : {keyProblem || 'configuration incomplète'}. Ajoute-les dans Vercel (Environment Variables) puis redéploie.</p>
+        <p className={help}>
+          🔧 Les notifications sont momentanément indisponibles (réglage de notre côté, rien à faire pour toi).
+          <span className="mt-1 block text-[10px] opacity-70">Détail pour l&apos;admin : {keyProblem || 'configuration incomplète'}.</span>
+        </p>
       )}
 
       {status === 'denied' && (

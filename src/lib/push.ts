@@ -10,9 +10,14 @@ export type PushResult = {
   detail?: string;
 };
 
+/** Nettoie une clé VAPID copiée dans Vercel : espaces, retours à la ligne, guillemets, « = » final. */
+export function cleanVapidKey(raw: string | undefined): string {
+  return (raw ?? '').replace(/\s+/g, '').replace(/^["']+|["']+$/g, '').replace(/=+$/, '');
+}
+
 function configure(): { ok: true } | { ok: false; detail: string } {
-  const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const priv = process.env.VAPID_PRIVATE_KEY;
+  const pub = cleanVapidKey(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
+  const priv = cleanVapidKey(process.env.VAPID_PRIVATE_KEY);
   if (!pub || !priv) {
     return { ok: false, detail: `Clé manquante sur le serveur (${!pub ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : ''}${!pub && !priv ? ' et ' : ''}${!priv ? 'VAPID_PRIVATE_KEY' : ''}).` };
   }
