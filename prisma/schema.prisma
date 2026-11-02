@@ -78,6 +78,7 @@ model User {
   friendshipsReceived   Friendship[] @relation("FriendAddressee")
   messagesSent          DirectMessage[] @relation("MessageSender")
   messagesReceived      DirectMessage[] @relation("MessageRecipient")
+  whatsappPhone         UserPhone?
 }
 
 model Friendship {
@@ -291,13 +292,15 @@ model AmbassadorPanelAccess {
   updatedAt    DateTime  @default(now()) @updatedAt
 }
 
-// Numéro WhatsApp de l'étudiant (table à part pour ne pas toucher à User) : un numéro = un compte.
+// Numéro WhatsApp de l'étudiant (table à part) : un numéro = un compte, supprimé avec le compte.
 // verifiedAt : rempli plus tard par la vérification WhatsApp (message envoyé par l'étudiant au numéro d'Arena).
 model UserPhone {
   userId     String    @id
   phone      String    @unique   // format international « +22790123456 »
   verifiedAt DateTime?
   createdAt  DateTime  @default(now())
+  // Compte supprimé → numéro effacé par la base (prisma/sql/2026-11-02-numero-lie-au-compte.sql)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AmbassadorCommission {

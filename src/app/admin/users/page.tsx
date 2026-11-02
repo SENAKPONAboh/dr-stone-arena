@@ -6,6 +6,7 @@ import AdminHeader, { Stat } from '@/components/admin/ui/AdminHeader';
 import AdminIcon from '@/components/admin/ui/AdminIcon';
 import ResetPasswordButton from '@/components/admin/ResetPasswordButton';
 import BanButton from '@/components/admin/BanButton';
+import DeleteAccountButton from '@/components/admin/DeleteAccountButton';
 import LevelSelect from '@/components/admin/LevelSelect';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
@@ -136,6 +137,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                     <LevelSelect userId={u.id} current={u.anneeEtude} />
                     <ResetPasswordButton userId={u.id} />
                     <BanButton userId={u.id} isBanned={u.statut === 'BANNI'} />
+                    <DeleteAccountButton userId={u.id} name={`${u.prenom} ${u.nom}`} />
                   </div>
                 </div>
               );
