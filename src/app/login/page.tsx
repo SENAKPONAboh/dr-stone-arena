@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import PasswordInput from '@/components/ui/PasswordInput';
 import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
+import ContactAdminButton from '@/components/ui/ContactAdminButton';
 
 export default function LoginPage() {
   const [error, setError] = useState('');
@@ -78,6 +79,8 @@ export default function LoginPage() {
           S'inscrire
         </Link>
       </div>
+
+      <ContactAdminButton context="connexion" />
     </AuthShell>
   );
 }

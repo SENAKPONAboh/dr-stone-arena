@@ -8,6 +8,7 @@ import PasswordInput from '@/components/ui/PasswordInput';
 import NationalitySelect from '@/components/ui/NationalitySelect';
 import { INDICATIFS } from '@/lib/indicatifs';
 import AuthShell, { AUTH_INPUT, AUTH_LABEL, AUTH_BUTTON } from '@/components/ui/AuthShell';
+import ContactAdminButton from '@/components/ui/ContactAdminButton';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -186,6 +187,8 @@ export default function RegisterPage() {
           Se connecter
         </Link>
       </div>
+
+      <ContactAdminButton context="inscription" />
     </AuthShell>
   );
 }
