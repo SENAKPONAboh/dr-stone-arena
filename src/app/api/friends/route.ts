@@ -110,6 +110,7 @@ export async function POST(request: Request) {
         await prisma.friendship.delete({ where: { id: existing.id } });
       }
       await prisma.friendship.create({ data: { requesterId: user.id, addresseeId: targetId } });
+      await notifyUser(targetId, `👋 ${user.pseudo || user.prenom} t'invite à devenir son ami sur le chat. Accepte son invitation pour discuter ensemble !`, '👋', { url: '/etudiant/messages' });
       return NextResponse.json({ success: true });
     }
 
