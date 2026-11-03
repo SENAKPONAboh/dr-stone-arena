@@ -2,8 +2,10 @@
 // ouvre une discussion WhatsApp avec l'admin (+227 90 01 62 84), message pré-rempli.
 const ADMIN_WHATSAPP = '22790016284';
 
-export default function ContactAdminButton({ context }: { context: 'connexion' | 'inscription' }) {
-  const text = `Bonjour, j'ai un problème avec ${context === 'connexion' ? 'la connexion' : "l'inscription"} sur Dr. Stone Arena.`;
+const SUBJECT = { connexion: 'la connexion', inscription: "l'inscription", 'mot-de-passe': 'mon mot de passe oublié' } as const;
+
+export default function ContactAdminButton({ context }: { context: keyof typeof SUBJECT }) {
+  const text = `Bonjour, j'ai un problème avec ${SUBJECT[context]} sur Dr. Stone Arena.`;
   const href = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(text)}`;
 
   return (

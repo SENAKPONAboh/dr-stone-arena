@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AdminHeader, { Stat } from '@/components/admin/ui/AdminHeader';
 import AdminIcon from '@/components/admin/ui/AdminIcon';
 import ResetPasswordButton from '@/components/admin/ResetPasswordButton';
+import ResetLinkButton from '@/components/admin/ResetLinkButton';
 import BanButton from '@/components/admin/BanButton';
 import DeleteAccountButton from '@/components/admin/DeleteAccountButton';
 import LevelSelect from '@/components/admin/LevelSelect';
@@ -135,6 +136,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
 
                   <div className="flex flex-col md:flex-row gap-2 items-end">
                     <LevelSelect userId={u.id} current={u.anneeEtude} />
+                    <ResetLinkButton userId={u.id} phone={phones.get(u.id)} />
                     <ResetPasswordButton userId={u.id} />
                     <BanButton userId={u.id} isBanned={u.statut === 'BANNI'} />
                     <DeleteAccountButton userId={u.id} name={`${u.prenom} ${u.nom}`} />
