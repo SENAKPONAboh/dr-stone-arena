@@ -153,10 +153,19 @@ export default function MessagesClient({ me }: { me: { id: string } }) {
         return [...server, ...pendingRef.current];
       });
       if (data.friend) setSelected(s => (s && s.id === data.friend.id ? { ...s, ...data.friend } : s));
+      // Le serveur vient de marquer lus les messages de cet ami : sa pastille (et celle de l'en-tête) tombe à 0
+      setFriends(prev => prev.map(f => (f.id === withUserId && f.unread > 0 ? { ...f, unread: 0 } : f)));
     } catch { /* silencieux */ } finally { setConvLoading(false); }
   }, [me.id]);
 
   useEffect(() => { loadFriends(); }, [loadFriends]);
+
+  // Pastille « messages » de l'en-tête (AppShell) mise à jour en direct
+  useEffect(() => {
+    if (!loaded) return;
+    const total = friends.reduce((n, f) => n + f.unread, 0);
+    window.dispatchEvent(new CustomEvent('arena:unread-messages', { detail: total }));
+  }, [friends, loaded]);
 
   // Rafraîchissement : liste toutes les 10 s, discussion toutes les 4 s (en pause si l'appli est en arrière-plan)
   useEffect(() => {

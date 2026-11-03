@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGroup, motion } from 'framer-motion';
@@ -40,6 +41,16 @@ export default function AppShell({
 }) {
   const pathname = usePathname();
   const premium = user.isPremium;
+
+  // Pastille « messages non lus » : la messagerie la met à jour en direct (événement arena:unread-messages),
+  // sinon elle resterait figée sur la valeur du chargement de la page.
+  const [liveUnread, setLiveUnread] = useState(unreadMessages);
+  useEffect(() => { setLiveUnread(unreadMessages); }, [unreadMessages]);
+  useEffect(() => {
+    const onUnread = (e: Event) => setLiveUnread((e as CustomEvent<number>).detail);
+    window.addEventListener('arena:unread-messages', onUnread);
+    return () => window.removeEventListener('arena:unread-messages', onUnread);
+  }, []);
 
   const NAV_ITEMS = [
     ...NAV_ITEMS_BASE,
@@ -116,9 +127,9 @@ export default function AppShell({
               <ThemeSwitch className="hidden sm:flex" />
               <Link href="/etudiant/messages" className="relative flex-shrink-0 text-mute transition-colors hover:text-ink" title="Messages" aria-label="Messages">
                 <Icon name="chat" size={24} />
-                {unreadMessages > 0 && (
+                {liveUnread > 0 && (
                   <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-mala px-1 font-display text-[9px] font-extrabold text-stone">
-                    {unreadMessages > 9 ? '9+' : unreadMessages}
+                    {liveUnread > 9 ? '9+' : liveUnread}
                   </span>
                 )}
               </Link>

@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
+import { pushOnly } from '@/lib/notify';
 
 // ===== MESSAGES PRIVÉS (réservés aux amis) =====
 
@@ -78,6 +79,17 @@ export async function POST(request: Request) {
 
     const created = await prisma.directMessage.create({
       data: { senderId: user.id, recipientId: targetId, message: msg },
+    });
+
+    // Notification sur le téléphone du destinataire (après la réponse : l'envoi reste instantané).
+    // Une seule par rafale : pas de nouvelle alerte s'il a déjà un message non lu de cet ami datant de moins de 5 min.
+    after(async () => {
+      const recentUnread = await prisma.directMessage.count({
+        where: { senderId: user.id, recipientId: targetId, isRead: false, id: { not: created.id }, createdAt: { gte: new Date(Date.now() - 5 * 60_000) } },
+      });
+      if (recentUnread > 0) return;
+      const preview = msg.length > 80 ? `${msg.slice(0, 80)}…` : msg;
+      await pushOnly(targetId, `${user.pseudo || user.prenom} : ${preview}`, '💬', { title: '💬 Nouveau message', url: '/etudiant/messages' });
     });
 
     return NextResponse.json({ success: true, message: created });
