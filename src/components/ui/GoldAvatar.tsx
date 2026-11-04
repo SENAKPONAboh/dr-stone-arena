@@ -8,6 +8,7 @@ type GoldAvatarProps = {
   initials: string;
   passActive?: boolean;
   frameKey?: string | null; // 🖼️ Cadre équipé — REMPLACE l'Anneau d'Or
+  premium?: boolean; // 👑 Premium : Anneau d'Or qui tourne (sans les étincelles, réservées au Pass Élite)
   size?: number;
 };
 
@@ -15,11 +16,11 @@ const GOLD_GRADIENT = 'conic-gradient(from 0deg, #b45309, #f59e0b, #fde68a, #fff
 const GOLD_GLOW: [string, string, string] = ['0 0 6px rgba(251,191,36,0.45)', '0 0 16px rgba(251,191,36,0.85)', '0 0 6px rgba(251,191,36,0.45)'];
 const GOLD_PARTICLE = '#fbbf24';
 
-export default function GoldAvatar({ imageUrl, initials, passActive = false, frameKey, size = 32 }: GoldAvatarProps) {
+export default function GoldAvatar({ imageUrl, initials, passActive = false, frameKey, premium = false, size = 32 }: GoldAvatarProps) {
   const reduceMotion = useReducedMotion();
   const frame = frameKey ? getFrameDef(frameKey) : null;
 
-  if (!frame && !passActive) {
+  if (!frame && !passActive && !premium) {
     if (imageUrl) {
       return <img src={imageUrl} alt="" style={{ width: size, height: size }} className="rounded-full object-cover" />;
     }
@@ -34,7 +35,7 @@ export default function GoldAvatar({ imageUrl, initials, passActive = false, fra
   const glow = frame ? frame.glow : GOLD_GLOW;
   const duration = frame ? frame.duration : 3.5;
   const particleColor = frame ? frame.particleColor : GOLD_PARTICLE;
-  const effect = frame ? frame.effect : 'orbit'; // l'Anneau d'Or gagne des étincelles en orbite
+  const effect: string = frame ? frame.effect : passActive ? 'orbit' : 'none'; // étincelles en orbite : Pass Élite seulement
   const ring = Math.max(2, Math.round(size * 0.08));
   const orbitRadius = size / 2 + ring;
 

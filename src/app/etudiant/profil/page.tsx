@@ -21,6 +21,7 @@ import LegendMark from '@/components/ui/LegendMark';
 import type { CSSProperties } from 'react';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
+import Icon from '@/components/ui/Icon';
 import TitleBadge from '@/components/ui/TitleBadge';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 import ShareButton from '@/components/ui/ShareButton';
@@ -83,7 +84,7 @@ export default async function ProfilPage() {
             <h1 className="font-extrabold text-xl">Mon Profil</h1>
           </a>
           {user.isPremium && (
-            <span className="bg-gold text-stone text-xs font-display font-bold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(user.premiumTier)}</span>
+            <span className="bg-gold text-stone text-xs font-display font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1"><Icon name="crown" size={12} /> {getPlanLabel(user.premiumTier)}</span>
           )}
         </div>
       </header>
@@ -92,9 +93,9 @@ export default async function ProfilPage() {
         <div className={`rounded-3xl p-8 text-center transition-all ${themeDef ? '' : cardStyle}`} style={cardInline}>
 
           {/* Photo de profil : cadre équipé > Anneau d'Or (Pass) > simple */}
-          {equipped?.passActive || equipped?.activeFrameId ? (
+          {equipped?.passActive || equipped?.activeFrameId || user.isPremium ? (
             <div className="relative mx-auto mb-4 flex justify-center">
-              <GoldAvatar imageUrl={user.imageUrl} initials={`${user.prenom.charAt(0)}${user.nom.charAt(0)}`} passActive={!!equipped?.passActive} frameKey={equipped?.activeFrameId} size={96} />
+              <GoldAvatar imageUrl={user.imageUrl} initials={`${user.prenom.charAt(0)}${user.nom.charAt(0)}`} passActive={!!equipped?.passActive} premium={user.isPremium} frameKey={equipped?.activeFrameId} size={96} />
             </div>
           ) : (
             <>

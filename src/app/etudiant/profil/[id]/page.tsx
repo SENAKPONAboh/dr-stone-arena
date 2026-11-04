@@ -8,6 +8,7 @@ import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
 import ChallengeDuelButton from '@/components/duel/ChallengeDuelButton';
 import GoldAvatar from '@/components/ui/GoldAvatar';
+import Icon from '@/components/ui/Icon';
 import { getCurrentUser } from '@/lib/auth';
 import { getTitleDef, getThemeDef } from '@/lib/personnalisation-data';
 import TitleBadge from '@/components/ui/TitleBadge';
@@ -103,7 +104,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
           </Link>
           <div className="flex items-center gap-2">
             {profileUser.isPremium && (
-              <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">👑 {getPlanLabel(profileUser.premiumTier)}</span>
+              <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1"><Icon name="crown" size={12} /> {getPlanLabel(profileUser.premiumTier)}</span>
             )}
             {profileUser.passActive && (
               <span className="bg-gradient-to-r from-yellow-500 to-amber-400 text-[#1a1308] text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider"><Coin /> Pass Arène</span>
@@ -117,11 +118,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
           {/* Photo — CADRE 2.0 > Anneau d'Or > simple */}
           <div className="relative mx-auto mb-4">
-            {profileUser.passActive || profileUser.activeFrameId ? (
+            {profileUser.passActive || profileUser.activeFrameId || profileUser.isPremium ? (
               <GoldAvatar
                 imageUrl={profileUser.imageUrl}
                 initials={`${profileUser.prenom.charAt(0)}${profileUser.nom.charAt(0)}`}
                 passActive={profileUser.passActive}
+                premium={profileUser.isPremium}
                 frameKey={profileUser.activeFrameId}
                 size={96}
               />

@@ -14,6 +14,7 @@ import { getTodaySelection } from '@/lib/daily-cases';
 import { getNiveauLabel } from '@/lib/niveau';
 import { getDuelGrade } from '@/lib/duel';
 import GoldAvatar from '@/components/ui/GoldAvatar';
+import PremiumCrown from '@/components/ui/PremiumCrown';
 import Icon from '@/components/ui/Icon';
 import GradeBadge from '@/components/ui/GradeBadge';
 import TournoiHomeCard from '@/components/tournoi/TournoiHomeCard';
@@ -290,9 +291,9 @@ export default async function EtudiantDashboard() {
                   className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${u.id === user.id ? 'bg-mala/10' : 'hover:bg-slab-2'} ${getXpGrade(u.xp).current.index === 7 ? 'legend-row border' : ''}`}>
                   {getXpGrade(u.xp).current.index === 7 && <LegendRowStorm offset={i} />}
                   <span className={`w-6 font-display text-sm font-extrabold ${i === 0 ? 'text-gold' : i === 1 ? 'text-mute' : 'text-flame'}`}>{i + 1}</span>
-                  <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} frameKey={u.activeFrameId} size={32} />
+                  <GoldAvatar imageUrl={u.imageUrl} initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`} passActive={u.passActive} premium={u.isPremium} frameKey={u.activeFrameId} size={32} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && '👑'} <LegendMark count={legends[u.id]} className="ml-1" /></p>
+                    <p className="truncate text-sm font-bold text-ink">{nameOf(u)} {u.isPremium && <PremiumCrown size={14} className="align-[-2px]" />} <LegendMark count={legends[u.id]} className="ml-1" /></p>
                     {getTitleDef(u.activeTitleId) && <div className="mt-0.5"><TitleBadge title={getTitleDef(u.activeTitleId)!} size="sm" /></div>}
                   </div>
                   <span className="flex items-center gap-1 font-display text-sm font-bold tabular-nums text-mala"><Icon name="star" size={14} /> {u.xp}</span>

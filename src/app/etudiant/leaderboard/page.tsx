@@ -6,6 +6,7 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getCountryFlag } from '@/lib/country-flags';
 import { getTitleDef } from '@/lib/personnalisation-data';
 import GoldAvatar from '@/components/ui/GoldAvatar';
+import PremiumCrown from '@/components/ui/PremiumCrown';
 import Icon from '@/components/ui/Icon';
 import { getXpGrade } from '@/lib/grades';
 import { getLegendCounts } from '@/lib/seasons';
@@ -14,12 +15,15 @@ import TitleBadge from '@/components/ui/TitleBadge';
 import GradeInsignia from '@/components/ui/GradeInsignia';
 import LegendRowStorm from '@/components/ui/LegendRowStorm';
 
-export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
+export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string; n?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ETUDIANT') redirect('/login');
 
-  const { scope } = await searchParams;
+  const { scope, n } = await searchParams;
+  // Classement complet, chargé par tranches de 100 (« Voir les suivants ») pour que la page reste rapide sur téléphone
+  const PAGE = 100;
+  const limit = Math.max(PAGE, Math.ceil((Number(n) || PAGE) / PAGE) * PAGE);
   const isGlobal = !scope || scope === 'global';
   const isLevel = scope === 'niveau';
   const isCountry = scope === 'pays';
@@ -31,18 +35,19 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
     ...(isCountry ? { pays: user.pays } : {}),
   };
 
-  const allUsers = await prisma.user.findMany({
+  const [allUsers, total] = await Promise.all([prisma.user.findMany({
     where,
-    orderBy: { xp: 'desc' },
-    take: 100, // le top 100 suffit : charger tous les étudiants (et leurs photos) ralentissait la page
+    orderBy: [{ xp: 'desc' }, { createdAt: 'asc' }],
+    take: limit,
     select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, anneeEtude: true, pays: true, universite: true, activeFrameId: true, activeTitleId: true }
-  });
+  }), prisma.user.count({ where })]);
 
   const legends = await getLegendCounts(allUsers.map(u => u.id));
 
-  // Hors du top 100 : on affiche quand même ton rang
+  // Pas encore chargé : on affiche quand même ton rang, avec un lien pour aller jusqu'à ta ligne
   const inTop = allUsers.some(u => u.id === user.id);
   const myRank = inTop ? null : (await prisma.user.count({ where: { ...where, xp: { gt: user.xp } } })) + 1;
+  const scopeQuery = isLevel ? 'scope=niveau&' : isCountry ? 'scope=pays&' : '';
 
   const tabStyle = (active: boolean) => `rounded-2xl px-2 py-2.5 text-center font-display text-[11px] font-bold uppercase tracking-wide transition-all ${active
     ? 'bg-mala text-stone shadow-[0_3px_0_#0f7a4f]'
@@ -105,6 +110,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
           {myRank && (
             <p className="mb-4 rounded-2xl border border-mala/40 bg-mala/10 p-3 text-center text-sm font-bold text-ink">
               Ton rang : <span className="text-mala">n°{myRank}</span> · {user.xp.toLocaleString('fr-FR')} XP
+              {' · '}<Link href={`/etudiant/leaderboard?${scopeQuery}n=${myRank + PAGE}#moi`} className="text-mala underline">Voir ma place</Link>
             </p>
           )}
 
@@ -119,7 +125,7 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                 const grade = getXpGrade(u.xp).current;
                 const legend = grade.index === 7; // ⚡ Légende Immortelle : les éclairs traversent sa ligne
                 return (
-                  <div key={u.id} className={`flex items-center gap-3 rounded-2xl p-3 ${u.id === user.id ? 'border-2 border-mala/50 bg-mala/10' : 'border border-line bg-slab-2'} ${legend ? 'legend-row' : ''}`}>
+                  <div key={u.id} id={u.id === user.id ? 'moi' : `rang-${index + 1}`} className={`flex items-center gap-3 rounded-2xl p-3 ${u.id === user.id ? 'border-2 border-mala/50 bg-mala/10' : 'border border-line bg-slab-2'} ${legend ? 'legend-row' : ''}`}>
                     {legend && <LegendRowStorm offset={index} />}
 
                     <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full font-display text-base font-extrabold ${
@@ -136,13 +142,14 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                         imageUrl={u.imageUrl}
                         initials={`${u.prenom.charAt(0)}${u.nom.charAt(0)}`}
                         passActive={u.passActive}
+                        premium={u.isPremium}
                         frameKey={u.activeFrameId}
                         size={40}
                       />
                       <div className="min-w-0">
                         <p className="flex items-center gap-1 truncate font-bold text-ink">
                           {u.pseudo || `${u.prenom} ${u.nom}`}
-                          {u.isPremium && <span title="Premium">👑</span>}
+                          {u.isPremium && <PremiumCrown />}
                           <LegendMark count={legends[u.id]} />
                         </p>
                         {title && <div className="my-0.5"><TitleBadge title={title} size="sm" /></div>}
@@ -159,6 +166,18 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {allUsers.length > 0 && (
+            <div className="mt-5 text-center">
+              <p className="text-xs text-mute">{allUsers.length.toLocaleString('fr-FR')} sur {total.toLocaleString('fr-FR')} étudiant{total > 1 ? 's' : ''}</p>
+              {allUsers.length < total && (
+                <Link href={`/etudiant/leaderboard?${scopeQuery}n=${limit + PAGE}#rang-${limit + 1}`} scroll={false}
+                  className="mt-3 inline-block rounded-2xl bg-mala px-5 py-3 font-display text-xs font-bold uppercase tracking-wide text-stone shadow-[0_3px_0_#0f7a4f] active:translate-y-[2px] active:shadow-none">
+                  Voir les {Math.min(PAGE, total - allUsers.length)} suivants
+                </Link>
+              )}
             </div>
           )}
         </div>
