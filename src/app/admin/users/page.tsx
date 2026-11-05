@@ -2,6 +2,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import AdminHeader, { Stat } from '@/components/admin/ui/AdminHeader';
 import AdminIcon from '@/components/admin/ui/AdminIcon';
 import ResetPasswordButton from '@/components/admin/ResetPasswordButton';
@@ -24,6 +25,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   const { filter, q: qParam } = await searchParams;
   const showPremiumOnly = filter === 'premium';
   const showFreeOnly = filter === 'gratuit';
+  // « N'a jamais joué » : aucun cas du jour tenté (pour les relancer sur WhatsApp)
+  const showNeverPlayed = filter === 'jamais';
+  const neverPlayed = { attempts: { none: {} } };
   const q = (qParam ?? '').trim().slice(0, 80);
   const nowDate = new Date();
 
@@ -33,13 +37,14 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
     role: 'ETUDIANT' as const,
     ...(showPremiumOnly ? activePremium : {}),
     ...(showFreeOnly ? { NOT: activePremium } : {}),
+    ...(showNeverPlayed ? neverPlayed : {}),
     ...(q ? {
       OR: ['prenom', 'nom', 'email', 'pseudo', 'universite'].map(field => ({ [field]: { contains: q, mode: 'insensitive' as const } })),
     } : {}),
   };
 
   // Liste + stats globales en parallèle
-  const [students, matching, totalStudents, totalPremium] = await Promise.all([
+  const [students, matching, totalStudents, totalPremium, totalNeverPlayed] = await Promise.all([
     prisma.user.findMany({
       where,
       // Premium en tête, expirations les plus proches d'abord
@@ -47,12 +52,13 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
       take: LIST_LIMIT,
       select: {
         id: true, prenom: true, nom: true, email: true, universite: true,
-        anneeEtude: true, isPremium: true, premiumTier: true, premiumExpiresAt: true, statut: true
+        anneeEtude: true, isPremium: true, premiumTier: true, premiumExpiresAt: true, statut: true, onboardingCompleted: true
       }
     }),
     prisma.user.count({ where }),
     prisma.user.count({ where: { role: 'ETUDIANT' } }),
     prisma.user.count({ where: { role: 'ETUDIANT', ...activePremium } }),
+    prisma.user.count({ where: { role: 'ETUDIANT', ...neverPlayed } }),
   ]);
 
   // Numéros WhatsApp (table "UserPhone" ; vide tant que le SQL n'a pas été exécuté)
@@ -62,6 +68,14 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
     const rows = await prisma.userPhone.findMany({ where: { userId: { in: students.map(s => s.id) } }, select: { userId: true, phone: true, verifiedAt: true } });
     for (const r of rows) { phones.set(r.userId, r.phone); if (r.verifiedAt) verifiedPhones.add(r.userId); }
   } catch { /* table pas encore créée */ }
+
+  // Message de relance WhatsApp (envoyé par l'admin lui-même, un par un)
+  const site = `https://${(await headers()).get('host') ?? 'dr-stone-arena.vercel.app'}`;
+  const relance = (prenom: string, onboardingDone: boolean) => onboardingDone
+    ? `Salut ${prenom} ! Ta première garde de 10 cas t'attend sur Dr Stone Arena 🩺 Ça prend 5 minutes, et ton XP de novembre compte déjà pour le classement : ${site}/login
+Un souci pour te connecter ? Réponds-moi ici.`
+    : `Salut ${prenom} ! Ton inscription sur Dr Stone Arena n'est pas tout à fait terminée : il te reste quelques écrans avant ta première garde de 10 cas 🩺 Reconnecte-toi ici : ${site}/login
+Si quelque chose te bloque, réponds-moi ici et je t'aide.`;
 
   const now = nowDate.getTime();
   const fmtDate = (d: Date) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -73,9 +87,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
 
       <main className="max-w-6xl mx-auto px-4 mt-5 space-y-4">
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Stat label="Étudiants inscrits" value={totalStudents.toLocaleString('fr-FR')} tone="sky" />
           <Stat label="Premium actifs" value={totalPremium} tone="gold" />
+          <Stat label="N'ont jamais joué" value={totalNeverPlayed} tone="heart" />
         </div>
 
         <div className="adm-card p-4 sm:p-6">
@@ -89,9 +104,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
           </form>
 
           <div className="mb-5 flex flex-wrap gap-2">
-            <Link href={filterHref(null)} className={`adm-tab ${!showPremiumOnly && !showFreeOnly ? 'adm-tab-on' : ''}`}>Tous</Link>
+            <Link href={filterHref(null)} className={`adm-tab ${!showPremiumOnly && !showFreeOnly && !showNeverPlayed ? 'adm-tab-on' : ''}`}>Tous</Link>
             <Link href={filterHref('premium')} className={`adm-tab ${showPremiumOnly ? 'adm-tab-on' : ''}`}>Premium actifs</Link>
             <Link href={filterHref('gratuit')} className={`adm-tab ${showFreeOnly ? 'adm-tab-on' : ''}`}>Gratuits</Link>
+            <Link href={filterHref('jamais')} className={`adm-tab ${showNeverPlayed ? 'adm-tab-on' : ''}`}>N'a jamais joué ({totalNeverPlayed})</Link>
             {q && <Link href={filter ? `/admin/users?filter=${filter}` : '/admin/users'} className="adm-tab">Effacer « {q} » ×</Link>}
           </div>
           <p className="mb-3 text-xs font-bold text-mute">
@@ -125,6 +141,11 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                       )}
                     </div>
 
+                    {showNeverPlayed && (
+                      <span className={`mt-1 inline-block adm-badge ${u.onboardingCompleted ? 'adm-badge-flame' : 'adm-badge-heart'}`}>
+                        {u.onboardingCompleted ? 'Accueil terminé · aucun cas joué' : "Bloqué dans l'accueil des nouveaux"}
+                      </span>
+                    )}
                     <p className="mt-1 truncate text-sm text-mute">{u.email} · {u.universite} ({getNiveauLabel(u.anneeEtude)})</p>
                     {phones.get(u.id) && (
                       <a href={`https://wa.me/${phones.get(u.id)!.replace('+', '')}`} target="_blank" rel="noopener noreferrer"
@@ -135,6 +156,10 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
                   </div>
 
                   <div className="flex flex-col md:flex-row gap-2 items-end">
+                    {showNeverPlayed && phones.get(u.id) && (
+                      <a href={`https://wa.me/${phones.get(u.id)!.replace(/\D/g, '')}?text=${encodeURIComponent(relance(u.prenom, u.onboardingCompleted))}`} target="_blank" rel="noopener noreferrer"
+                        className="adm-btn adm-btn-mala adm-btn-sm">Relancer sur WhatsApp</a>
+                    )}
                     <LevelSelect userId={u.id} current={u.anneeEtude} />
                     <ResetLinkButton userId={u.id} phone={phones.get(u.id)} />
                     <ResetPasswordButton userId={u.id} />
