@@ -24,97 +24,26 @@ type Slide = {
   extra?: 'grades' | 'theme' | 'profile' | 'whatsapp' | 'notifs' | 'verify';
 };
 
-// Contenu à jour : garde de 10 cas, saisons mensuelles, 8 grades, Espace Élite / Pass Élite, Premium, thèmes, installation.
+// Accueil COURT (6 nov. 2026) : 8 écrans au lieu de 18 — 42 % des inscrits abandonnaient pendant les 12 écrans
+// d'explications. Le reste (duels, tournoi, Élite, Premium, badges…) se découvre dans l'application.
+// Les 3 étapes obligatoires (communauté WhatsApp, notifications, numéro) sont inchangées.
 const SLIDES: Slide[] = [
   {
     icon: '🩺', kicker: 'Bienvenue', title: 'Dr. Stone Arena',
     paragraphs: [
-      "Révise la médecine comme un jeu. Tu résous des cas cliniques sous forme de QCM (A, B, C, D) adaptés à ton niveau, tu gagnes de l'expérience et tu montes dans l'Arène.",
+      "Chaque jour, 10 cas cliniques t'attendent, choisis pour ton niveau. Tu réponds (A, B, C ou D), tu vois aussitôt la correction expliquée, et chaque bonne réponse te rapporte de l'XP.",
     ],
+    points: ['🎯 10 cas par jour', '💡 Correction expliquée', '⭐ XP et grades'],
     highlight: "Tu ne récites pas un cours : tu raisonnes comme un médecin.",
     from: '#2fd28a', to: '#5cc8ff',
   },
   {
-    icon: '🎯', kicker: 'Chaque jour', title: 'Ta garde de 10 cas',
-    paragraphs: [
-      "Chaque jour, 10 nouveaux cas t'attendent, choisis pour ton niveau (de la 1ère année à Médecin). Tu avances sur un parcours, chronomètre en main.",
-      "Après chaque réponse, tu vois tout de suite la correction et l'explication du raisonnement.",
-    ],
-    points: ['⏱️ Un chrono par cas', '💡 Correction expliquée', '🔒 Reste sur la page pendant un cas'],
-    highlight: "Comprendre pourquoi vaut mieux que deviner.",
-    from: '#5cc8ff', to: '#2fd28a',
-  },
-  {
-    icon: '⭐', kicker: 'Progression', title: 'XP, grades et saisons',
-    paragraphs: [
-      "Chaque bonne réponse rapporte de l'XP (bonus de rapidité, bonus de série), chaque erreur en retire. Ton grade dépend de tes XP du mois, de Novice de l'Arène jusqu'à Légende Immortelle.",
-      "Chaque mois est une saison : les XP repartent à zéro pour que tout le monde puisse rattraper les autres. Ton grade final est gardé dans ton profil, avec le nombre de fois où tu l'as atteint.",
-    ],
-    points: ['✅ Bonne réponse : +10 à +35 XP', '❌ Erreur : −5 à −15 XP', '⚡ Légende : 4 000 XP'],
-    highlight: "Attention : une erreur te fait perdre des XP, et tu peux redescendre de grade. Seuls les plus réguliers atteignent la Légende.",
-    from: '#8b5cf6', to: '#fde047', extra: 'grades',
-  },
-  {
     icon: '🔥', kicker: 'Régularité', title: 'La Flamme et les vies',
     paragraphs: [
-      "La Flamme compte tes jours consécutifs de jeu : ne la laisse pas s'éteindre. À chaque série de 7 jours, un coffre t'attend.",
-      "Tu as jusqu'à 10 vies. Une mauvaise réponse en fait perdre une, puis elles se régénèrent avec le temps : 1 toutes les 24 h, 18 h si tu t'es inscrit avec un code ambassadeur, et bien plus vite avec Premium.",
+      "La Flamme compte tes jours de jeu d'affilée : ne la laisse pas s'éteindre. Une mauvaise réponse te fait perdre une vie, et tes vies reviennent avec le temps.",
     ],
-    points: ['🔥 1 jour de plus = Flamme plus forte', '❤️ 10 vies maximum', '🎁 Coffre tous les 7 jours'],
+    points: ['🔥 Joue chaque jour', '❤️ 10 vies maximum', '🎁 Coffre tous les 7 jours'],
     from: '#ff8a3d', to: '#ff5470',
-  },
-  {
-    icon: '⚔️', kicker: 'Face à face', title: 'Les duels',
-    paragraphs: [
-      "Défie un joueur de ton niveau sur 5 cas identiques. Le meilleur résultat gagne des Points Arena et fait grimper ton grade de duel.",
-      "Les duels sont réservés aux membres Premium (et ouverts à tous pendant tes 7 jours de Découverte). Perdre un duel ne te fait jamais perdre de vie.",
-    ],
-    from: '#ff5470', to: '#ff8a3d',
-  },
-  {
-    icon: '🏆', kicker: 'Reconnaissance', title: 'Classements et profil',
-    paragraphs: [
-      "Compare-toi au classement du mois : global, par niveau ou par pays. Ton profil public montre ton grade, ton palmarès de saisons (« Légende Immortelle ×2 »), tes badges et tes objets équipés.",
-      "À la fin de chaque mois, les 10 premiers de chaque promotion se qualifient pour le Tournoi mensuel (étape suivante).",
-    ],
-    highlight: "Chaque nouveau mois, tout le monde repart sur la même ligne de départ.",
-    from: '#f2c14e', to: '#ff8a3d',
-  },
-  {
-    icon: '🏆', kicker: 'Fin de mois', title: 'Le Tournoi mensuel',
-    paragraphs: [
-      "Quand le mois se termine, les 10 premiers de chaque promotion (selon les XP du mois) sont qualifiés pour le Tournoi. Tu peux suivre ta place dans l'onglet Tournoi.",
-      "Le week-end suivant, chaque finaliste joue UNE seule fois, pendant 48 h : 20 cas inédits, chronométrés par le serveur. Les bonnes réponses restent secrètes jusqu'à la clôture, pour que personne ne triche.",
-      "Le meilleur de chaque promotion devient Champion de promotion : un trophée et un titre exclusif qui restent sur son profil. Tout le monde peut voir les résultats et les corrections.",
-    ],
-    points: ['🎯 Top 10 de ta promotion', '⏱️ 20 cas inédits, 1 tentative', '👑 Champion de promotion'],
-    highlight: "Pas besoin de payer : on se qualifie au mérite.",
-    from: '#f2c14e', to: '#8b5cf6',
-  },
-  {
-    icon: '🎖️', kicker: 'Récompenses', title: 'Badges et coffres',
-    paragraphs: [
-      "Les badges se gagnent par tes actions : régularité, performances, duels, défis. Ils ne s'achètent pas.",
-      "Les coffres sont des récompenses surprise, débloquées par ta Flamme.",
-    ],
-    from: '#a855f7', to: '#60a5fa',
-  },
-  {
-    icon: '🛡️', kicker: 'Espace Élite', title: 'Le Pass Élite',
-    paragraphs: [
-      "Le Pass Élite (2 000 FCFA par mois) te donne accès à l'Espace Élite : 10 cas Élite par jour du lundi au vendredi, le Rush du week-end (5 zones de difficulté croissante : Urgences, Bloc, Réa, Neuro, puis le Major), la boutique, la personnalisation (cadres animés, thèmes, titres) et le classement Élite.",
-      "Tes réussites te rapportent des points de mérite. La Prime Arena est une bourse de mérite qui récompense ta performance : elle n'est pas garantie.",
-    ],
-    highlight: "Tu paies un accès, pas une mise. C'est ton travail qui compte.",
-    from: '#f2c14e', to: '#fde68a',
-  },
-  {
-    icon: '💎', kicker: 'Confort', title: 'Premium',
-    paragraphs: [
-      "Premium (3 niveaux) te donne des vies qui reviennent plus vite et l'accès aux duels, avec un badge doré sur ton profil.",
-    ],
-    highlight: "Premium n'apporte aucun avantage injuste : pas de réponses, pas de questions simplifiées, pas d'XP en plus.",
-    from: '#5cc8ff', to: '#a5f3fc',
   },
   {
     icon: '🎁', kicker: 'Cadeau de bienvenue', title: '7 jours de Découverte',
@@ -127,16 +56,6 @@ const SLIDES: Slide[] = [
     from: '#5cc8ff', to: '#2fd28a',
   },
   {
-    icon: '🛡️', kicker: 'Fair-play', title: "L'Arena te surveille",
-    paragraphs: [
-      "Un système anti-triche surveille automatiquement chaque partie : sortie de l'application pendant un cas, comptes multiples, réponses partagées, comportements anormaux.",
-      "Toute activité suspecte est signalée à l'administration et peut entraîner l'annulation de tes points, la suspension ou le bannissement définitif du compte.",
-    ],
-    points: ['👁️ Surveillance automatique', '🚫 1 seul compte par personne', '⚖️ Bannissement en cas de triche'],
-    highlight: "Joue honnête : ici, seul ton vrai niveau compte.",
-    from: '#ff5470', to: '#f2c14e',
-  },
-  {
     icon: '😎', kicker: 'Ton identité', title: 'Choisis ton pseudo et ta photo',
     paragraphs: [
       "Ton pseudo et ta photo s'affichent partout : dans le classement, le Top 3 de l'accueil, les duels et ton profil public.",
@@ -145,14 +64,6 @@ const SLIDES: Slide[] = [
     points: ['🏆 Visible au classement', '⚔️ Visible en duel', '✏️ Modifiable à tout moment'],
     highlight: "Fais-toi un nom dans l'Arène.",
     from: '#a855f7', to: '#5cc8ff', extra: 'profile',
-  },
-  {
-    icon: '🎨', kicker: 'À ta façon', title: 'Ton application',
-    paragraphs: [
-      "Choisis ton thème, sombre ou clair, dans Profil → Apparence (ou avec le bouton soleil/lune).",
-      "Installe l'application sur ton téléphone : sur Android, touche « Installer l'application » ; sur iPhone, Partager puis « Sur l'écran d'accueil ». Active aussi les notifications avec la cloche pour ne pas rater un duel.",
-    ],
-    from: '#2fd28a', to: '#f2c14e', extra: 'theme',
   },
   {
     icon: '💬', kicker: 'Étape obligatoire', title: 'Rejoins la communauté WhatsApp',
@@ -180,7 +91,7 @@ const SLIDES: Slide[] = [
   {
     icon: '🚀', kicker: "C'est parti", title: "Entre dans l'Arena",
     paragraphs: [
-      "Analyse les cas. Apprends de tes erreurs. Reviens chaque jour.",
+      "Ta première garde de 10 cas t'attend. Duels, classements, tournoi du mois, Espace Élite : tu les découvriras au fur et à mesure dans l'application.",
     ],
     highlight: "Deviens meilleur qu'hier. Bienvenue dans Dr. Stone Arena.",
     from: '#2fd28a', to: '#5cc8ff',
