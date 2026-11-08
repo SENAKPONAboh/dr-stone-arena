@@ -10,7 +10,7 @@ export default function LeagueHomeCard({ view }: { view: LeagueView }) {
 
   let line: React.ReactNode;
   if (view.status === 'waiting') {
-    line = <>Réussis ton premier cas de la semaine pour entrer dans ton groupe.</>;
+    line = <>Ta garde du jour et tes duels te font entrer dans ton groupe.</>;
   } else {
     const n = view.rows.length, r = view.myRank;
     const inUp = r <= view.up, inStar = r <= view.starZone, inDown = view.down > 0 && r > n - view.down;

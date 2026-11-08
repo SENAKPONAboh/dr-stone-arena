@@ -57,10 +57,16 @@ export default async function LeaguePage() {
             {view.status === 'waiting' ? (
               <div className="rounded-3xl border border-line bg-slab p-5 text-center">
                 <p className="font-display text-base font-extrabold">Ton groupe t&apos;attend</p>
-                <p className="mt-1 text-sm text-mute">Réussis ton premier cas de la semaine : tu entres dans un groupe d&apos;environ 15 étudiants de ta ligue, et tout le monde part de 0 point.</p>
-                <Link href="/etudiant/challenge" className="mt-4 block rounded-2xl bg-mala px-5 py-3.5 font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
-                  Commencer le défi
-                </Link>
+                <p className="mt-1 text-sm text-mute">Les points de ligue viennent de ta <b className="text-ink">garde du jour</b> (tes 10 cas) et de tes <b className="text-ink">duels</b>. Ton premier point de la semaine te fait entrer dans un groupe d&apos;environ 15 étudiants de ta ligue, et tout le monde part de 0.</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <Link href="/etudiant/challenge" className="block rounded-2xl bg-mala px-3 py-3.5 font-display text-xs font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
+                    Garde du jour
+                  </Link>
+                  <Link href="/etudiant/arene" className="block rounded-2xl bg-slab-2 px-3 py-3.5 font-display text-xs font-bold uppercase tracking-wide text-ink">
+                    Lancer un duel
+                  </Link>
+                </div>
+                <p className="mt-2 text-[11px] text-mute">Garde déjà finie aujourd&apos;hui ? Un duel suffit pour entrer, ou reviens demain.</p>
               </div>
             ) : (
               <div className="rounded-3xl border border-line bg-slab p-4">
