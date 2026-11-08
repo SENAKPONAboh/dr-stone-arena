@@ -52,7 +52,7 @@ export default async function BoutiquePage({ searchParams }: { searchParams: Pro
           equipped={{ CADRE: equipped?.activeFrameId ?? null, TITRE: equipped?.activeTitleId ?? null, THEME: equipped?.activeThemeId ?? null }}
           premium={{ amount: premiumAmount, claimed: profile?.premiumUaMonth === monthKey() }}
           earn={{ chestByTier: UA_CHEST_BY_TIER, star: UA_STAR_CHEST, duelWin: UA_DUEL_WIN, duelLoss: UA_DUEL_LOSS, premium: PREMIUM_MONTHLY_UA }}
-          user={{ imageUrl: user.imageUrl, initials: `${user.prenom.charAt(0)}${user.nom.charAt(0)}` }}
+          user={{ imageUrl: user.imageUrl, initials: `${user.prenom.charAt(0)}${user.nom.charAt(0)}`, name: user.pseudo || user.prenom }}
         />
       </main>
     </div>

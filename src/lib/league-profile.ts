@@ -12,7 +12,7 @@ export const UA_STAR_CHEST = 4000;                                    // étoile
 export const UA_DUEL_WIN = 300;                                       // duels au-delà des 3 premiers du jour
 export const UA_DUEL_LOSS = 100;
 export const FREE_LEAGUE_DUELS = 3;
-export const PREMIUM_MONTHLY_UA: Record<number, number> = { 1: 10000, 2: 20000, 3: 35000 };
+export { PREMIUM_MONTHLY_UA } from '@/lib/premium';
 
 /** Ligue de départ (une seule fois) d'après l'XP du mois : ≥ 650 → Or, ≥ 250 → Argent, sinon Bronze. */
 export function startTierFromXp(xp: number) {

@@ -29,6 +29,9 @@ export const PREMIUM_PLANS = [
   },
 ] as const;
 
+/** UA de boutique offertes chaque mois par le coffre Premium, selon le palier. */
+export const PREMIUM_MONTHLY_UA: Record<number, number> = { 1: 10000, 2: 20000, 3: 35000 };
+
 export function getPlan(tier: number | null | undefined) {
   return PREMIUM_PLANS.find(p => p.tier === tier) ?? null;
 }

@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import GoldAvatar from '@/components/ui/GoldAvatar';
+import TitleBadge from '@/components/ui/TitleBadge';
+import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
+import { TITLES, FRAMES, THEMES, getTitleDef, getThemeDef, type Rarity } from '@/lib/personnalisation-data';
 
 type Item = { id: string; name: string; category: string; priceUA: number; icon: string | null; effectKey: string | null; description: string | null };
 type Props = {
@@ -11,7 +14,7 @@ type Props = {
   equipped: { CADRE: string | null; TITRE: string | null; THEME: string | null };
   premium: { amount: number; claimed: boolean };
   earn: { chestByTier: number[]; star: number; duelWin: number; duelLoss: number; premium: Record<number, number> };
-  user: { imageUrl: string | null; initials: string };
+  user: { imageUrl: string | null; initials: string; name: string };
 };
 
 const SECTIONS: { cat: string; title: string; hint: string }[] = [
@@ -20,6 +23,45 @@ const SECTIONS: { cat: string; title: string; hint: string }[] = [
   { cat: 'THEME', title: 'Thèmes', hint: 'L’apparence de ton profil' },
   { cat: 'FLAMME', title: 'Protections de Flamme', hint: 'Pour ne pas perdre ta série' },
 ];
+const rarityOf = (it: Item): Rarity | undefined =>
+  it.category === 'TITRE' ? TITLES.find((t) => t.key === it.effectKey)?.rarity
+  : it.category === 'CADRE' ? FRAMES.find((f) => f.key === it.effectKey)?.rarity
+  : it.category === 'THEME' ? THEMES.find((t) => t.key === it.effectKey)?.rarity : undefined;
+const cardFx = (r?: Rarity) =>
+  r === 'LEGENDAIRE' || r === 'EXCLUSIF' ? 'fx-card fx-card--legend' : r === 'EPIC' ? 'fx-card fx-card--epic' : r === 'RARE' ? 'fx-card fx-card--rare' : 'border border-line';
+const RARITY_LABEL: Record<Rarity, string> = { COMMUN: 'Commun', RARE: 'Rare', EPIC: 'Épique', LEGENDAIRE: 'Légendaire', EXCLUSIF: 'Exclusif' };
+
+/** Aperçu d'un objet tel qu'il apparaîtra : cadre autour de ta photo, titre avec son effet, mini-profil au thème. */
+function ItemPreview({ it, user }: { it: Item; user: Props['user'] }) {
+  if (it.category === 'CADRE') {
+    return <div className="flex h-24 items-center justify-center rounded-xl bg-black/30"><GoldAvatar key={it.effectKey} imageUrl={user.imageUrl} initials={user.initials} frameKey={it.effectKey} size={60} /></div>;
+  }
+  if (it.category === 'THEME') {
+    const t = getThemeDef(it.effectKey);
+    if (!t) return null;
+    return (
+      <div className="relative h-24 overflow-hidden rounded-xl" style={{ backgroundImage: t.bg }}>
+        <ThemeBackdrop themeKey={t.key} compact />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-1">
+          <GoldAvatar imageUrl={user.imageUrl} initials={user.initials} size={34} />
+          <span className="rounded-lg px-2.5 py-0.5 text-[11px] font-extrabold" style={{ background: t.cardBg, border: `1px solid ${t.borderColor}`, color: t.accent }}>{user.name}</span>
+        </div>
+      </div>
+    );
+  }
+  if (it.category === 'TITRE') {
+    const t = getTitleDef(it.effectKey);
+    if (!t) return null;
+    return (
+      <div className="flex h-24 flex-col items-center justify-center gap-1.5 rounded-xl bg-black/30 px-1">
+        <span className="text-[11px] font-bold text-white/60">{user.name}</span>
+        <TitleBadge title={t} size="sm" />
+      </div>
+    );
+  }
+  return <div className="flex h-24 items-center justify-center rounded-xl bg-black/20"><span className="animate-float text-5xl">{it.icon ?? '🎁'}</span></div>;
+}
+
 const fmt = (n: number) => n.toLocaleString('fr-FR').replace(/ | /g, ' ');
 
 export default function BoutiqueLigue({ initialUa, items, owned: initialOwned, equipped: initialEquipped, premium, earn, user }: Props) {
@@ -28,6 +70,16 @@ export default function BoutiqueLigue({ initialUa, items, owned: initialOwned, e
   const [equipped, setEquipped] = useState(initialEquipped);
   const [premiumClaimed, setPremiumClaimed] = useState(premium.claimed);
   const [busy, setBusy] = useState('');
+  const [tryOn, setTryOn] = useState<{ CADRE?: string | null; TITRE?: string | null; THEME?: string | null }>({});
+  const shown = { CADRE: tryOn.CADRE ?? equipped.CADRE, TITRE: tryOn.TITRE ?? equipped.TITRE, THEME: tryOn.THEME ?? equipped.THEME };
+  const trying = !!(tryOn.CADRE || tryOn.TITRE || tryOn.THEME);
+  const themeShown = getThemeDef(shown.THEME);
+  const titleShown = getTitleDef(shown.TITRE);
+  const tryItem = (it: Item) => {
+    if (it.category === 'FLAMME') return;
+    setTryOn((o) => ({ ...o, [it.category]: it.effectKey }));
+    document.getElementById('apercu-profil')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(null);
   const say = (ok: boolean, text: string) => { setToast({ ok, text }); setTimeout(() => setToast(null), 3000); };
 
@@ -84,6 +136,21 @@ export default function BoutiqueLigue({ initialUa, items, owned: initialOwned, e
         </div>
       </div>
 
+      {/* Ton profil en direct : touche un objet pour l'essayer (rien n'est acheté) */}
+      <div id="apercu-profil" className="relative scroll-mt-20 overflow-hidden rounded-3xl border-2 border-gold/30"
+        style={{ backgroundImage: themeShown ? themeShown.bg : 'linear-gradient(135deg,#1c2723,#0d1311)' }}>
+        {themeShown && <ThemeBackdrop key={themeShown.key} themeKey={themeShown.key} compact />}
+        <div className="relative z-10 flex flex-col items-center gap-2.5 px-4 py-6 text-center">
+          <p className="text-[11px] font-extrabold uppercase tracking-widest text-gold/80">{trying ? '👀 Essai : rien n’est acheté' : 'Ton profil, tel que les autres le voient'}</p>
+          <GoldAvatar key={shown.CADRE ?? 'none'} imageUrl={user.imageUrl} initials={user.initials} frameKey={shown.CADRE} size={88} />
+          <p className="text-lg font-extrabold" style={{ color: themeShown?.accent ?? '#e9f1ed' }}>{user.name}</p>
+          {titleShown ? <TitleBadge title={titleShown} /> : <span className="text-xs text-white/40">Aucun titre</span>}
+          {trying
+            ? <button onClick={() => setTryOn({})} className="rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold text-white/80">Arrêter l’essai</button>
+            : <p className="text-[11px] text-white/50">Touche un cadre, un titre ou un thème pour l’essayer ici.</p>}
+        </div>
+      </div>
+
       {/* Coffre Premium */}
       <div className="rounded-3xl border border-sky/40 bg-slab p-4">
         <p className="font-display text-sm font-extrabold text-sky">Coffre Premium du mois</p>
@@ -122,11 +189,12 @@ export default function BoutiqueLigue({ initialUa, items, owned: initialOwned, e
                 const isOn = sec.cat !== 'FLAMME' && equipped[sec.cat as 'CADRE' | 'TITRE' | 'THEME'] === it.effectKey;
                 const canBuy = ua >= it.priceUA;
                 return (
-                  <div key={it.id} className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 text-center ${isOn ? 'border-mala bg-mala/10' : 'border-line bg-slab-2'}`}>
-                    {sec.cat === 'CADRE'
-                      ? <GoldAvatar imageUrl={user.imageUrl} initials={user.initials} frameKey={it.effectKey} size={56} />
-                      : <span className="text-3xl">{it.icon ?? '🎁'}</span>}
+                  <div key={it.id} className={`flex flex-col gap-1.5 rounded-2xl p-2.5 text-center ${cardFx(rarityOf(it))} ${isOn ? 'ring-2 ring-mala' : ''} bg-slab-2`}>
+                    <button type="button" onClick={() => tryItem(it)} className="block w-full" aria-label={`Essayer ${it.name}`}>
+                      <ItemPreview it={it} user={user} />
+                    </button>
                     <p className="text-xs font-bold leading-tight">{it.name}</p>
+                    {rarityOf(it) && <p className="text-[10px] font-bold uppercase tracking-wider text-mute">{RARITY_LABEL[rarityOf(it)!]}</p>}
                     {sec.cat === 'FLAMME' && qty > 0 && <p className="text-[10px] font-bold text-mala">En stock : {qty}</p>}
                     {sec.cat !== 'FLAMME' && qty > 0 ? (
                       <button onClick={() => equip(it, !isOn)} disabled={busy === it.id}

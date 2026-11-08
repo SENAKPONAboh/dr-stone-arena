@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { FREE_DAILY_DUELS } from '@/lib/decouverte';
 import { useRouter } from 'next/navigation';
-import { PREMIUM_PLANS, getPlan } from '@/lib/premium';
+import { PREMIUM_PLANS, PREMIUM_MONTHLY_UA, getPlan } from '@/lib/premium';
 
 type ActiveMethod = {
   id: string; name: string; icon: string | null; isManual: boolean;
@@ -137,6 +138,8 @@ export default function PremiumPlans({
             <li className="flex items-center gap-2"><span className="text-mala">✓</span> Régénération d'1 vie toutes les 24h</li>
             <li className="flex items-center gap-2"><span className="text-mala">✓</span> Accès aux cas cliniques de base</li>
             <li className="flex items-center gap-2"><span className="text-mala">✓</span> Classement et progression XP</li>
+            <li className="flex items-center gap-2"><span className="text-mala">✓</span> Ligues de la semaine et boutique</li>
+            <li className="flex items-center gap-2"><span className="text-mala">✓</span> {FREE_DAILY_DUELS} duels par jour</li>
           </ul>
 
           <div className="w-full rounded-2xl bg-slab-2 py-3 text-center text-sm font-bold uppercase tracking-wide text-mute">
@@ -176,7 +179,9 @@ export default function PremiumPlans({
                 <li className="flex items-center gap-2"><span className="text-mala">✓</span> 10 Vies maximum</li>
                 <li className="flex items-center gap-2"><span className="text-mala">✓</span> Régénération d'1 vie {plan.regenLabel}</li>
                 <li className="flex items-center gap-2"><span className="text-mala">✓</span> Accès à tous les cas exclusifs</li>
-                <li className="flex items-center gap-2"><span className="text-mala">✓</span> Accès aux Duels ({plan.dailyDuels} par jour)</li>
+                <li className="flex items-start gap-2"><span className="text-mala">✓</span><span>{plan.dailyDuels} duels par jour <span className="text-mute">(gratuit : {FREE_DAILY_DUELS})</span></span></li>
+                <li className="flex items-start gap-2"><span className="text-gold">✓</span><span>Coffre Premium : <b className="text-gold">{PREMIUM_MONTHLY_UA[plan.tier].toLocaleString('fr-FR')} UA</b> offertes chaque mois pour la boutique</span></li>
+                <li className="flex items-center gap-2"><span className="text-mala">✓</span> Badge Premium sur ton profil</li>
               </ul>
 
               {isCurrent ? (
