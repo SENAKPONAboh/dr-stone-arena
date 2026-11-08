@@ -26,7 +26,7 @@ import TitleBadge from '@/components/ui/TitleBadge';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 import ShareButton from '@/components/ui/ShareButton';
 
-export default async function ProfilPage() {
+export default async function ProfilPage({ searchParams }: { searchParams: Promise<{ theme?: string }> }) {
   const user = await getCurrentUser();
 
   if (!user) redirect('/api/auth/logout');
@@ -37,9 +37,12 @@ export default async function ProfilPage() {
     select: { activeTitleId: true, activeFrameId: true, activeThemeId: true, passActive: true },
   });
   const titleDef = getTitleDef(equipped?.activeTitleId);
-  const themeDef = getThemeDef(equipped?.activeThemeId);
+  // ?theme=THEME_COSMOS : aperçu d'un thème EN LOCAL uniquement (jamais sur le vrai site), rien n'est enregistré
+  const previewTheme = process.env.VERCEL !== '1' ? (await searchParams).theme : undefined;
+  const themeDef = getThemeDef(previewTheme ?? equipped?.activeThemeId);
   const cardInline: CSSProperties | undefined = themeDef
-    ? ({ background: themeDef.cardBg, border: `2px solid ${themeDef.borderColor}`, color: '#ffffff', '--aura-color': themeDef.aura, animation: 'auraPulse 3.5s ease-in-out infinite' } as CSSProperties)
+    // Thème équipé : carte TRANSPARENTE, les éléments sont posés directement sur le fond du thème (demande d'Arthur, 8 nov.)
+    ? ({ background: 'transparent', border: 'none', color: '#ffffff' } as CSSProperties)
     : undefined;
 
   // Grade de la saison + palmarès des saisons passées
@@ -68,7 +71,7 @@ export default async function ProfilPage() {
   return (
     // 🖥️📱 PLEIN ÉCRAN : recouvre la coquille classique — la flèche retour sert de sortie
     <div
-      className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 font-body text-ink ${themeDef ? 'theme-bg-anim' : 'bg-stone'}`}
+      className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 font-body text-ink ${themeDef ? 'theme-bg-anim theme-glass' : 'bg-stone'}`}
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
       {themeDef && <ThemeBackdrop themeKey={themeDef.key} />}

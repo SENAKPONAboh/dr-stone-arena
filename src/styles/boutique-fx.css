@@ -115,3 +115,16 @@
 /* ---------- Compte à rebours des 10 dernières secondes ---------- */
 @keyframes fxCount { 0% { transform: scale(2); opacity: 0; } 18% { opacity: 1; } 100% { transform: scale(1); opacity: 0.88; } }
 @keyframes fxVignette { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.85; } }
+
+/* ===== Profil avec un thème équipé : tout est posé sur le fond du thème (cartes transparentes) ===== */
+.theme-glass .bg-slab,
+.theme-glass .bg-slab-2,
+.theme-glass .bg-stone,
+.theme-glass main [class*="bg-gray-"],
+.theme-glass main [class*="bg-slate-"],
+.theme-glass main [class*="bg-white"] { background-color: rgba(0, 0, 0, 0.18) !important; }
+.theme-glass .border-line { border-color: rgba(255, 255, 255, 0.14) !important; }
+.theme-glass main p,
+.theme-glass main h1,
+.theme-glass main h2,
+.theme-glass main span { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55); }

@@ -60,13 +60,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
       : { className: `px-3 py-1 rounded-full text-sm font-bold ${profileUser.isPremium ? prem : free}`, style: undefined as CSSProperties | undefined };
 
   const cardInline: CSSProperties | undefined = themeDef
-    ? {
-        background: themeDef.cardBg,
-        border: `2px solid ${themeDef.borderColor}`,
-        color: '#ffffff',
-        '--aura-color': themeDef.aura,
-        animation: 'auraPulse 3.5s ease-in-out infinite',
-      } as CSSProperties
+    // Thème équipé : carte TRANSPARENTE, les éléments sont posés directement sur le fond du thème
+    ? { background: 'transparent', border: 'none', color: '#ffffff' } as CSSProperties
     : undefined;
 
   const cardClass = themeDef
@@ -81,7 +76,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
     // Défilement interne + overscroll-contain : expérience mobile propre.
     <div
       className={`fixed inset-0 z-[80] overflow-y-auto overscroll-contain pb-10 ${themeDef
-        ? 'theme-bg-anim'
+        ? 'theme-bg-anim theme-glass'
         : 'bg-stone'}`}
       style={themeDef ? { backgroundImage: themeDef.bg } : undefined}
     >
