@@ -14,14 +14,19 @@ export default async function BoutiquePage({ searchParams }: { searchParams: Pro
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ETUDIANT') redirect('/login');
 
-  const [perso, shop, inventory, equipped, profile] = await Promise.all([
-    getOrCreatePersonalisationCatalog().catch(() => []),
-    getOrCreateShopCatalog().catch(() => []),
+  // Catalogue lu directement (déjà enregistré) ; on ne le recrée que s'il est vide (première fois) — sinon la page mettait ~60 s
+  const CATS = ['CADRE', 'TITRE', 'THEME', 'FLAMME'];
+  let catalog = await prisma.shopItem.findMany({ where: { category: { in: CATS }, isActive: true }, orderBy: [{ category: 'asc' }, { priceUA: 'asc' }] });
+  if (catalog.length === 0) {
+    const [p, sh] = await Promise.all([getOrCreatePersonalisationCatalog().catch(() => []), getOrCreateShopCatalog().catch(() => [])]);
+    catalog = [...p, ...sh.filter((i) => i.category === 'FLAMME')];
+  }
+  const [inventory, equipped, profile] = await Promise.all([
     prisma.userInventory.findMany({ where: { userId: user.id }, select: { itemId: true, quantity: true } }),
     prisma.user.findUnique({ where: { id: user.id }, select: { activeFrameId: true, activeTitleId: true, activeThemeId: true } }),
     prisma.leagueProfile.findUnique({ where: { userId: user.id } }).catch(() => null),
   ]);
-  const items = [...perso, ...shop.filter((i) => i.category === 'FLAMME')].map((i) => ({
+  const items = catalog.map((i) => ({
     id: i.id, name: i.name, category: i.category, priceUA: i.priceUA, icon: i.icon, effectKey: i.effectKey, description: i.description,
   }));
   const demo = demoAllowed((await searchParams).demo); // local uniquement : solde fictif pour le tutoriel
