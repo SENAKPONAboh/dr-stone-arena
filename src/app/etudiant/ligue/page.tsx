@@ -1,17 +1,19 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getLeagueView, getLeaguesOverview, LEAGUES, DUEL_WIN, DUEL_WIN_HIGHER, DUEL_LOSS, DUELS_FULL_POINTS } from '@/lib/league';
+import { getLeagueView, getLeaguesOverview, demoAllowed, demoLeagueView, demoOverview, LEAGUES, DUEL_WIN, DUEL_WIN_HIGHER, DUEL_LOSS, DUELS_FULL_POINTS } from '@/lib/league';
 import LeagueCountdown from '@/components/league/LeagueCountdown';
+import ChestOpener from '@/components/league/ChestOpener';
 import { getNiveauLabel } from '@/lib/niveau';
 
 // ===== MA LIGUE DE LA SEMAINE =====
-export default async function LeaguePage() {
+export default async function LeaguePage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   const user = await getCurrentUser();
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ETUDIANT') redirect('/login');
 
-  const [view, overview] = await Promise.all([getLeagueView(user.id), getLeaguesOverview()]);
+  const demo = demoAllowed((await searchParams).demo); // local uniquement : données fictives pour le tutoriel
+  const [view, overview] = demo ? [demoLeagueView(), demoOverview()] : await Promise.all([getLeagueView(user.id), getLeaguesOverview()]);
   const L = view.status === 'unavailable' || view.status === 'soon' ? LEAGUES[0] : LEAGUES[view.tier];
   const stars = view.status === 'waiting' || view.status === 'active' ? view.stars : 0;
 
@@ -53,6 +55,24 @@ export default async function LeaguePage() {
                 ))}
               </div>
             </div>
+
+            {/* Résultat de la semaine dernière + coffre à ouvrir */}
+            {view.lastResult && (
+              <div className="rounded-3xl border border-line bg-slab p-4 text-center text-sm font-bold">
+                {view.lastResult === 'MONTE' ? '🎉 La semaine dernière, tu es monté de ligue !' : view.lastResult === 'ETOILE' ? '⭐ La semaine dernière, tu as gagné une étoile !'
+                  : view.lastResult === 'DESCEND' ? 'La semaine dernière, tu es redescendu. Reprends ta place cette semaine !' : 'La semaine dernière, tu as gardé ta ligue.'}
+              </div>
+            )}
+            {view.chestUa > 0 && <ChestOpener amount={view.chestUa} label={view.chestLabel} />}
+
+            <Link href="/etudiant/boutique" className="flex items-center gap-3 rounded-3xl border border-gold/40 bg-slab p-4">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#fff3c9] via-gold to-[#9a6a12] font-display text-xs font-extrabold text-[#5a3d06]">UA</span>
+              <span className="flex-1">
+                <span className="block text-[11px] font-bold uppercase tracking-wider text-mute">Mes UA</span>
+                <span className="block font-display text-lg font-extrabold text-gold">{view.ua.toLocaleString('fr-FR')}</span>
+              </span>
+              <span className="font-display text-xs font-bold uppercase text-gold">Boutique →</span>
+            </Link>
 
             {view.status === 'waiting' ? (
               <div className="rounded-3xl border border-line bg-slab p-5 text-center">
@@ -156,7 +176,7 @@ export default async function LeaguePage() {
               </ul>
               <p className="mt-3 text-xs text-mute">
                 Les points de ligue sont à part de ton XP et repartent à 0 chaque lundi. 1 duel compté par adversaire et par semaine ; au-delà de {DUELS_FULL_POINTS} duels dans la journée, les points sont divisés par 2.
-                Dimanche à minuit, environ 1 joueur sur 5 monte (avec un coffre) et 1 sur 5 redescend. Dans la plus haute ligue ouverte, les 3 premiers gagnent une étoile.
+                Dimanche à minuit, environ 1 joueur sur 5 monte (avec un coffre d&apos;UA) et 1 sur 5 redescend. Dans la plus haute ligue ouverte, les 3 premiers gagnent une étoile (et un coffre). Quand une ligue a assez de joueurs, la suivante s&apos;ouvre : ceux qui ont le plus d&apos;étoiles y entrent en premier.
               </p>
             </div>
           </>

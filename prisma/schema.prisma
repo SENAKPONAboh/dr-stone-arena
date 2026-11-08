@@ -517,6 +517,11 @@ model LeagueProfile {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   tier      Int      @default(0)
   stars     Int      @default(0)
+  // UA de la boutique (prisma/sql/2026-ligues-ua.sql) : séparées de l'Élite, jamais retirables
+  ua             Int     @default(0)
+  chestUa        Int     @default(0)   // coffre gagné, en attente d'ouverture
+  chestLabel     String?
+  premiumUaMonth String?               // mois du dernier coffre Premium reçu, ex. "2026-11"
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 }
@@ -558,4 +563,16 @@ model LeagueDuelCredit {
 model LeagueSetting {
   key   String @id
   value String
+}
+
+// Historique des UA de boutique (gains et achats).
+model UaLedger {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  reason    String   // MONTEE | ETOILE | DUEL | PREMIUM | ACHAT | AUTRE
+  reference String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

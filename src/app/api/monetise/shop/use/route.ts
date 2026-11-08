@@ -13,7 +13,7 @@ const RESTAURE_WINDOW_MS = 48 * 3600 * 1000; // fenêtre d'utilisation après la
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
   if (!user) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
-  if (!user.passActive) return NextResponse.json({ error: "Pass Monétisé requis." }, { status: 403 });
+  // Boutique ouverte à tous (ligues, nov. 2026) : posséder l'objet suffit, le Pass Élite n'est plus exigé.
 
   try {
     const { itemId } = await request.json();

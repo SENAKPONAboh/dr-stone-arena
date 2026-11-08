@@ -29,9 +29,9 @@ import { flameStatus } from '@/lib/flame';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
 import LeagueHomeCard from '@/components/league/LeagueHomeCard';
-import { getLeagueView } from '@/lib/league';
+import { getLeagueView, demoAllowed, demoLeagueView } from '@/lib/league';
 
-export default async function EtudiantDashboard() {
+export default async function EtudiantDashboard({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   const user = await getCurrentUserCore();
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ETUDIANT') redirect('/login');
@@ -159,7 +159,7 @@ export default async function EtudiantDashboard() {
   const gradePct = gradeProgress(user.xp);
   const legends = await getLegendCounts(topUsers.map(u => u.id));
   const card = 'rounded-3xl border border-line bg-slab';
-  const leagueView = await getLeagueView(user.id);
+  const leagueView = demoAllowed((await searchParams).demo) ? demoLeagueView() : await getLeagueView(user.id); // ?demo=1 : local uniquement
 
   return (
     <div className="space-y-5">

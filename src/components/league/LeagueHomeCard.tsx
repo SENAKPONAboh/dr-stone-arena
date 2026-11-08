@@ -34,6 +34,7 @@ export default function LeagueHomeCard({ view }: { view: LeagueView }) {
   }
 
   return (
+    <div className="space-y-3">
     <Link href="/etudiant/ligue" className="relative flex items-center gap-3 overflow-hidden rounded-3xl border bg-slab p-4 transition-transform active:scale-[0.98]"
       style={{ borderColor: `${L.color}66` }}>
       <span aria-hidden className="pointer-events-none absolute -left-10 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full blur-3xl" style={{ background: `${L.color}33` }} />
@@ -50,5 +51,14 @@ export default function LeagueHomeCard({ view }: { view: LeagueView }) {
       </span>
       <span className="relative font-display text-lg font-extrabold" style={{ color: L.color }}>→</span>
     </Link>
+    <Link href={view.chestUa > 0 ? '/etudiant/ligue' : '/etudiant/boutique'} className="flex items-center gap-3 rounded-3xl border border-gold/40 bg-slab p-4 transition-transform active:scale-[0.98]">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#fff3c9] via-gold to-[#9a6a12] font-display text-xs font-extrabold text-[#5a3d06]">UA</span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-display text-sm font-extrabold text-gold">{view.chestUa > 0 ? '🎁 Un coffre t’attend !' : 'Boutique'}</span>
+        <span className="block text-xs text-mute">{view.ua.toLocaleString('fr-FR')} UA · cadres, titres, thèmes, protections de Flamme</span>
+      </span>
+      <span className="font-display text-lg font-extrabold text-gold">→</span>
+    </Link>
+    </div>
   );
 }

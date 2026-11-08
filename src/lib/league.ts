@@ -8,6 +8,9 @@
 // Tout est NON BLOQUANT : si les tables n'existent pas encore (SQL pas exécuté), rien ne casse.
 import prisma from '@/lib/prisma';
 import { pushOnly } from '@/lib/notify';
+import { startTierFromXp, getOpenTiers, ensureProfile, creditUa, FREE_LEAGUE_DUELS, UA_DUEL_WIN, UA_DUEL_LOSS } from '@/lib/league-profile';
+
+export { startTierFromXp, getOpenTiers };
 
 export const LEAGUES = [
   { name: 'Bronze', color: '#e0a36a' },
@@ -64,21 +67,6 @@ async function weekCasePoints(userId: string) {
   return Math.max(0, agg._sum.xpEarned ?? 0);
 }
 
-/** Ligue de départ (une seule fois) d'après l'XP du mois. */
-export function startTierFromXp(xp: number) {
-  return xp >= 650 ? 2 : xp >= 250 ? 1 : 0;
-}
-
-export async function getOpenTiers(): Promise<number> {
-  try {
-    const s = await prisma.leagueSetting.findUnique({ where: { key: 'openTiers' } });
-    const n = Number(s?.value);
-    return Number.isFinite(n) && n >= 1 ? Math.min(6, n) : 3;
-  } catch {
-    return 3;
-  }
-}
-
 /** Nombre de places qui montent / descendent / gagnent une étoile dans un groupe de n joueurs. */
 export function zones(n: number, tier: number, openTiers: number) {
   const fifth = n >= 5 ? Math.round(n / 5) : n >= 2 ? 1 : 0;
@@ -90,19 +78,29 @@ export function zones(n: number, tier: number, openTiers: number) {
   };
 }
 
+/** Clôture la semaine précédente si la tâche planifiée du dimanche ne l'a pas fait (appel léger, verrouillé). */
+export async function closePreviousWeekIfNeeded() {
+  try {
+    const prev = weekKey(new Date(weekStart().getTime() - 3600000));
+    const done = await prisma.leagueSetting.findUnique({ where: { key: `closed:${prev}` } });
+    if (done) return;
+    const any = await prisma.leagueMember.findFirst({ where: { week: prev }, select: { id: true } });
+    if (!any) return;
+    const { closeWeek } = await import('@/lib/league-close');
+    await closeWeek(prev);
+  } catch (e) {
+    console.error('Ligue (clôture) :', e);
+  }
+}
+
 /** Inscrit l'étudiant dans la ligue de la semaine (crée son profil et lui trouve un groupe). */
 export async function ensureMember(userId: string): Promise<{ member: Awaited<ReturnType<typeof prisma.leagueMember.create>>; created: boolean }> {
   const week = weekKey();
   const existing = await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } } });
   if (existing) return { member: existing, created: false };
 
-  const openTiers = await getOpenTiers();
-  let profile = await prisma.leagueProfile.findUnique({ where: { userId } });
-  if (!profile) {
-    const u = await prisma.user.findUnique({ where: { id: userId }, select: { xp: true } });
-    const tier = Math.min(openTiers - 1, startTierFromXp(u?.xp ?? 0));
-    profile = await prisma.leagueProfile.upsert({ where: { userId }, update: {}, create: { userId, tier } });
-  }
+  await closePreviousWeekIfNeeded();
+  const profile = await ensureProfile(userId);
   const tier = profile.tier;
 
   // Verrou par (semaine, ligue) : deux inscriptions simultanées ne remplissent pas le même groupe au-delà de 15
@@ -186,6 +184,8 @@ export async function creditLeagueDuel(duel: { id: string; requesterId: string; 
         continue; // déjà compté (double appel)
       }
       await addLeaguePoints(me, pts, 'duel');
+      // Au-delà des 3 duels du jour (les duels « de ligue »), chaque duel rapporte aussi un peu d'UA de boutique
+      if (countedToday >= FREE_LEAGUE_DUELS) await creditUa(me.id, won ? UA_DUEL_WIN : UA_DUEL_LOSS, 'DUEL', duel.id);
     }
   } catch (e) {
     console.error('Ligue (duel) :', e);
@@ -196,8 +196,8 @@ export type LeagueRow = { userId: string; name: string; imageUrl: string | null;
 export type LeagueView =
   | { status: 'unavailable' }
   | { status: 'soon'; startsOn: string }
-  | { status: 'waiting'; tier: number; stars: number; openTiers: number; endsAt: string }
-  | { status: 'active'; tier: number; stars: number; openTiers: number; endsAt: string; groupNo: number; rows: LeagueRow[]; myRank: number; up: number; down: number; starZone: number };
+  | { status: 'waiting'; tier: number; stars: number; openTiers: number; endsAt: string; ua: number; chestUa: number; chestLabel: string | null; lastResult: string | null }
+  | { status: 'active'; tier: number; stars: number; openTiers: number; endsAt: string; ua: number; chestUa: number; chestLabel: string | null; lastResult: string | null; groupNo: number; rows: LeagueRow[]; myRank: number; up: number; down: number; starZone: number };
 
 /** Tout ce qu'il faut pour afficher la ligue de l'étudiant cette semaine. */
 export async function getLeagueView(userId: string): Promise<LeagueView> {
@@ -214,13 +214,16 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
       prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } } }),
     ]);
     const endsAt = weekEnd().toISOString();
+    const prevWeek = weekKey(new Date(weekStart().getTime() - 3600000));
+    const last = await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week: prevWeek } }, select: { result: true } });
+    const extra = { ua: profile?.ua ?? 0, chestUa: profile?.chestUa ?? 0, chestLabel: profile?.chestLabel ?? null, lastResult: last?.result ?? null };
     if (!member) {
       let tier = profile?.tier;
       if (tier === undefined) {
         const u = await prisma.user.findUnique({ where: { id: userId }, select: { xp: true } });
         tier = Math.min(openTiers - 1, startTierFromXp(u?.xp ?? 0));
       }
-      return { status: 'waiting', tier, stars: profile?.stars ?? 0, openTiers, endsAt };
+      return { status: 'waiting', tier, stars: profile?.stars ?? 0, openTiers, endsAt, ...extra };
     }
     const members = await prisma.leagueMember.findMany({
       where: { week, tier: member.tier, groupNo: member.groupNo },
@@ -233,7 +236,7 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
     }));
     const z = zones(rows.length, member.tier, openTiers);
     return {
-      status: 'active', tier: member.tier, stars: profile?.stars ?? 0, openTiers, endsAt, groupNo: member.groupNo, rows,
+      status: 'active', tier: member.tier, stars: profile?.stars ?? 0, openTiers, endsAt, ...extra, groupNo: member.groupNo, rows,
       myRank: rows.find((r) => r.me)?.rank ?? rows.length, up: z.up, down: z.down, starZone: z.stars,
     };
   } catch {
@@ -262,4 +265,28 @@ export async function getLeaguesOverview(): Promise<LeagueOverview> {
   } catch {
     return [];
   }
+}
+
+// ===== MODE DÉMONSTRATION (LOCAL UNIQUEMENT, ?demo=1) : données fictives pour les captures du tutoriel vidéo =====
+// Rien n'est lu ni écrit en base. Impossible sur le vrai site (Vercel).
+export const demoAllowed = (demo?: string) => IS_LOCAL && demo === '1';
+const DEMO_NAMES = ['Fatima', 'Ibrahim', 'Kofi', 'Grâce', 'Moussa', 'Aïcha', 'Kossi', 'Mariam', 'Sani', 'Hamza', 'Bénédicte', 'Yacine', 'Nadia', 'Paul'];
+const DEMO_POINTS = [612, 540, 498, 455, 430, 402, 377, 340, 295, 260, 210, 185, 120, 64];
+export function demoLeagueView(): LeagueView {
+  const rows: LeagueRow[] = DEMO_NAMES.map((name, i) => ({
+    userId: `demo-${i}`, name, imageUrl: null, anneeEtude: 3, points: DEMO_POINTS[i], tier: 1, rank: i + 1, me: name === 'Kofi',
+  }));
+  const z = zones(rows.length, 1, 3);
+  return {
+    status: 'active', tier: 1, stars: 0, openTiers: 3, endsAt: weekEnd().toISOString(), ua: 12400, chestUa: 3000, chestLabel: 'Coffre de montée en Argent',
+    lastResult: 'MONTE', groupNo: 1, rows, myRank: 3, up: z.up, down: z.down, starZone: z.stars,
+  };
+}
+export function demoOverview(): LeagueOverview {
+  const t = (names: string[], pts: number[]) => names.map((name, i) => ({ userId: `d-${name}`, name, imageUrl: null, anneeEtude: (i % 6) + 1, points: pts[i] }));
+  return [
+    { tier: 0, players: 46, top: t(['Junior', 'Inès', 'Rachid', 'Sena', 'Mariam'], [702, 655, 610, 588, 540]) },
+    { tier: 1, players: 28, top: t(['Fatima', 'Ibrahim', 'Kofi', 'Grâce', 'Moussa'], [612, 540, 498, 455, 430]) },
+    { tier: 2, players: 15, top: t(['Nadia', 'Yacine', 'Paul', 'Aïcha', 'Kevin'], [890, 845, 790, 760, 702]) },
+  ];
 }

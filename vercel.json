@@ -1,5 +1,12 @@
 {
   "crons": [
-    { "path": "/api/cron/flamme", "schedule": "0 19 * * *" }
+    {
+      "path": "/api/cron/flamme",
+      "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/ligues",
+      "schedule": "5 23 * * 0"
+    }
   ]
 }
