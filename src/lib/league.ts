@@ -20,7 +20,8 @@ export const LEAGUES = [
 
 /** Premier lundi des ligues. Sur le vrai site (Vercel), rien n'est visible ni compté avant cette semaine ; en local, tout est testable. */
 export const LEAGUE_START = '2026-11-09';
-export const leaguesOpen = () => process.env.VERCEL !== '1' || weekKey() >= LEAGUE_START;
+const IS_LOCAL = process.env.VERCEL !== '1';
+export const leaguesOpen = () => IS_LOCAL || weekKey() >= LEAGUE_START;
 
 export const GROUP_SIZE = 15;
 export const STAR_TOP = 3;           // dans la plus haute ligue ouverte : les 3 premiers gagnent une étoile
@@ -105,7 +106,8 @@ export async function ensureMember(userId: string): Promise<{ member: Awaited<Re
   const tier = profile.tier;
 
   // Verrou par (semaine, ligue) : deux inscriptions simultanées ne remplissent pas le même groupe au-delà de 15
-  const startPoints = await weekCasePoints(userId);
+  // Rattrapage des cas déjà joués dans la semaine : UNIQUEMENT en local (tests d'Arthur). Sur le vrai site, tout le monde part de 0.
+  const startPoints = IS_LOCAL ? await weekCasePoints(userId) : 0;
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`league:${week}:${tier}`}))`;
     const again = await tx.leagueMember.findUnique({ where: { userId_week: { userId, week } } });
@@ -123,9 +125,9 @@ export async function addLeaguePoints(user: { id: string; prenom: string; pseudo
   if (!delta || !leaguesOpen()) return;
   try {
     const { member, created } = await ensureMember(user.id);
-    if (created && source === 'case') {
+    if (created && source === 'case' && IS_LOCAL) {
       if (member.points > 0) await notifyLeagueOvertaken(user, member, 0, member.points);
-      return; // ce cas fait déjà partie des points de départ
+      return; // (local) ce cas fait déjà partie des points de départ
     }
     const before = member.points;
     const rows = await prisma.$queryRaw<{ points: number }[]>`
@@ -202,8 +204,8 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
   if (!leaguesOpen()) return { status: 'soon', startsOn: LEAGUE_START };
   try {
     const week = weekKey();
-    // A déjà joué des cas cette semaine sans être inscrit : on l'inscrit avec ces points
-    if (!(await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } }, select: { id: true } })) && (await weekCasePoints(userId)) > 0) {
+    // (Local seulement) a déjà joué des cas cette semaine sans être inscrit : on l'inscrit avec ces points
+    if (IS_LOCAL && !(await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } }, select: { id: true } })) && (await weekCasePoints(userId)) > 0) {
       await ensureMember(userId);
     }
     const [openTiers, profile, member] = await Promise.all([
@@ -236,5 +238,28 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
     };
   } catch {
     return { status: 'unavailable' };
+  }
+}
+
+export type LeagueOverview = { tier: number; players: number; top: { userId: string; name: string; imageUrl: string | null; anneeEtude: number | null; points: number }[] }[];
+
+/** Toutes les ligues ouvertes cette semaine : nombre de joueurs et les 5 meilleurs (tous groupes confondus). */
+export async function getLeaguesOverview(): Promise<LeagueOverview> {
+  try {
+    if (!leaguesOpen()) return [];
+    const week = weekKey();
+    const openTiers = await getOpenTiers();
+    return await Promise.all(Array.from({ length: openTiers }, async (_, tier) => {
+      const [players, top] = await Promise.all([
+        prisma.leagueMember.count({ where: { week, tier } }),
+        prisma.leagueMember.findMany({
+          where: { week, tier }, orderBy: [{ points: 'desc' }, { updatedAt: 'asc' }], take: 5,
+          select: { userId: true, points: true, user: { select: { prenom: true, pseudo: true, imageUrl: true, anneeEtude: true } } },
+        }),
+      ]);
+      return { tier, players, top: top.map((m) => ({ userId: m.userId, name: m.user.pseudo || m.user.prenom, imageUrl: m.user.imageUrl, anneeEtude: m.user.anneeEtude, points: m.points })) };
+    }));
+  } catch {
+    return [];
   }
 }

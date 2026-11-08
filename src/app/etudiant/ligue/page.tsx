@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getLeagueView, LEAGUES, DUEL_WIN, DUEL_WIN_HIGHER, DUEL_LOSS, DUELS_FULL_POINTS } from '@/lib/league';
+import { getLeagueView, getLeaguesOverview, LEAGUES, DUEL_WIN, DUEL_WIN_HIGHER, DUEL_LOSS, DUELS_FULL_POINTS } from '@/lib/league';
 import LeagueCountdown from '@/components/league/LeagueCountdown';
 import { getNiveauLabel } from '@/lib/niveau';
 
@@ -11,7 +11,7 @@ export default async function LeaguePage() {
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ETUDIANT') redirect('/login');
 
-  const view = await getLeagueView(user.id);
+  const [view, overview] = await Promise.all([getLeagueView(user.id), getLeaguesOverview()]);
   const L = view.status === 'unavailable' || view.status === 'soon' ? LEAGUES[0] : LEAGUES[view.tier];
   const stars = view.status === 'waiting' || view.status === 'active' ? view.stars : 0;
 
@@ -80,7 +80,8 @@ export default async function LeaguePage() {
                     const star = r.rank <= view.starZone, up = r.rank <= view.up, down = view.down > 0 && r.rank > n - view.down;
                     const zone = star ? 'border-gold/40 bg-gold/10' : up ? 'border-mala/40 bg-mala/10' : down ? 'border-heart/40 bg-heart/10' : 'border-line bg-slab-2';
                     return (
-                      <li key={r.userId} className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 ${zone} ${r.me ? 'ring-2 ring-sky' : ''}`}>
+                      <li key={r.userId}>
+                      <Link href={r.me ? '/etudiant/profil' : `/etudiant/profil/${r.userId}`} className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-transform active:scale-[0.98] ${zone} ${r.me ? 'ring-2 ring-sky' : ''}`}>
                         <span className={`w-7 text-center font-display text-sm font-extrabold ${star ? 'text-gold' : up ? 'text-mala' : down ? 'text-heart' : 'text-mute'}`}>{r.rank}</span>
                         {r.imageUrl
                           // eslint-disable-next-line @next/next/no-img-element
@@ -92,14 +93,53 @@ export default async function LeaguePage() {
                         </span>
                         <span className="font-display text-sm font-extrabold tabular-nums">{r.points}</span>
                         <span className="w-4 text-center text-xs">{star ? <span className="text-gold">★</span> : up ? <span className="text-mala">▲</span> : down ? <span className="text-heart">▼</span> : ''}</span>
+                      </Link>
                       </li>
                     );
                   })}
                 </ol>
-                <div className="mt-3 flex flex-wrap gap-3 px-1 text-[10px] font-bold text-mute">
+                <p className="mt-3 px-1 text-[11px] text-mute">Touche un joueur pour voir son profil et le <b className="text-ink">défier en duel</b> (étudiants de ta promotion).</p>
+                <div className="mt-2 flex flex-wrap gap-3 px-1 text-[10px] font-bold text-mute">
                   {view.starZone > 0 && <span><span className="text-gold">★</span> gagnent une étoile</span>}
                   {view.up > 0 && <span><span className="text-mala">▲</span> montent en {LEAGUES[view.tier + 1]?.name}</span>}
                   {view.down > 0 && <span><span className="text-heart">▼</span> redescendent en {LEAGUES[view.tier - 1]?.name}</span>}
+                </div>
+              </div>
+            )}
+
+            {/* Toutes les ligues ouvertes : nombre de joueurs et les 5 meilleurs de la semaine */}
+            {overview.length > 0 && (
+              <div className="rounded-3xl border border-line bg-slab p-4">
+                <h2 className="mb-3 px-1 font-display text-sm font-bold">Toutes les ligues cette semaine</h2>
+                <div className="space-y-3">
+                  {[...overview].reverse().map((o) => {
+                    const LL = LEAGUES[o.tier];
+                    const mine = view.tier === o.tier;
+                    return (
+                      <div key={o.tier} className={`rounded-2xl border p-3 ${mine ? 'ring-2 ring-sky' : ''}`} style={{ borderColor: `${LL.color}55` }}>
+                        <div className="mb-2 flex items-center gap-2">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`/ligues/ligue-${o.tier}.png`} alt="" className="h-8 w-11 object-contain" />
+                          <span className="flex-1 font-display text-sm font-extrabold" style={{ color: LL.color }}>Ligue {LL.name}{mine ? ' · ta ligue' : ''}</span>
+                          <span className="text-[11px] font-bold text-mute">{o.players} joueur{o.players > 1 ? 's' : ''}</span>
+                        </div>
+                        {o.top.length === 0 ? <p className="px-1 text-xs text-mute">Personne n&apos;a encore joué cette semaine.</p> : (
+                          <ol className="space-y-1">
+                            {o.top.map((t, i) => (
+                              <li key={t.userId}>
+                                <Link href={t.userId === user.id ? '/etudiant/profil' : `/etudiant/profil/${t.userId}`} className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-slab-2">
+                                  <span className="w-5 text-center font-display text-xs font-bold text-mute">{i + 1}</span>
+                                  <span className="min-w-0 flex-1 truncate font-bold">{t.userId === user.id ? `${t.name} (toi)` : t.name}</span>
+                                  <span className="text-[10px] text-mute">{getNiveauLabel(t.anneeEtude)}</span>
+                                  <span className="w-12 text-right font-display text-xs font-extrabold tabular-nums">{t.points}</span>
+                                </Link>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
