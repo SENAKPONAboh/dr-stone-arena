@@ -12,8 +12,8 @@ export default async function LeaguePage() {
   if (user.role !== 'ETUDIANT') redirect('/login');
 
   const view = await getLeagueView(user.id);
-  const L = view.status === 'unavailable' ? LEAGUES[0] : LEAGUES[view.tier];
-  const stars = view.status !== 'unavailable' ? view.stars : 0;
+  const L = view.status === 'unavailable' || view.status === 'soon' ? LEAGUES[0] : LEAGUES[view.tier];
+  const stars = view.status === 'waiting' || view.status === 'active' ? view.stars : 0;
 
   return (
     // Plein écran (même convention que le classement) : la flèche retour sert de sortie
@@ -30,10 +30,10 @@ export default async function LeaguePage() {
       </header>
 
       <main className="mx-auto mt-5 max-w-3xl space-y-4 px-4">
-        {view.status === 'unavailable' ? (
+        {view.status === 'unavailable' || view.status === 'soon' ? (
           <div className="rounded-3xl border border-line bg-slab p-6 text-center">
             <p className="font-display text-lg font-extrabold">Les ligues arrivent bientôt</p>
-            <p className="mt-2 text-sm text-mute">Encore un peu de patience !</p>
+            <p className="mt-2 text-sm text-mute">{view.status === 'soon' ? 'Départ lundi 9 novembre à minuit : tout le monde part de 0 point.' : 'Encore un peu de patience !'}</p>
           </div>
         ) : (
           <>

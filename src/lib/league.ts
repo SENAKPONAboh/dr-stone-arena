@@ -18,6 +18,10 @@ export const LEAGUES = [
   { name: 'Diamant', color: '#8ef0ff' },
 ] as const;
 
+/** Premier lundi des ligues. Sur le vrai site (Vercel), rien n'est visible ni compté avant cette semaine ; en local, tout est testable. */
+export const LEAGUE_START = '2026-11-09';
+export const leaguesOpen = () => process.env.VERCEL !== '1' || weekKey() >= LEAGUE_START;
+
 export const GROUP_SIZE = 15;
 export const STAR_TOP = 3;           // dans la plus haute ligue ouverte : les 3 premiers gagnent une étoile
 export const DUEL_WIN = 30;
@@ -47,6 +51,18 @@ export function weekEnd(at = new Date()) {
   return new Date(Date.UTC(y, m - 1, d + 7) - NIAMEY_MS - 1000);
 }
 
+/** Début de la semaine en cours : lundi 0 h à Niamey. */
+export function weekStart(at = new Date()) {
+  const [y, m, d] = weekKey(at).split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d) - NIAMEY_MS);
+}
+
+/** Points des cas du jour déjà joués cette semaine (comptés à l'entrée en ligue). */
+async function weekCasePoints(userId: string) {
+  const agg = await prisma.attempt.aggregate({ where: { userId, createdAt: { gte: weekStart() } }, _sum: { xpEarned: true } });
+  return Math.max(0, agg._sum.xpEarned ?? 0);
+}
+
 /** Ligue de départ (une seule fois) d'après l'XP du mois. */
 export function startTierFromXp(xp: number) {
   return xp >= 650 ? 2 : xp >= 250 ? 1 : 0;
@@ -74,10 +90,10 @@ export function zones(n: number, tier: number, openTiers: number) {
 }
 
 /** Inscrit l'étudiant dans la ligue de la semaine (crée son profil et lui trouve un groupe). */
-export async function ensureMember(userId: string) {
+export async function ensureMember(userId: string): Promise<{ member: Awaited<ReturnType<typeof prisma.leagueMember.create>>; created: boolean }> {
   const week = weekKey();
   const existing = await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } } });
-  if (existing) return existing;
+  if (existing) return { member: existing, created: false };
 
   const openTiers = await getOpenTiers();
   let profile = await prisma.leagueProfile.findUnique({ where: { userId } });
@@ -89,22 +105,28 @@ export async function ensureMember(userId: string) {
   const tier = profile.tier;
 
   // Verrou par (semaine, ligue) : deux inscriptions simultanées ne remplissent pas le même groupe au-delà de 15
+  const startPoints = await weekCasePoints(userId);
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`league:${week}:${tier}`}))`;
     const again = await tx.leagueMember.findUnique({ where: { userId_week: { userId, week } } });
-    if (again) return again;
+    if (again) return { member: again, created: false };
     const groups = await tx.leagueMember.groupBy({ by: ['groupNo'], where: { week, tier }, _count: { _all: true }, orderBy: { groupNo: 'asc' } });
     const open = groups.find((g) => g._count._all < GROUP_SIZE);
     const groupNo = open ? open.groupNo : (groups.length ? groups[groups.length - 1].groupNo + 1 : 1);
-    return tx.leagueMember.create({ data: { userId, week, tier, groupNo } });
+    const member = await tx.leagueMember.create({ data: { userId, week, tier, groupNo, points: startPoints } });
+    return { member, created: true };
   });
 }
 
 /** Ajoute (ou retire) des points de ligue. Jamais sous 0. Prévient ceux qui viennent d'être dépassés. */
-export async function addLeaguePoints(user: { id: string; prenom: string; pseudo: string | null }, delta: number) {
-  if (!delta) return;
+export async function addLeaguePoints(user: { id: string; prenom: string; pseudo: string | null }, delta: number, source: 'case' | 'duel' = 'case') {
+  if (!delta || !leaguesOpen()) return;
   try {
-    const member = await ensureMember(user.id);
+    const { member, created } = await ensureMember(user.id);
+    if (created && source === 'case') {
+      if (member.points > 0) await notifyLeagueOvertaken(user, member, 0, member.points);
+      return; // ce cas fait déjà partie des points de départ
+    }
     const before = member.points;
     const rows = await prisma.$queryRaw<{ points: number }[]>`
       UPDATE "LeagueMember" SET "points" = GREATEST("points" + ${delta}, 0), "updatedAt" = NOW()
@@ -140,6 +162,7 @@ async function notifyLeagueOvertaken(
 
 /** Points de ligue d'un duel terminé, pour les deux joueurs (une seule fois par duel). */
 export async function creditLeagueDuel(duel: { id: string; requesterId: string; opponentId: string; winnerId: string | null }) {
+  if (!leaguesOpen()) return;
   try {
     const week = weekKey(), day = dayKey();
     const [ra, oa] = await Promise.all([
@@ -147,7 +170,7 @@ export async function creditLeagueDuel(duel: { id: string; requesterId: string; 
       prisma.user.findUnique({ where: { id: duel.opponentId }, select: { id: true, prenom: true, pseudo: true } }),
     ]);
     if (!ra || !oa) return;
-    const [rm, om] = await Promise.all([ensureMember(ra.id), ensureMember(oa.id)]);
+    const [{ member: rm }, { member: om }] = await Promise.all([ensureMember(ra.id), ensureMember(oa.id)]);
     for (const [me, other, myTier, otherTier] of [[ra, oa, rm.tier, om.tier], [oa, ra, om.tier, rm.tier]] as const) {
       const already = await prisma.leagueDuelCredit.findFirst({ where: { userId: me.id, opponentId: other.id, week } });
       if (already) continue; // 1 duel compté par adversaire et par semaine
@@ -160,7 +183,7 @@ export async function creditLeagueDuel(duel: { id: string; requesterId: string; 
       } catch {
         continue; // déjà compté (double appel)
       }
-      await addLeaguePoints(me, pts);
+      await addLeaguePoints(me, pts, 'duel');
     }
   } catch (e) {
     console.error('Ligue (duel) :', e);
@@ -170,13 +193,19 @@ export async function creditLeagueDuel(duel: { id: string; requesterId: string; 
 export type LeagueRow = { userId: string; name: string; imageUrl: string | null; anneeEtude: number | null; points: number; tier: number; rank: number; me: boolean };
 export type LeagueView =
   | { status: 'unavailable' }
+  | { status: 'soon'; startsOn: string }
   | { status: 'waiting'; tier: number; stars: number; openTiers: number; endsAt: string }
   | { status: 'active'; tier: number; stars: number; openTiers: number; endsAt: string; groupNo: number; rows: LeagueRow[]; myRank: number; up: number; down: number; starZone: number };
 
 /** Tout ce qu'il faut pour afficher la ligue de l'étudiant cette semaine. */
 export async function getLeagueView(userId: string): Promise<LeagueView> {
+  if (!leaguesOpen()) return { status: 'soon', startsOn: LEAGUE_START };
   try {
     const week = weekKey();
+    // A déjà joué des cas cette semaine sans être inscrit : on l'inscrit avec ces points
+    if (!(await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } }, select: { id: true } })) && (await weekCasePoints(userId)) > 0) {
+      await ensureMember(userId);
+    }
     const [openTiers, profile, member] = await Promise.all([
       getOpenTiers(),
       prisma.leagueProfile.findUnique({ where: { userId } }),

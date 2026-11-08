@@ -5,6 +5,18 @@ import LeagueCountdown from './LeagueCountdown';
 // Carte « Ma ligue » en haut de l'accueil.
 export default function LeagueHomeCard({ view }: { view: LeagueView }) {
   if (view.status === 'unavailable') return null;
+  if (view.status === 'soon') {
+    return (
+      <div className="flex items-center gap-3 rounded-3xl border border-gold/40 bg-slab p-4">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/ligues/ligue-2.png" alt="" className="h-14 w-[76px] shrink-0 animate-float object-contain" />
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-sm font-extrabold text-gold">Les ligues de la semaine arrivent</span>
+          <span className="block text-xs text-mute">Départ lundi 9 novembre à minuit : tout le monde part de 0 point.</span>
+        </span>
+      </div>
+    );
+  }
   const L = LEAGUES[view.tier];
   const stars = view.stars > 0 ? ` ${'★'.repeat(Math.min(view.stars, 5))}${view.stars > 5 ? `×${view.stars}` : ''}` : '';
 
