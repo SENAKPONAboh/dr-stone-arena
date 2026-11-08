@@ -1,9 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { POINTS_PER_WIN } from '@/lib/duel';
 import { checkDuelBadges } from '@/lib/duel-server';
 import { notifyUser } from '@/lib/notify';
+import { creditLeagueDuel } from '@/lib/league';
 import { readStoredAnswers } from '@/lib/duel-answers';
 import { caseDuration } from '@/lib/case-duration';
 
@@ -139,6 +140,9 @@ export async function POST(request: Request) {
 
         await checkDuelBadges(fresh.requesterId);
         await checkDuelBadges(fresh.opponentId);
+        // Points de ligue du duel (une seule fois par duel, après la réponse)
+        const finalWinner = winnerId;
+        after(() => creditLeagueDuel({ id: duel.id, requesterId: fresh.requesterId, opponentId: fresh.opponentId, winnerId: finalWinner }));
       }
     }
 

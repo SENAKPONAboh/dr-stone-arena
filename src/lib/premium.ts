@@ -9,7 +9,7 @@ export const PREMIUM_PLANS = [
     price: 1000,
     priceLabel: '1 000 FCFA',
     regenLabel: 'toutes les 12 heures',
-    dailyDuels: 3,
+    dailyDuels: 5,
   },
   {
     tier: 2,

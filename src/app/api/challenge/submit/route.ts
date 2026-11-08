@@ -7,6 +7,7 @@ import { caseDuration } from '@/lib/case-duration';
 import { elapsedSinceStart } from '@/lib/challenge-token';
 import { xpLossFor } from '@/lib/grades';
 import { notifyOvertaken } from '@/lib/overtake';
+import { addLeaguePoints } from '@/lib/league';
 import { streakAfterPlay } from '@/lib/flame';
 
 // Marge de réseau (secondes) tolérée au-delà du chrono avant de considérer la réponse comme hors délai
@@ -167,6 +168,8 @@ export async function POST(request: Request) {
 
     // Préviens ceux que l'étudiant vient de dépasser au classement (après la réponse, jamais bloquant)
     if (result.xpEarned > 0) after(() => notifyOvertaken(user, result.xpBefore, result.xpBefore + result.xpEarned));
+    // Points de ligue de la semaine (compteur à part de l'XP, jamais sous 0)
+    if (result.xpEarned !== 0) after(() => addLeaguePoints(user, result.xpEarned));
 
     return NextResponse.json({
       isCorrect,

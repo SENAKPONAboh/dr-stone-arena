@@ -79,6 +79,9 @@ model User {
   messagesSent          DirectMessage[] @relation("MessageSender")
   messagesReceived      DirectMessage[] @relation("MessageRecipient")
   whatsappPhone         UserPhone?
+  // ===== Ligues de la semaine (prisma/sql/2026-ligues.sql) =====
+  leagueProfile         LeagueProfile?
+  leagueMembers         LeagueMember[]
 }
 
 model Friendship {
@@ -505,4 +508,54 @@ model TournamentEntry {
 
   @@unique([tournamentId, userId])
   @@index([userId])
+}
+
+// ===== LIGUES DE LA SEMAINE (prisma/sql/2026-ligues.sql) =====
+// Ligue actuelle (0 Bronze … 5 Diamant) + étoiles gagnées dans la plus haute ligue ouverte.
+model LeagueProfile {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier      Int      @default(0)
+  stars     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+// Participation à UNE semaine (points de ligue séparés de l'XP, remis à 0 chaque lundi).
+model LeagueMember {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  week          String   // lundi de la semaine (heure de Niamey), ex. "2026-11-09"
+  tier          Int
+  groupNo       Int
+  points        Int      @default(0)
+  overtakeDay   String?
+  overtakeCount Int      @default(0)
+  rank          Int?
+  result        String?  // MONTE | RESTE | DESCEND | ETOILE
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@unique([userId, week])
+  @@index([week, tier, groupNo])
+}
+
+// Duel déjà compté pour la ligue (idempotence + 1 par adversaire et par semaine).
+model LeagueDuelCredit {
+  duelId     String
+  userId     String
+  opponentId String
+  week       String
+  day        String
+  points     Int
+  createdAt  DateTime @default(now())
+
+  @@id([duelId, userId])
+  @@index([userId, day])
+}
+
+model LeagueSetting {
+  key   String @id
+  value String
 }

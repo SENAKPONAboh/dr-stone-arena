@@ -71,6 +71,9 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
       <main className="mx-auto mt-6 max-w-3xl px-4">
         <div className="rounded-3xl border border-line bg-slab p-5">
 
+          <Link href="/etudiant/ligue" className="mb-3 flex items-center justify-between rounded-2xl border border-mala/40 bg-mala/10 px-4 py-3 text-sm font-bold text-ink">
+            <span>🏅 Ma ligue de la semaine</span><span className="text-mala">→</span>
+          </Link>
           <Link href="/etudiant/tournoi" className="mb-4 flex items-center justify-between rounded-2xl border border-gold/40 bg-gold/10 px-4 py-3 text-sm font-bold text-ink">
             <span>🏆 Tournoi mensuel : les 10 premiers de chaque promotion</span><span className="text-gold">→</span>
           </Link>

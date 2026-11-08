@@ -28,6 +28,8 @@ import EcgLine from '@/components/ui/EcgLine';
 import { flameStatus } from '@/lib/flame';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
+import LeagueHomeCard from '@/components/league/LeagueHomeCard';
+import { getLeagueView } from '@/lib/league';
 
 export default async function EtudiantDashboard() {
   const user = await getCurrentUserCore();
@@ -157,6 +159,7 @@ export default async function EtudiantDashboard() {
   const gradePct = gradeProgress(user.xp);
   const legends = await getLegendCounts(topUsers.map(u => u.id));
   const card = 'rounded-3xl border border-line bg-slab';
+  const leagueView = await getLeagueView(user.id);
 
   return (
     <div className="space-y-5">
@@ -175,6 +178,9 @@ export default async function EtudiantDashboard() {
       <WhatsappVerifyCard />
 
       <HomeStagger>
+        {/* Ma ligue de la semaine (en haut de l'accueil) */}
+        <LeagueHomeCard view={leagueView} />
+
         {/* Découverte 7 jours (seulement pendant la Découverte, inutile pour un Premium III déjà plus rapide) */}
         {discoveryLeft > 0 && user.premiumTier !== 3 && <DiscoveryBanner daysLeft={discoveryLeft} />}
 

@@ -50,8 +50,11 @@ export function regenLabel(ms: number): string {
 }
 
 // Quota de duels du jour : Premium, sinon Découverte, sinon 0.
+/** Duels gratuits par jour pour tout le monde (les paliers Premium en donnent plus). */
+export const FREE_DAILY_DUELS = 3;
+
 export function getEffectiveDuelQuota(user: AccessUser): number {
   const plan = PREMIUM_PLANS.find(p => p.tier === user.premiumTier);
-  const premiumQuota = plan ? plan.dailyDuels : 0;
+  const premiumQuota = plan ? plan.dailyDuels : FREE_DAILY_DUELS; // gratuit : 3 duels par jour (ligues, 9 nov. 2026)
   return isInDiscovery(user) ? Math.max(premiumQuota, DISCOVERY_DAILY_DUELS) : premiumQuota;
 }
