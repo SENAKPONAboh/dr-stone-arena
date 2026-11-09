@@ -1,6 +1,6 @@
 // ===== LIGUES DE LA SEMAINE — Dr. Stone Arena (prisma/sql/2026-ligues.sql) =====
 // Points de ligue SÉPARÉS de l'XP, remis à 0 chaque lundi (heure de Niamey, UTC+1).
-// - Ligue de départ (une seule fois) selon l'XP du mois : ≥ 650 → Or, ≥ 250 → Argent, sinon Bronze.
+// - Ligue de départ (une seule fois) selon l'XP du mois : ≥ 1 000 → Or, ≥ 500 → Argent, sinon Bronze.
 // - On entre dans un groupe de ~15 joueurs de sa ligue au premier point de la semaine.
 // - Cas du jour : + l'XP gagnée / − l'XP perdue (jamais sous 0). Duels : +30, +100 contre une ligue au-dessus, +5 si perdu ;
 //   1 duel compté par adversaire et par semaine ; au-delà de 5 duels comptés dans la journée, points divisés par 2.
@@ -273,4 +273,20 @@ export function demoOverview(): LeagueOverview {
     { tier: 1, players: 28, top: t(['Fatima', 'Ibrahim', 'Kofi', 'Grâce', 'Moussa'], [612, 540, 498, 455, 430]) },
     { tier: 2, players: 15, top: t(['Nadia', 'Yacine', 'Paul', 'Aïcha', 'Kevin'], [890, 845, 790, 760, 702]) },
   ];
+}
+
+/** Annonce « Les ligues sont ouvertes » à tous les étudiants, UNE seule fois (réglage « announced »), à la première visite après l'ouverture. */
+export async function announceLeaguesOnce() {
+  if (!leaguesOpen() || IS_LOCAL) return;
+  try {
+    const claimed = await prisma.leagueSetting.createMany({ data: [{ key: 'announced', value: new Date().toISOString() }], skipDuplicates: true });
+    if (claimed.count === 0) return; // déjà annoncé
+    const students = await prisma.user.findMany({ where: { role: 'ETUDIANT', statut: 'VALIDE' }, select: { id: true } });
+    const { notifyMany } = await import('@/lib/notify');
+    await notifyMany(students.map((s) => s.id),
+      "🏅 Les ligues de la semaine sont ouvertes ! Tout le monde part de 0 : fais ta garde du jour et gagne tes duels pour monter. Ouvre « Ma ligue » pour voir ton groupe.",
+      '🏅', { title: '🏅 Les ligues sont ouvertes !', url: '/etudiant/ligue' });
+  } catch (e) {
+    console.error('Ligue (annonce) :', e);
+  }
 }

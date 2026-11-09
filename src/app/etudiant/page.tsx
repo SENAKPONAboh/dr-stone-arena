@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { getCurrentUserCore } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import prisma from '@/lib/prisma';
@@ -29,7 +30,7 @@ import { flameStatus } from '@/lib/flame';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
 import LeagueHomeCard from '@/components/league/LeagueHomeCard';
-import { getLeagueView, demoAllowed, demoLeagueView, leaguesOpen } from '@/lib/league';
+import { getLeagueView, demoAllowed, demoLeagueView, leaguesOpen, announceLeaguesOnce } from '@/lib/league';
 import { grantMonthlyPremiumUa } from '@/lib/league-profile';
 
 export default async function EtudiantDashboard({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
@@ -162,6 +163,8 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
   const card = 'rounded-3xl border border-line bg-slab';
   // Coffre Premium du mois : versé automatiquement à la première visite du mois (dès l'ouverture des ligues)
   if (leaguesOpen()) await grantMonthlyPremiumUa(user);
+  // Première visite après l'ouverture : « Les ligues sont ouvertes » à tout le monde (une seule fois, après la réponse)
+  if (leaguesOpen()) after(() => announceLeaguesOnce());
   const leagueView = demoAllowed((await searchParams).demo) ? demoLeagueView() : await getLeagueView(user.id); // ?demo=1 : local uniquement
 
   return (

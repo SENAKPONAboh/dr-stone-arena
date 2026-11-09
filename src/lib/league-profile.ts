@@ -14,9 +14,9 @@ export const UA_DUEL_LOSS = 100;
 export const FREE_LEAGUE_DUELS = 3;
 export { PREMIUM_MONTHLY_UA } from '@/lib/premium';
 
-/** Ligue de départ (une seule fois) d'après l'XP du mois : ≥ 650 → Or, ≥ 250 → Argent, sinon Bronze. */
+/** Ligue de départ (une seule fois) d'après l'XP du mois : ≥ 1 000 → Or, ≥ 500 → Argent, sinon Bronze (≈ 20 % / 28 % / reste, 9 nov.). */
 export function startTierFromXp(xp: number) {
-  return xp >= 650 ? 2 : xp >= 250 ? 1 : 0;
+  return xp >= 1000 ? 2 : xp >= 500 ? 1 : 0;
 }
 
 export async function getOpenTiers(db: Tx | typeof prisma = prisma): Promise<number> {

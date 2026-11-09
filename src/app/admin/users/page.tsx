@@ -72,9 +72,9 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   // Message de relance WhatsApp (envoyé par l'admin lui-même, un par un)
   const site = `https://${(await headers()).get('host') ?? 'dr-stone-arena.vercel.app'}`;
   const relance = (prenom: string, onboardingDone: boolean) => onboardingDone
-    ? `Salut ${prenom} ! Ta première garde de 10 cas t'attend sur Dr Stone Arena 🩺 Ça prend 5 minutes, et ton XP de novembre compte déjà pour le classement : ${site}/login
+    ? `Salut ${prenom} ! Les ligues de la semaine viennent d'ouvrir sur Dr Stone Arena 🏅 Tout le monde part de 0 cette semaine : c'est le moment de commencer ! Fais ta garde de 10 cas (5 minutes), gagne des duels et monte en Argent, puis en Or. Lance-toi ici : ${site}/login
 Un souci pour te connecter ? Réponds-moi ici.`
-    : `Salut ${prenom} ! Ton inscription sur Dr Stone Arena n'est pas tout à fait terminée : il te reste quelques écrans avant ta première garde de 10 cas 🩺 Reconnecte-toi ici : ${site}/login
+    : `Salut ${prenom} ! Les ligues de la semaine viennent d'ouvrir sur Dr Stone Arena 🏅 Tout le monde part de 0 : tu peux commencer maintenant, à égalité avec les autres. Ton inscription n'est pas tout à fait terminée, il ne reste que quelques écrans (c'est plus court qu'avant), puis ta première garde de 10 cas t'attend. Reconnecte-toi ici : ${site}/login
 Si quelque chose te bloque, réponds-moi ici et je t'aide.`;
 
   const now = nowDate.getTime();
