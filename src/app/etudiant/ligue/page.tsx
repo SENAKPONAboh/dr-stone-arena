@@ -5,6 +5,7 @@ import { getLeagueView, getLeaguesOverview, demoAllowed, demoLeagueView, demoOve
 import LeagueCountdown from '@/components/league/LeagueCountdown';
 import ChestOpener from '@/components/league/ChestOpener';
 import { getNiveauLabel } from '@/lib/niveau';
+import BackLink from '@/components/ui/BackLink';
 
 // ===== MA LIGUE DE LA SEMAINE =====
 export default async function LeaguePage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
@@ -22,11 +23,11 @@ export default async function LeaguePage({ searchParams }: { searchParams: Promi
     <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-stone pb-12 font-body text-ink">
       <header className="border-b border-line bg-stone">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
-          <Link href="/etudiant" className="text-mute transition-colors hover:text-ink" aria-label="Retour">
+          <BackLink fallback="/etudiant" className="text-mute transition-colors hover:text-ink" aria-label="Retour">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-          </Link>
+          </BackLink>
           <h1 className="font-display text-lg font-extrabold text-ink">Ma ligue</h1>
         </div>
       </header>

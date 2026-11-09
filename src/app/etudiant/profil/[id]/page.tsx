@@ -24,6 +24,7 @@ import { getSeasonSummary } from '@/lib/seasons';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 import { getEffectiveDuelQuota } from '@/lib/decouverte';
 import { effectiveStreak } from '@/lib/flame';
+import BackLink from '@/components/ui/BackLink';
 
 export default async function PublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -91,12 +92,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         style={themeDef ? { background: 'rgba(0,0,0,0.4)' } : undefined}
       >
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/etudiant" className={`flex items-center gap-2 ${themeDef ? 'text-white/80 hover:text-white' : 'text-mute hover:text-ink'}`}>
+          <BackLink fallback="/etudiant" className={`flex items-center gap-2 ${themeDef ? 'text-white/80 hover:text-white' : 'text-mute hover:text-ink'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <h1 className="font-extrabold text-xl">Profil Public</h1>
-          </Link>
+          </BackLink>
           <div className="flex items-center gap-2">
             {profileUser.isPremium && (
               <span className="bg-yellow-400 text-slate-900 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1"><Icon name="crown" size={12} /> {getPlanLabel(profileUser.premiumTier)}</span>

@@ -25,6 +25,7 @@ import Icon from '@/components/ui/Icon';
 import TitleBadge from '@/components/ui/TitleBadge';
 import ThemeBackdrop from '@/components/ui/ThemeBackdrop';
 import ShareButton from '@/components/ui/ShareButton';
+import BackLink from '@/components/ui/BackLink';
 
 export default async function ProfilPage({ searchParams }: { searchParams: Promise<{ theme?: string }> }) {
   const user = await getCurrentUser();
@@ -80,12 +81,12 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
 
       <header className={`relative z-10 border-b ${themeDef ? 'border-white/10' : 'border-line bg-stone'}`} style={themeDef ? { background: 'rgba(0,0,0,0.4)' } : undefined}>
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <a href="/etudiant" className={`flex items-center gap-2 text-mute hover:text-ink`}>
+          <BackLink fallback="/etudiant" className={`flex items-center gap-2 text-mute hover:text-ink`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             <h1 className="font-extrabold text-xl">Mon Profil</h1>
-          </a>
+          </BackLink>
           {user.isPremium && (
             <span className="bg-gold text-stone text-xs font-display font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1"><Icon name="crown" size={12} /> {getPlanLabel(user.premiumTier)}</span>
           )}

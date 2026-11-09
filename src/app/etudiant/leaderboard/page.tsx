@@ -14,6 +14,7 @@ import LegendMark from '@/components/ui/LegendMark';
 import TitleBadge from '@/components/ui/TitleBadge';
 import GradeInsignia from '@/components/ui/GradeInsignia';
 import LegendRowStorm from '@/components/ui/LegendRowStorm';
+import BackLink from '@/components/ui/BackLink';
 
 export default async function FullLeaderboardPage({ searchParams }: { searchParams: Promise<{ scope?: string; n?: string }> }) {
   const user = await getCurrentUser();
@@ -59,11 +60,11 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
 
       <header className="border-b border-line bg-stone">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
-          <Link href="/etudiant" className="text-mute transition-colors hover:text-ink" aria-label="Retour">
+          <BackLink fallback="/etudiant" className="text-mute transition-colors hover:text-ink" aria-label="Retour">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-          </Link>
+          </BackLink>
           <h1 className="flex items-center gap-2 font-display text-lg font-extrabold text-ink"><Icon name="trophy" size={22} className="text-gold" /> Classement</h1>
         </div>
       </header>

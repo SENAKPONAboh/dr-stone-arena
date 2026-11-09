@@ -8,6 +8,7 @@ import { monthKey, PREMIUM_MONTHLY_UA, UA_CHEST_BY_TIER, UA_STAR_CHEST, UA_DUEL_
 import BoutiqueLigue from '@/components/league/BoutiqueLigue';
 import { demoAllowed, leaguesOpen } from '@/lib/league';
 import { grantMonthlyPremiumUa } from '@/lib/league-profile';
+import BackLink from '@/components/ui/BackLink';
 
 // ===== BOUTIQUE (ouverte à tous) : on paie avec les UA gagnées en ligue, en duel et avec le coffre Premium =====
 export default async function BoutiquePage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
@@ -38,11 +39,11 @@ export default async function BoutiquePage({ searchParams }: { searchParams: Pro
     <div className="fixed inset-0 z-[80] overflow-y-auto overscroll-contain bg-stone pb-12 font-body text-ink">
       <header className="sticky top-0 z-10 border-b border-line bg-stone">
         <div className="mx-auto flex max-w-3xl items-center gap-4 px-4 py-4">
-          <Link href="/etudiant" className="text-mute transition-colors hover:text-ink" aria-label="Retour">
+          <BackLink fallback="/etudiant" className="text-mute transition-colors hover:text-ink" aria-label="Retour">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-          </Link>
+          </BackLink>
           <h1 className="font-display text-lg font-extrabold text-ink">Boutique</h1>
         </div>
       </header>

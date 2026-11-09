@@ -46,6 +46,10 @@ export default function AppShell({
   // sinon elle resterait figée sur la valeur du chargement de la page.
   const [liveUnread, setLiveUnread] = useState(unreadMessages);
   useEffect(() => { setLiveUnread(unreadMessages); }, [unreadMessages]);
+  // Compte les pages visitées dans l'appli : le bouton « retour » des pages (BackLink) revient alors à la page précédente
+  useEffect(() => {
+    try { sessionStorage.setItem('arena-nav', String(Number(sessionStorage.getItem('arena-nav') || '0') + 1)); } catch { /* ignore */ }
+  }, [pathname]);
   useEffect(() => {
     const onUnread = (e: Event) => setLiveUnread((e as CustomEvent<number>).detail);
     window.addEventListener('arena:unread-messages', onUnread);
