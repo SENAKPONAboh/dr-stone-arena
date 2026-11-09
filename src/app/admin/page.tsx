@@ -54,6 +54,7 @@ export default async function AdminDashboard() {
     },
     {
       title: 'Étudiants et communauté', icon: 'users', cards: [
+        { href: '/admin/ligues', icon: 'chart', tone: 'mala', title: 'Stats & Ligues', desc: 'Activité jour par jour, groupes des ligues, duels, UA et boutique' },
         { href: '/admin/users', icon: 'users', tone: 'sky', title: 'Gestion des étudiants', desc: 'Rechercher un compte, niveau, mot de passe, bannissement' },
         { href: '/admin/ambassadors', icon: 'handshake', tone: 'mala', title: 'Ambassadeurs', desc: 'Codes, filleuls, commissions et versements' },
         { href: '/admin/saison', icon: 'flag', tone: 'flame', title: 'Saison mensuelle', desc: 'Fin du mois : garder les grades puis remettre les XP à zéro' },
