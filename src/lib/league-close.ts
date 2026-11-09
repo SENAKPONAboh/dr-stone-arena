@@ -9,7 +9,7 @@
 // Idempotente : un réglage « closed:<semaine> » empêche de clôturer deux fois.
 import prisma from '@/lib/prisma';
 import { notifyUser } from '@/lib/notify';
-import { LEAGUES, zones } from '@/lib/league';
+import { LEAGUES, zones, GROUP_MIN } from '@/lib/league';
 import { getOpenTiers, addChest, UA_CHEST_BY_TIER, UA_STAR_CHEST } from '@/lib/league-profile';
 
 const OPEN_NEXT_AT = 24;   // joueurs dans la plus haute ligue ouverte pour ouvrir la suivante
@@ -38,6 +38,20 @@ export async function closeWeek(week: string) {
     const k = `${m.tier}:${m.groupNo}`;
     if (!groups.has(k)) groups.set(k, []);
     groups.get(k)!.push(m);
+  }
+
+  // Petits groupes (moins de GROUP_MIN joueurs) : fusionnés avec le plus grand groupe de la même ligue avant le classement,
+  // pour que personne ne monte sans vraie bataille. Leurs points ne changent pas.
+  for (const [k, list] of [...groups.entries()]) {
+    if (list.length >= GROUP_MIN) continue;
+    const tier = list[0].tier;
+    const target = [...groups.entries()].filter(([k2, l2]) => k2 !== k && l2[0].tier === tier).sort((a, b) => b[1].length - a[1].length)[0];
+    if (!target) continue;
+    const targetGroupNo = target[1][0].groupNo;
+    target[1].push(...list);
+    target[1].sort((a, b) => b.points - a.points);
+    groups.delete(k);
+    await prisma.leagueMember.updateMany({ where: { id: { in: list.map((m) => m.id) } }, data: { groupNo: targetGroupNo } });
   }
 
   let moved = 0;

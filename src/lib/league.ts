@@ -26,7 +26,9 @@ export const LEAGUE_START = '2026-11-09';
 const IS_LOCAL = process.env.VERCEL !== '1';
 export const leaguesOpen = () => IS_LOCAL || weekKey() >= LEAGUE_START;
 
-export const GROUP_SIZE = 15;
+export const GROUP_SIZE = 15;      // taille visée d'un groupe
+export const GROUP_MAX = 20;       // un groupe grandit jusqu'à 20 avant qu'on en ouvre un nouveau (pas de groupe de 2 ou 3)
+export const GROUP_MIN = 6;        // à la clôture, un groupe plus petit est fusionné avec le plus grand de sa ligue
 export const STAR_TOP = 3;           // dans la plus haute ligue ouverte : les 3 premiers gagnent une étoile
 export const DUEL_WIN = 30;
 export const DUEL_WIN_HIGHER = 100;
@@ -103,8 +105,12 @@ export async function ensureMember(userId: string): Promise<{ member: Awaited<Re
     const again = await tx.leagueMember.findUnique({ where: { userId_week: { userId, week } } });
     if (again) return { member: again, created: false };
     const groups = await tx.leagueMember.groupBy({ by: ['groupNo'], where: { week, tier }, _count: { _all: true }, orderBy: { groupNo: 'asc' } });
-    const open = groups.find((g) => g._count._all < GROUP_SIZE);
-    const groupNo = open ? open.groupNo : (groups.length ? groups[groups.length - 1].groupNo + 1 : 1);
+    // 1) un groupe qui n'a pas encore 15 joueurs ; 2) sinon le plus petit groupe tant qu'il a moins de 20 ; 3) sinon un nouveau groupe
+    const underTarget = groups.find((g) => g._count._all < GROUP_SIZE);
+    const smallest = [...groups].sort((a, b) => a._count._all - b._count._all)[0];
+    const groupNo = underTarget ? underTarget.groupNo
+      : smallest && smallest._count._all < GROUP_MAX ? smallest.groupNo
+      : (groups.length ? groups[groups.length - 1].groupNo + 1 : 1);
     const member = await tx.leagueMember.create({ data: { userId, week, tier, groupNo } });
     return { member, created: true };
   });
