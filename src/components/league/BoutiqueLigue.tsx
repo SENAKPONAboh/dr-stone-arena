@@ -156,7 +156,7 @@ export default function BoutiqueLigue({ initialUa, items, owned: initialOwned, e
         <p className="font-display text-sm font-extrabold text-sky">Coffre Premium du mois</p>
         {premium.amount > 0 ? (
           premiumClaimed
-            ? <p className="mt-1 text-sm text-mute">Déjà ouvert ce mois-ci. Le prochain arrive le 1er du mois.</p>
+            ? <p className="mt-1 text-sm text-mute">✅ Reçu automatiquement ce mois-ci : +{fmt(premium.amount)} UA. Le prochain arrive le mois prochain.</p>
             : <button onClick={claimPremium} disabled={busy === 'premium'} className="mt-2 w-full rounded-2xl bg-sky px-4 py-3 font-display text-sm font-bold uppercase text-stone shadow-[0_5px_0_#1d6fa0] active:translate-y-1 active:shadow-[0_1px_0_#1d6fa0]">
                 Ouvrir mon coffre : +{fmt(premium.amount)} UA
               </button>

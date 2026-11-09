@@ -6,7 +6,8 @@ import { getOrCreatePersonalisationCatalog } from '@/lib/personnalisation';
 import { getOrCreateShopCatalog } from '@/lib/monetise-shop';
 import { monthKey, PREMIUM_MONTHLY_UA, UA_CHEST_BY_TIER, UA_STAR_CHEST, UA_DUEL_WIN, UA_DUEL_LOSS } from '@/lib/league-profile';
 import BoutiqueLigue from '@/components/league/BoutiqueLigue';
-import { demoAllowed } from '@/lib/league';
+import { demoAllowed, leaguesOpen } from '@/lib/league';
+import { grantMonthlyPremiumUa } from '@/lib/league-profile';
 
 // ===== BOUTIQUE (ouverte à tous) : on paie avec les UA gagnées en ligue, en duel et avec le coffre Premium =====
 export default async function BoutiquePage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
@@ -14,6 +15,7 @@ export default async function BoutiquePage({ searchParams }: { searchParams: Pro
   if (!user) redirect('/api/auth/logout');
   if (user.role !== 'ETUDIANT') redirect('/login');
 
+  if (leaguesOpen()) await grantMonthlyPremiumUa(user); // coffre Premium du mois, automatique
   // Catalogue lu directement (déjà enregistré) ; on ne le recrée que s'il est vide (première fois) — sinon la page mettait ~60 s
   const CATS = ['CADRE', 'TITRE', 'THEME', 'FLAMME'];
   let catalog = await prisma.shopItem.findMany({ where: { category: { in: CATS }, isActive: true }, orderBy: [{ category: 'asc' }, { priceUA: 'asc' }] });

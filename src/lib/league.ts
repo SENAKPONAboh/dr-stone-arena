@@ -61,12 +61,6 @@ export function weekStart(at = new Date()) {
   return new Date(Date.UTC(y, m - 1, d) - NIAMEY_MS);
 }
 
-/** Points des cas du jour déjà joués cette semaine (comptés à l'entrée en ligue). */
-async function weekCasePoints(userId: string) {
-  const agg = await prisma.attempt.aggregate({ where: { userId, createdAt: { gte: weekStart() } }, _sum: { xpEarned: true } });
-  return Math.max(0, agg._sum.xpEarned ?? 0);
-}
-
 /** Nombre de places qui montent / descendent / gagnent une étoile dans un groupe de n joueurs. */
 export function zones(n: number, tier: number, openTiers: number) {
   const fifth = n >= 5 ? Math.round(n / 5) : n >= 2 ? 1 : 0;
@@ -104,8 +98,6 @@ export async function ensureMember(userId: string): Promise<{ member: Awaited<Re
   const tier = profile.tier;
 
   // Verrou par (semaine, ligue) : deux inscriptions simultanées ne remplissent pas le même groupe au-delà de 15
-  // Rattrapage des cas déjà joués dans la semaine : UNIQUEMENT en local (tests d'Arthur). Sur le vrai site, tout le monde part de 0.
-  const startPoints = IS_LOCAL ? await weekCasePoints(userId) : 0;
   return prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`league:${week}:${tier}`}))`;
     const again = await tx.leagueMember.findUnique({ where: { userId_week: { userId, week } } });
@@ -113,7 +105,7 @@ export async function ensureMember(userId: string): Promise<{ member: Awaited<Re
     const groups = await tx.leagueMember.groupBy({ by: ['groupNo'], where: { week, tier }, _count: { _all: true }, orderBy: { groupNo: 'asc' } });
     const open = groups.find((g) => g._count._all < GROUP_SIZE);
     const groupNo = open ? open.groupNo : (groups.length ? groups[groups.length - 1].groupNo + 1 : 1);
-    const member = await tx.leagueMember.create({ data: { userId, week, tier, groupNo, points: startPoints } });
+    const member = await tx.leagueMember.create({ data: { userId, week, tier, groupNo } });
     return { member, created: true };
   });
 }
@@ -122,11 +114,7 @@ export async function ensureMember(userId: string): Promise<{ member: Awaited<Re
 export async function addLeaguePoints(user: { id: string; prenom: string; pseudo: string | null }, delta: number, source: 'case' | 'duel' = 'case') {
   if (!delta || !leaguesOpen()) return;
   try {
-    const { member, created } = await ensureMember(user.id);
-    if (created && source === 'case' && IS_LOCAL) {
-      if (member.points > 0) await notifyLeagueOvertaken(user, member, 0, member.points);
-      return; // (local) ce cas fait déjà partie des points de départ
-    }
+    const { member } = await ensureMember(user.id);
     const before = member.points;
     const rows = await prisma.$queryRaw<{ points: number }[]>`
       UPDATE "LeagueMember" SET "points" = GREATEST("points" + ${delta}, 0), "updatedAt" = NOW()
@@ -204,10 +192,6 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
   if (!leaguesOpen()) return { status: 'soon', startsOn: LEAGUE_START };
   try {
     const week = weekKey();
-    // (Local seulement) a déjà joué des cas cette semaine sans être inscrit : on l'inscrit avec ces points
-    if (IS_LOCAL && !(await prisma.leagueMember.findUnique({ where: { userId_week: { userId, week } }, select: { id: true } })) && (await weekCasePoints(userId)) > 0) {
-      await ensureMember(userId);
-    }
     const [openTiers, profile, member] = await Promise.all([
       getOpenTiers(),
       prisma.leagueProfile.findUnique({ where: { userId } }),

@@ -29,7 +29,8 @@ import { flameStatus } from '@/lib/flame';
 import ProgressPath from '@/components/ui/ProgressPath';
 import HomeStagger from '@/components/dashboard/HomeStagger';
 import LeagueHomeCard from '@/components/league/LeagueHomeCard';
-import { getLeagueView, demoAllowed, demoLeagueView } from '@/lib/league';
+import { getLeagueView, demoAllowed, demoLeagueView, leaguesOpen } from '@/lib/league';
+import { grantMonthlyPremiumUa } from '@/lib/league-profile';
 
 export default async function EtudiantDashboard({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   const user = await getCurrentUserCore();
@@ -159,6 +160,8 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
   const gradePct = gradeProgress(user.xp);
   const legends = await getLegendCounts(topUsers.map(u => u.id));
   const card = 'rounded-3xl border border-line bg-slab';
+  // Coffre Premium du mois : versé automatiquement à la première visite du mois (dès l'ouverture des ligues)
+  if (leaguesOpen()) await grantMonthlyPremiumUa(user);
   const leagueView = demoAllowed((await searchParams).demo) ? demoLeagueView() : await getLeagueView(user.id); // ?demo=1 : local uniquement
 
   return (

@@ -57,3 +57,32 @@ export function monthKey(at = new Date()) {
   const d = new Date(at.getTime() + 3600000);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
 }
+
+/**
+ * Coffre Premium du mois, AUTOMATIQUE : à la première visite du mois, un membre Premium actif reçoit les UA de son palier
+ * (une seule fois par mois, verrouillé). Renvoie le montant reçu, ou 0.
+ */
+export async function grantMonthlyPremiumUa(user: { id: string; isPremium: boolean; premiumTier: number | null }) {
+  const { PREMIUM_MONTHLY_UA } = await import('@/lib/premium');
+  const amount = user.isPremium && user.premiumTier ? PREMIUM_MONTHLY_UA[user.premiumTier] ?? 0 : 0;
+  if (!amount) return 0;
+  try {
+    await ensureProfile(user.id);
+    const month = monthKey();
+    const granted = await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'ua:' + user.id}))`;
+      const p = await tx.leagueProfile.findUnique({ where: { userId: user.id } });
+      if (!p || p.premiumUaMonth === month) return false;
+      await tx.leagueProfile.update({ where: { userId: user.id }, data: { ua: { increment: amount }, premiumUaMonth: month } });
+      await tx.uaLedger.create({ data: { userId: user.id, amount, reason: 'PREMIUM', reference: month } });
+      return true;
+    });
+    if (!granted) return 0;
+    const { notifyUser } = await import('@/lib/notify');
+    await notifyUser(user.id, `🎁 Coffre Premium du mois : +${amount.toLocaleString('fr-FR')} UA ajoutées à ta boutique !`, '🎁', { url: '/etudiant/boutique' });
+    return amount;
+  } catch (e) {
+    console.error('Coffre Premium :', e);
+    return 0;
+  }
+}
