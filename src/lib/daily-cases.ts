@@ -5,6 +5,7 @@
 // Alerte admin automatique à 90% et 100% d'écoulement.
 
 import prisma from '@/lib/prisma';
+import { getSeenCases } from '@/lib/seen-cases';
 import { getReservedCaseIds } from '@/lib/tournoi';
 import { getNiveauLabel } from '@/lib/niveau';
 
@@ -84,13 +85,9 @@ export async function getOrCreateDailySelection(userId: string, anneeEtude: numb
   const kept = existing?.caseIds ?? [];
   const need = CASES_PER_DAY - kept.length;
 
-  // 2. Cas jamais tentés par CET étudiant dans SON niveau
-  const attemptsAsc = await prisma.attempt.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'asc' },
-    select: { clinicalCaseId: true, createdAt: true },
-  });
-  const attemptedIds = new Set(attemptsAsc.map(a => a.clinicalCaseId));
+  // 2. Cas jamais vus par CET étudiant, dans TOUS les modes (garde, Élite, duels, Rush) : rien ne revient tant que la banque n'est pas épuisée
+  const seen = await getSeenCases(userId);
+  const attemptedIds = new Set(seen.keys());
 
   const everyCase = await prisma.clinicalCase.findMany({
     where: { anneeEtude },
@@ -113,8 +110,7 @@ export async function getOrCreateDailySelection(userId: string, anneeEtude: numb
   } else {
     // Banque presque/entièrement vue : les jamais-vus d'abord,
     // complétés par les déjà-vus les plus ANCIENNEMENT tentés (révision espacée)
-    const lastAttempt = new Map<string, number>();
-    for (const a of attemptsAsc) lastAttempt.set(a.clinicalCaseId, a.createdAt.getTime());
+    const lastAttempt = seen;
     const seenSorted = pool
       .filter(c => attemptedIds.has(c.id))
       .sort((a, b) => (lastAttempt.get(a.id) ?? 0) - (lastAttempt.get(b.id) ?? 0));

@@ -3,6 +3,7 @@
 // sélection et tentatives totalement indépendantes du mode classique.
 
 import prisma from '@/lib/prisma';
+import { getSeenCases } from '@/lib/seen-cases';
 import { getReservedCaseIds } from '@/lib/tournoi';
 import { UA_PER_CASE } from '@/lib/monetise';
 
@@ -38,13 +39,9 @@ export async function getOrCreateMonetiseSelection(userId: string, anneeEtude: n
   const kept = existing?.caseIds ?? [];
   const need = CASES_PER_DAY - kept.length;
 
-  // 2. Cas jamais tentés PAR CET UTILISATEUR côté monétisé (MonetiseAttempt — pas Attempt classique)
-  const attemptsAsc = await prisma.monetiseAttempt.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'asc' },
-    select: { clinicalCaseId: true, createdAt: true },
-  });
-  const attemptedIds = new Set(attemptsAsc.map(a => a.clinicalCaseId));
+  // 2. Cas jamais vus par cet utilisateur, dans TOUS les modes (garde, Élite, duels, Rush) : rien ne revient tant que la banque n'est pas épuisée
+  const seen = await getSeenCases(userId);
+  const attemptedIds = new Set(seen.keys());
 
   const everyCase = await prisma.clinicalCase.findMany({
     where: { anneeEtude },
@@ -64,8 +61,7 @@ export async function getOrCreateMonetiseSelection(userId: string, anneeEtude: n
     selected = [];
   } else {
     // Révision : jamais-vus d'abord + les plus anciennement tentés
-    const lastAttempt = new Map<string, number>();
-    for (const a of attemptsAsc) lastAttempt.set(a.clinicalCaseId, a.createdAt.getTime());
+    const lastAttempt = seen;
     const seenSorted = pool
       .filter(c => attemptedIds.has(c.id))
       .sort((a, b) => (lastAttempt.get(a.id) ?? 0) - (lastAttempt.get(b.id) ?? 0));

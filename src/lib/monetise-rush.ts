@@ -124,7 +124,7 @@ export async function countRushPool(level: number): Promise<number> {
  * Si la banque du niveau est épuisée, on autorise une répétition (en évitant le tout dernier cas joué)
  * plutôt que de bloquer le joueur.
  */
-export async function pickNextRushCase(level: number, playedIds: string[], correctCount = 0): Promise<RushCasePayload | null> {
+export async function pickNextRushCase(level: number, playedIds: string[], correctCount = 0, seenElsewhere: string[] = []): Promise<RushCasePayload | null> {
   // On vise la difficulté de l'étage ; s'il n'y a pas assez de cas de cette difficulté, on prend la plus proche.
   const target = DIFFICULTY_ORDER.indexOf(rushDifficultyFor(correctCount));
   const pickClosest = (cands: { id: string; difficulty: string }[]): string | null => {
@@ -136,10 +136,17 @@ export async function pickNextRushCase(level: number, playedIds: string[], corre
   };
 
   const reserved = await getReservedCaseIds(); // cas d'un tournoi à venir : on les évite
+  // 1) cas jamais vus nulle part (garde, Élite, duels, Rush) ; 2) sinon, au moins pas encore joués dans cette tentative
   let id = pickClosest(await prisma.clinicalCase.findMany({
-    where: { anneeEtude: level, id: { notIn: [...playedIds, ...reserved] } },
+    where: { anneeEtude: level, id: { notIn: [...playedIds, ...reserved, ...seenElsewhere] } },
     select: { id: true, difficulty: true },
   }));
+  if (!id && seenElsewhere.length) {
+    id = pickClosest(await prisma.clinicalCase.findMany({
+      where: { anneeEtude: level, id: { notIn: [...playedIds, ...reserved] } },
+      select: { id: true, difficulty: true },
+    }));
+  }
 
   if (!id) {
     // Banque du niveau épuisée : on autorise une répétition (en évitant le tout dernier cas joué)

@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { CASES_PER_DUEL, INVITE_EXPIRY_HOURS } from '@/lib/duel';
 import { getEffectiveDuelQuota } from '@/lib/decouverte';
+import { getSeenCases, pickUnseenFirst } from '@/lib/seen-cases';
+import { getReservedCaseIds } from '@/lib/tournoi';
 
 export async function POST(request: Request) {
   const user = await getCurrentUserCore();
@@ -72,13 +74,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Pas encore assez de cas publiés pour ton niveau (${eligibleCases.length}/${CASES_PER_DUEL}). Reviens bientôt !` }, { status: 400 });
     }
 
-    // 8. Tirage aléatoire de 5 cas (Fisher-Yates) — identiques pour les deux joueurs
-    const shuffled = [...eligibleCases];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    const caseIds = shuffled.slice(0, CASES_PER_DUEL).map(c => c.id);
+    // 8. Tirage de 5 cas identiques pour les deux joueurs : d'abord des cas que NI L'UN NI L'AUTRE n'a jamais vus
+    //    (garde, Élite, duels, Rush), en évitant aussi les cas de leur garde du jour et ceux réservés à un tournoi.
+    //    Un cas déjà vu ne revient que si la banque de l'année est épuisée (les plus anciens d'abord).
+    const seen = await getSeenCases([user.id, opponentId]);
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const [todayDaily, todayElite, reserved] = await Promise.all([
+      prisma.dailyCaseSelection.findMany({ where: { userId: { in: [user.id, opponentId] }, date: { gte: dayStart } }, select: { caseIds: true } }),
+      prisma.monetiseSelection.findMany({ where: { userId: { in: [user.id, opponentId] }, date: { gte: dayStart } }, select: { caseIds: true } }).catch(() => []),
+      getReservedCaseIds(),
+    ]);
+    const now = Date.now();
+    for (const s of [...todayDaily, ...todayElite]) for (const c of s.caseIds) if (!seen.has(c)) seen.set(c, now);
+    const notReserved = eligibleCases.filter(c => !reserved.includes(c.id));
+    const caseIds = pickUnseenFirst(notReserved.length >= CASES_PER_DUEL ? notReserved : eligibleCases, seen, CASES_PER_DUEL);
 
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000);
 

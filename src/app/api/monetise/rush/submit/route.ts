@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { RUSH_MAX_ERRORS, RUSH_WEEKEND_CAP_UA, RUSH_PALIER_1_UA, RUSH_PALIER_2_UA, RUSH_PALIER_3_UA, GEL_FLAMME_UA, RESTAURE_FLAMME_UA, RUSH_ETAGE_SIZE, RUSH_ETAGES, getWeekendId } from '@/lib/monetise';
 import { isRushWeekend, getWeekendSaturday, pickNextRushCase, countRushPool } from '@/lib/monetise-rush';
+import { getSeenCases } from '@/lib/seen-cases';
 
 const normalizeString = (str: string) => str.trim().toLowerCase();
 
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
 
     // ⚡ Fluidité : le cas suivant est préparé tout de suite et renvoyé avec la correction.
     // Le navigateur l'affiche sans recharger la page (aucune réponse ni explication n'y figure).
-    const nextCase = response.sessionStatus === 'EN_COURS' ? await pickNextRushCase(level, playedAfter, response.currentStreak) : null;
+    const nextCase = response.sessionStatus === 'EN_COURS' ? await pickNextRushCase(level, playedAfter, response.currentStreak, [...(await getSeenCases(user.id)).keys()]) : null;
 
     // Étage en cours (1 à 5) et étage tout juste terminé (pour l'animation)
     const etage = Math.min(RUSH_ETAGES, Math.floor(response.currentStreak / RUSH_ETAGE_SIZE) + 1);
