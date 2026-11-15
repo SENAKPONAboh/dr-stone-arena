@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import PremiumOfferSheet from '@/components/premium/PremiumOfferSheet';
 
 type Invite = { id: string; requesterName: string; requesterImage: string | null; expiresAt: string };
 
-export default function DuelInvitationBanner({ invites }: { invites: Invite[] }) {
+export default function DuelInvitationBanner({ invites, tier = null }: { invites: Invite[]; tier?: number | null }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [offerOpen, setOfferOpen] = useState(false);
   const [hidden, setHidden] = useState<string[]>([]);
 
   const respond = async (duelId: string, accept: boolean) => {
@@ -23,6 +25,7 @@ export default function DuelInvitationBanner({ invites }: { invites: Invite[] })
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Erreur');
+        if (res.status === 429) setOfferOpen(true); // limite de duels du jour → présenter le Premium
       } else {
         setHidden(prev => [...prev, duelId]);
         router.refresh();
@@ -68,6 +71,7 @@ export default function DuelInvitationBanner({ invites }: { invites: Invite[] })
         </div>
       ))}
       {error && <p className="text-red-500 text-xs text-center bg-white rounded-xl py-2">{error}</p>}
+      <PremiumOfferSheet open={offerOpen} onClose={() => setOfferOpen(false)} reason="duels" tier={tier} />
     </div>
   );
 }

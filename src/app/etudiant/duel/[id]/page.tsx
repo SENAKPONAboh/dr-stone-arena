@@ -63,7 +63,7 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
         <div className="min-h-screen bg-gray-50 pb-10">
           {header}
           <main className="max-w-4xl mx-auto px-4 mt-8">
-            <DuelInvitationBanner invites={[{
+            <DuelInvitationBanner tier={user.premiumTier} invites={[{
               id: duel.id,
               requesterName: duel.requester.pseudo || `${duel.requester.prenom} ${duel.requester.nom}`,
               requesterImage: duel.requester.imageUrl,

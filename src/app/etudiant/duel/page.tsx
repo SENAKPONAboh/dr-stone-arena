@@ -97,6 +97,7 @@ export default async function DuelPage() {
         <DuelHub
           quotaUsed={quotaUsed}
           quotaMax={quotaMax}
+          tier={user.premiumTier}
           stats={{ won: user.duelsWon, lost: user.duelsLost, pointsArena: user.pointsArena }}
           invites={invites.map(d => ({
             id: d.id,

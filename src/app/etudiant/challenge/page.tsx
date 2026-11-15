@@ -9,11 +9,12 @@ import Link from 'next/link';
 import BackgroundCells from '@/components/ui/BackgroundCells';
 import Icon, { type IconName } from '@/components/ui/Icon';
 import { getEffectiveRegenMs, regenLabel } from '@/lib/decouverte';
+import { PremiumOfferAuto } from '@/components/premium/PremiumOfferSheet';
 
 const CASES_PER_DAY_TEXT = '10';
 
-function InfoScreen({ icon, color, title, text, buttonText = 'Retour au tableau de bord' }: {
-  icon: IconName; color: string; title: string; text: string; buttonText?: string;
+function InfoScreen({ icon, color, title, text, buttonText = 'Retour au tableau de bord', children }: {
+  icon: IconName; color: string; title: string; text: string; buttonText?: string; children?: React.ReactNode;
 }) {
   return (
     <div className="relative flex min-h-[70vh] items-center justify-center p-2">
@@ -28,6 +29,7 @@ function InfoScreen({ icon, color, title, text, buttonText = 'Retour au tableau 
           className="inline-block rounded-2xl bg-mala px-6 py-3.5 font-display text-sm font-bold uppercase tracking-wide text-stone shadow-[0_5px_0_#0f7a4f] active:translate-y-1 active:shadow-[0_1px_0_#0f7a4f]">
           {buttonText}
         </Link>
+        {children && <div>{children}</div>}
       </div>
     </div>
   );
@@ -55,7 +57,9 @@ export default async function ChallengePage() {
   // 3. Plus de vies → le frein (le Premium régénère plus vite)
   if (user.lives <= 0) {
     return <InfoScreen icon="heart" color="text-heart" title="Plus de vies"
-      text={`Tes vies se régénèrent (${regenLabel(getEffectiveRegenMs(user)).replace('1/', '1 vie/')}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`} />;
+      text={`Tes vies se régénèrent (${regenLabel(getEffectiveRegenMs(user)).replace('1/', '1 vie/')}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`}>
+      <PremiumOfferAuto reason="lives" tier={user.premiumTier} />
+    </InfoScreen>;
   }
 
   // 4. Banque vide pour ce niveau

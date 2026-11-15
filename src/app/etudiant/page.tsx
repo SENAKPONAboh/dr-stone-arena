@@ -32,6 +32,7 @@ import HomeStagger from '@/components/dashboard/HomeStagger';
 import LeagueHomeCard from '@/components/league/LeagueHomeCard';
 import { getLeagueView, demoAllowed, demoLeagueView, leaguesOpen, announceLeaguesOnce } from '@/lib/league';
 import { grantMonthlyPremiumUa } from '@/lib/league-profile';
+import { PremiumOfferAuto } from '@/components/premium/PremiumOfferSheet';
 
 export default async function EtudiantDashboard({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   const user = await getCurrentUserCore();
@@ -172,7 +173,7 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
 
       {/* Invitations de duel (bannière géante — uniquement si présentes) */}
       {duelInvites.length > 0 && (
-        <DuelInvitationBanner invites={duelInvites.map(d => ({
+        <DuelInvitationBanner tier={user.premiumTier} invites={duelInvites.map(d => ({
           id: d.id,
           requesterName: nameOf(d.requester),
           requesterImage: d.requester.imageUrl,
@@ -262,6 +263,7 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
               <p className="font-display text-sm font-bold text-heart">Plus de vies</p>
               <p className="mt-1 text-xs text-mute">Régénération en cours — {regenLabel(regenMs).replace('1/', '1 vie/')}</p>
               {nextLifeAt && <p className="mt-1 text-xs font-bold text-heart">Prochaine vie dans {formatDelay(nextLifeAt)}</p>}
+              <PremiumOfferAuto reason="lives" tier={user.premiumTier} />
             </div>
           )}
         </div>

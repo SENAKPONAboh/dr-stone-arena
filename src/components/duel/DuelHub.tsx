@@ -5,6 +5,7 @@ import UserSearchBar from '@/components/dashboard/UserSearchBar';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import ArenaClaimCard from '@/components/duel/ArenaClaimCard';
 import { getDuelGrade } from '@/lib/duel';
+import { PremiumOfferAuto } from '@/components/premium/PremiumOfferSheet';
 
 type Person = { id: string; name: string; imageUrl: string | null };
 type Invite = { id: string; requesterName: string; requesterImage: string | null; expiresAt: string };
@@ -12,9 +13,9 @@ type ActiveDuel = { id: string; opponent: Person; myCompleted: boolean; deadline
 type RecentDuel = { id: string; opponent: Person; won: boolean | null; myScore: number | null; opponentScore: number | null };
 
 export default function DuelHub({
-  quotaUsed, quotaMax, stats, invites, active, recent, claimed
+  quotaUsed, quotaMax, stats, invites, active, recent, claimed, tier = null
 }: {
-  quotaUsed: number; quotaMax: number;
+  quotaUsed: number; quotaMax: number; tier?: number | null;
   stats: { won: number; lost: number; pointsArena: number };
   invites: Invite[];
   active: ActiveDuel[];
@@ -69,7 +70,13 @@ export default function DuelHub({
       </div>
 
       {/* Invitations reçues (bannière géante) */}
-      {invites.length > 0 && <DuelInvitationBanner invites={invites} />}
+      {quotaUsed >= quotaMax && quotaMax > 0 && (
+        <div className="rounded-2xl bg-heart/10 p-4 text-center">
+          <p className="font-display text-sm font-bold text-heart">Tu as joué tes {quotaMax} duels du jour</p>
+          <PremiumOfferAuto reason="duels" tier={tier} />
+        </div>
+      )}
+      {invites.length > 0 && <DuelInvitationBanner invites={invites} tier={tier} />}
 
       {/* Barre de recherche */}
       <UserSearchBar />

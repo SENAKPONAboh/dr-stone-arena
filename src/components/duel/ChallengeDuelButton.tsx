@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import PremiumOfferSheet from '@/components/premium/PremiumOfferSheet';
 
 type Props = {
   targetId: string;
@@ -16,6 +17,7 @@ export default function ChallengeDuelButton({ targetId, targetName, sameLevel, m
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [offerOpen, setOfferOpen] = useState(false);
 
   const canChallenge = myTier !== null && sameLevel && targetPremium;
 
@@ -31,6 +33,7 @@ export default function ChallengeDuelButton({ targetId, targetName, sameLevel, m
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Erreur');
+        if (res.status === 429) setOfferOpen(true); // limite de duels du jour → présenter le Premium
       } else {
         setSuccess(true);
         router.refresh();
@@ -67,6 +70,7 @@ export default function ChallengeDuelButton({ targetId, targetName, sameLevel, m
       </button>
       {!canChallenge && <p className="text-xs text-center text-gray-400 mt-1">{disabledReason}</p>}
       {error && <p className="text-red-500 text-xs text-center mt-1">{error}</p>}
+      <PremiumOfferSheet open={offerOpen} onClose={() => setOfferOpen(false)} reason="duels" tier={myTier} />
     </div>
   );
 }

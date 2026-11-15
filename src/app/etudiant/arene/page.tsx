@@ -65,7 +65,7 @@ export default async function ArenePage() {
     <div className="space-y-6">
 
       {invites.length > 0 && (
-        <DuelInvitationBanner invites={invites.map(d => ({
+        <DuelInvitationBanner tier={user.premiumTier} invites={invites.map(d => ({
           id: d.id,
           requesterName: nameOf(d.requester),
           requesterImage: d.requester.imageUrl,
