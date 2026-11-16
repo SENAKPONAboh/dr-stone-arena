@@ -10,6 +10,8 @@ import { WHATSAPP_COMMUNITY_URL } from '@/lib/community';
 import WhatsappVerifyCard from '@/components/dashboard/WhatsappVerifyCard';
 import Link from 'next/link';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
+import TrophyPopup from '@/components/dashboard/TrophyPopup';
+import { getTrophyPopup } from '@/lib/trophy-popup';
 import { expireStaleDuels } from '@/lib/duel-server';
 import { getTodaySelection } from '@/lib/daily-cases';
 import { getNiveauLabel } from '@/lib/niveau';
@@ -168,8 +170,11 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
   if (leaguesOpen()) after(() => announceLeaguesOnce());
   const leagueView = demoAllowed((await searchParams).demo) ? demoLeagueView() : await getLeagueView(user.id); // ?demo=1 : local uniquement
 
+  const trophy = await getTrophyPopup(user.id);
+
   return (
     <div className="space-y-5">
+      {trophy && <TrophyPopup popupKey={trophy.key} title={trophy.title} subtitle={trophy.subtitle} xp={trophy.xp} rank={trophy.rank} />}
 
       {/* Invitations de duel (bannière géante — uniquement si présentes) */}
       {duelInvites.length > 0 && (
