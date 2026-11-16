@@ -167,14 +167,14 @@ export default function MessagesClient({ me, openWith }: { me: { id: string }; o
     window.dispatchEvent(new CustomEvent('arena:unread-messages', { detail: total }));
   }, [friends, loaded]);
 
-  // Rafraîchissement : liste toutes les 10 s, discussion toutes les 4 s (en pause si l'appli est en arrière-plan)
+  // Rafraîchissement : liste toutes les 30 s, discussion toutes les 8 s (en pause si l'appli est en arrière-plan)
   useEffect(() => {
     const tick = () => {
       if (document.hidden) return;
       if (selectedRef.current) loadMessages(selectedRef.current.id);
       else loadFriends();
     };
-    const t = setInterval(tick, selected ? 4000 : 10000);
+    const t = setInterval(tick, selected ? 8000 : 30000);
     const onVisible = () => { if (!document.hidden) tick(); };
     document.addEventListener('visibilitychange', onVisible);
     return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible); };
@@ -238,9 +238,9 @@ export default function MessagesClient({ me, openWith }: { me: { id: string }; o
     setMenuOpen(false);
     setNewMessage('');
     loadFriends();
-    // Met à jour la pastille « messages non lus » de l'en-tête
-    if (hadUnreadRef.current) { hadUnreadRef.current = false; router.refresh(); }
-  }, [loadFriends, router]);
+    // La pastille de l'en-tête se met à jour toute seule (événement arena:unread-messages) : plus de rechargement de page
+    hadUnreadRef.current = false;
+  }, [loadFriends]);
 
   const goBack = () => {
     if (pushedHistoryRef.current) { pushedHistoryRef.current = false; window.history.back(); }

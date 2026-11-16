@@ -91,7 +91,7 @@ export default function AppShell({
             {NAV_ITEMS.map(item => {
               const active = isActive(item.href);
               return (
-                <Link key={item.href} href={item.href}
+                <Link key={item.href} href={item.href} prefetch={false}
                   className={`relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition-colors ${active ? 'text-mala' : 'text-mute hover:text-ink'}`}>
                   {active && (
                     <motion.span layoutId="side-indicator" className="absolute inset-0 rounded-2xl border border-mala/30 bg-mala/10"
@@ -129,7 +129,7 @@ export default function AppShell({
 
             <div className="flex items-center gap-2">
               <ThemeSwitch className="hidden sm:flex" />
-              <Link href="/etudiant/messages" className="relative flex-shrink-0 text-mute transition-colors hover:text-ink" title="Messages" aria-label="Messages">
+              <Link href="/etudiant/messages" prefetch={false} className="relative flex-shrink-0 text-mute transition-colors hover:text-ink" title="Messages" aria-label="Messages">
                 <Icon name="chat" size={24} />
                 {liveUnread > 0 && (
                   <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-mala px-1 font-display text-[9px] font-extrabold text-stone">
@@ -138,7 +138,7 @@ export default function AppShell({
                 )}
               </Link>
               <NotificationBell initialNotifications={notifications as any} unreadCount={unreadCount} />
-              <Link href="/etudiant/profil" className="ml-0.5">
+              <Link href="/etudiant/profil" prefetch={false} className="ml-0.5">
                 {user.imageUrl ? (
                   <img src={user.imageUrl} alt="Profil" className={`h-9 w-9 rounded-full object-cover border-2 ${premium ? 'border-gold' : 'border-mala'}`} />
                 ) : (
@@ -164,7 +164,7 @@ export default function AppShell({
             {NAV_ITEMS.map(item => {
               const active = isActive(item.href);
               return (
-                <Link key={item.href} href={item.href}
+                <Link key={item.href} href={item.href} prefetch={false}
                   className={`relative flex flex-1 flex-col items-center gap-0.5 px-1 py-1.5 transition-colors ${active ? 'text-mala' : 'text-mute'}`}>
                   {active && (
                     <motion.span layoutId="bottom-indicator" className="absolute -top-1.5 h-1 w-8 rounded-full bg-mala"

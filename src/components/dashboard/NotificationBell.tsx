@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/Icon';
 import PushNotificationManager from '@/components/dashboard/PushNotificationManager';
 
@@ -14,7 +13,6 @@ type Notification = {
 };
 
 export default function NotificationBell({ initialNotifications, unreadCount }: { initialNotifications: Notification[], unreadCount: number }) {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [count, setCount] = useState(unreadCount);
@@ -47,7 +45,6 @@ export default function NotificationBell({ initialNotifications, unreadCount }: 
     try {
       await fetch('/api/notifications/read', { method: 'POST' });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      router.refresh();
     } catch (e) {
       console.error(e);
     }

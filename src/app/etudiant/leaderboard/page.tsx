@@ -9,6 +9,7 @@ import GoldAvatar from '@/components/ui/GoldAvatar';
 import PremiumCrown from '@/components/ui/PremiumCrown';
 import Icon from '@/components/ui/Icon';
 import { getXpGrade } from '@/lib/grades';
+import { unstable_cache } from 'next/cache';
 import { getLegendCounts } from '@/lib/seasons';
 import LegendMark from '@/components/ui/LegendMark';
 import TitleBadge from '@/components/ui/TitleBadge';
@@ -36,14 +37,18 @@ export default async function FullLeaderboardPage({ searchParams }: { searchPara
     ...(isCountry ? { pays: user.pays } : {}),
   };
 
-  const [allUsers, total] = await Promise.all([prisma.user.findMany({
-    where,
-    orderBy: [{ xp: 'desc' }, { createdAt: 'asc' }],
-    take: limit,
-    select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, anneeEtude: true, pays: true, universite: true, activeFrameId: true, activeTitleId: true }
-  }), prisma.user.count({ where })]);
-
-  const legends = await getLegendCounts(allUsers.map(u => u.id));
+  // Mêmes données pour tous les joueurs d'un même classement : gardées 60 s en mémoire (au lieu de les recalculer à chaque affichage)
+  const getBoard = unstable_cache(async () => {
+    const [users, count] = await Promise.all([prisma.user.findMany({
+      where,
+      orderBy: [{ xp: 'desc' }, { createdAt: 'asc' }],
+      take: limit,
+      select: { id: true, prenom: true, nom: true, xp: true, pseudo: true, imageUrl: true, isPremium: true, passActive: true, anneeEtude: true, pays: true, universite: true, activeFrameId: true, activeTitleId: true }
+    }), prisma.user.count({ where })]);
+    const legendCounts = await getLegendCounts(users.map(u => u.id));
+    return { users, count, legendCounts };
+  }, ['leaderboard', scope ?? 'global', String(isLevel ? user.anneeEtude : ''), String(isCountry ? user.pays : ''), String(limit)], { revalidate: 60 });
+  const { users: allUsers, count: total, legendCounts: legends } = await getBoard();
 
   // Pas encore chargé : on affiche quand même ton rang, avec un lien pour aller jusqu'à ta ligne
   const inTop = allUsers.some(u => u.id === user.id);
