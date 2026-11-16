@@ -89,7 +89,7 @@ const ChatWallpaper = () => (
   </svg>
 );
 
-export default function MessagesClient({ me }: { me: { id: string } }) {
+export default function MessagesClient({ me, openWith }: { me: { id: string }; openWith?: string }) {
   const router = useRouter();
   const reduce = useReducedMotion();
 
@@ -221,6 +221,16 @@ export default function MessagesClient({ me }: { me: { id: string } }) {
     try { window.history.pushState({ arenaChat: u.id }, ''); pushedHistoryRef.current = true; } catch { /* ignore */ }
     loadMessages(u.id);
   };
+
+  // Arrivée depuis un profil (« Envoyer un message ») : ouvrir la discussion avec cet ami une seule fois
+  const openedWithRef = useRef(false);
+  useEffect(() => {
+    if (!openWith || openedWithRef.current || !loaded) return;
+    const f = friends.find(x => x.id === openWith);
+    openedWithRef.current = true;
+    if (f) openConversation(f);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, friends, openWith]);
 
   const closeConversation = useCallback(() => {
     selectedRef.current = null;

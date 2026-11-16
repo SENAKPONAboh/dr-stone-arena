@@ -7,6 +7,7 @@ import { getNiveauLabel } from '@/lib/niveau';
 import { getPlanLabel } from '@/lib/premium';
 import { getDuelGrade } from '@/lib/duel';
 import ChallengeDuelButton from '@/components/duel/ChallengeDuelButton';
+import FriendButton, { type FriendState } from '@/components/profile/FriendButton';
 import GoldAvatar from '@/components/ui/GoldAvatar';
 import Icon from '@/components/ui/Icon';
 import { getCurrentUser } from '@/lib/auth';
@@ -31,7 +32,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const profileUser = await prisma.user.findUnique({
     where: { id: (await params).id },
     select: {
-      id: true, prenom: true, nom: true, pseudo: true, imageUrl: true,
+      id: true, prenom: true, nom: true, pseudo: true, imageUrl: true, role: true,
       anneeEtude: true, xp: true, streak: true, lastActive: true, flameProtectedUntil: true,
       isPremium: true, premiumTier: true, passActive: true, createdAt: true,
       activeTitleId: true, activeFrameId: true, activeThemeId: true,
@@ -44,6 +45,17 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
   const user = await getCurrentUser();
   if (!user) redirect('/api/auth/logout');
+
+  // Amitié entre moi et ce profil (bouton « Demander en ami » / « Envoyer un message »)
+  const isMe = user.id === profileUser.id;
+  const friendship = isMe ? null : await prisma.friendship.findFirst({
+    where: { OR: [{ requesterId: user.id, addresseeId: profileUser.id }, { requesterId: profileUser.id, addresseeId: user.id }] },
+    select: { id: true, status: true, requesterId: true },
+  });
+  const friendState: FriendState = !friendship || friendship.status === 'REFUSE' ? { status: 'NONE' }
+    : friendship.status === 'ACCEPTE' ? { status: 'FRIENDS', friendshipId: friendship.id }
+    : { status: friendship.requesterId === user.id ? 'SENT' : 'RECEIVED', friendshipId: friendship.id };
+  const canFriend = !isMe && user.role === 'ETUDIANT' && profileUser.role === 'ETUDIANT';
 
   const { current: duelGrade } = getDuelGrade(profileUser.duelsWon);
 
@@ -164,6 +176,12 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
 
           <SeasonPalmares summary={seasons} />
           <TournoiTrophies data={tournoi} />
+
+          {canFriend && (
+            <div className="mt-6">
+              <FriendButton targetId={profileUser.id} targetName={profileUser.pseudo || profileUser.prenom} initial={friendState} />
+            </div>
+          )}
 
           <div className={`mt-8 text-left border-t pt-6 ${themeDef || profileUser.isPremium ? 'border-white/10' : 'border-gray-100'}`}>
             <h3 className="font-bold mb-4">⚔️ Duels Arena</h3>
