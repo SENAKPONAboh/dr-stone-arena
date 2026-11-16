@@ -27,14 +27,13 @@ async function main() {
     xp: XP,
     players: rows.map((r) => ({ id: r.userId, rank: r.rank })),
   });
-  await prisma.$transaction(async (tx) => {
-    for (const r of rows) {
-      await tx.user.update({ where: { id: r.userId }, data: { xp: { increment: XP } } });
-      await tx.notification.create({ data: { userId: r.userId, icon: '🏆', message: `🏆 Trophée : tu fais partie des 3 premiers de la Ligue Or ! +${XP} XP t’ont été offerts.` } });
-    }
-    await tx.leagueSetting.upsert({ where: { key: KEY }, update: { value }, create: { key: KEY, value } });
-    await tx.leagueSetting.create({ data: { key: LOCK, value: new Date().toISOString() } });
-  });
+  // Transaction « en lot » (un seul aller-retour) : la transaction interactive expirait sur la connexion d'Arthur (P2028).
+  await prisma.$transaction([
+    ...rows.map((r) => prisma.user.update({ where: { id: r.userId }, data: { xp: { increment: XP } } })),
+    ...rows.map((r) => prisma.notification.create({ data: { userId: r.userId, icon: '🏆', message: `🏆 Trophée : tu fais partie des 3 premiers de la Ligue Or ! +${XP} XP t’ont été offerts.` } })),
+    prisma.leagueSetting.upsert({ where: { key: KEY }, update: { value }, create: { key: KEY, value } }),
+    prisma.leagueSetting.create({ data: { key: LOCK, value: new Date().toISOString() } }),
+  ]);
   console.log(`\nAPPLIQUÉ : +${XP} XP donnés à ${rows.length} joueurs ; la fenêtre s’affichera à leur prochaine connexion.`);
 }
 
