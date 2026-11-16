@@ -9,6 +9,15 @@ export const CASES_PER_DUEL = 5;
 export const INVITE_EXPIRY_HOURS = 24;
 export const PLAY_DEADLINE_HOURS = 24;
 
+// Duel entre deux années différentes : chaque joueur reçoit les cas de SON année, de même difficulté, rangés
+// à la suite dans Duel.caseIds (5 cas du demandeur puis 5 cas de l'adversaire). Même année : 5 cas communs.
+export function duelCasesFor(duel: { caseIds: string[]; requesterId: string }, userId: string): string[] {
+  if (duel.caseIds.length >= CASES_PER_DUEL * 2) {
+    return userId === duel.requesterId ? duel.caseIds.slice(0, CASES_PER_DUEL) : duel.caseIds.slice(CASES_PER_DUEL, CASES_PER_DUEL * 2);
+  }
+  return duel.caseIds;
+}
+
 // Seuils Points Arena → XP (réclamables UNE seule fois chacun)
 export const ARENA_THRESHOLDS = [
   { threshold: 100, xp: 50 },

@@ -171,7 +171,7 @@ export default async function LeaguePage({ searchParams }: { searchParams: Promi
               <ul className="mt-3 space-y-2 text-sm">
                 <li className="flex justify-between gap-3"><span>Cas du jour réussi</span><b className="text-mala">+ l&apos;XP gagnée</b></li>
                 <li className="flex justify-between gap-3"><span>Cas raté</span><b className="text-heart">− l&apos;XP perdue</b></li>
-                <li className="flex justify-between gap-3"><span>Duel gagné</span><b className="text-mala">+{DUEL_WIN}</b></li>
+                <li className="flex justify-between gap-3"><span>Duel gagné contre ta ligue ou en dessous</span><b className="text-mala">+{DUEL_WIN}</b></li>
                 <li className="flex justify-between gap-3"><span>Duel gagné contre une ligue au-dessus</span><b className="text-gold">+{DUEL_WIN_HIGHER}</b></li>
                 <li className="flex justify-between gap-3"><span>Duel perdu</span><b>+{DUEL_LOSS}</b></li>
               </ul>

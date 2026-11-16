@@ -1,3 +1,4 @@
+import { duelCasesFor } from '@/lib/duel';
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { caseDuration } from '@/lib/case-duration';
@@ -86,7 +87,7 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
     const oppTime = isRequester ? duel.opponentTime : duel.requesterTime;
     const won = duel.winnerId === null ? null : duel.winnerId === user.id;
 
-    const totalCases = duel.caseIds.length;
+    const totalCases = duelCasesFor(duel, user.id).length;
     const avg = (t: number | null) => (t !== null && totalCases > 0 ? Math.round(t / totalCases) : null);
 
     // Critère de départage (recalculé pour l'affichage)
@@ -134,15 +135,16 @@ export default async function DuelDetailPage({ params }: { params: Promise<{ id:
 
   // À moi de jouer : les 5 cas dans l'ordre du tirage
   const cases = await prisma.clinicalCase.findMany({
-    where: { id: { in: duel.caseIds } },
+    where: { id: { in: duelCasesFor(duel, user.id) } },
     include: { chapter: { include: { subject: true } } }
   });
   // Reprise : les réponses déjà enregistrées (rechargement de la page) ne se rejouent pas
   const progress = readStoredAnswers(isRequester ? duel.requesterAnswers : duel.opponentAnswers);
   const answeredIds = new Set(progress.map(a => a.caseId));
-  const firstUnanswered = duel.caseIds.findIndex(cid => !answeredIds.has(cid));
+  const myCaseIds = duelCasesFor(duel, user.id);
+  const firstUnanswered = myCaseIds.findIndex(cid => !answeredIds.has(cid));
 
-  const orderedCases = duel.caseIds
+  const orderedCases = myCaseIds
     .map(cid => cases.find(c => c.id === cid))
     .filter((c): c is NonNullable<typeof c> => c !== undefined);
 

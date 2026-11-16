@@ -19,7 +19,7 @@ export default function ChallengeDuelButton({ targetId, targetName, sameLevel, m
   const [success, setSuccess] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
 
-  const canChallenge = myTier !== null && sameLevel && targetPremium;
+  const canChallenge = myTier !== null && targetPremium; // toutes les promotions depuis le 16 nov. 2026
 
   const handleChallenge = async () => {
     setLoading(true);
@@ -56,7 +56,6 @@ export default function ChallengeDuelButton({ targetId, targetName, sameLevel, m
 
   let disabledReason = '';
   if (myTier === null) disabledReason = "Réservé aux membres Premium";
-  else if (!sameLevel) disabledReason = "Niveau différent — duels entre mêmes niveaux uniquement";
   else if (!targetPremium) disabledReason = "Cet étudiant n'a pas accès aux duels";
 
   return (

@@ -1,3 +1,4 @@
+import { duelCasesFor } from '@/lib/duel';
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       if (duel.status !== 'ACCEPTE') throw new Error('NOT_PLAYING');
       if (duel.playDeadline && duel.playDeadline < new Date()) throw new Error('DEADLINE');
       if (isRequester ? duel.requesterCompleted : duel.opponentCompleted) throw new Error('COMPLETED');
-      if (!duel.caseIds.includes(caseId)) throw new Error('NOT_IN_DUEL');
+      if (!duelCasesFor(duel, user.id).includes(caseId)) throw new Error('NOT_IN_DUEL');
 
       const stored = readStoredAnswers(isRequester ? duel.requesterAnswers : duel.opponentAnswers);
       const existing = stored.find(a => a.caseId === caseId);

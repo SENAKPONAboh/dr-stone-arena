@@ -34,10 +34,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Cet étudiant n'a pas accès aux duels (Premium uniquement)." }, { status: 400 });
     }
 
-    // 4. Même niveau obligatoire
-    if (!user.anneeEtude || opponent.anneeEtude !== user.anneeEtude) {
-      return NextResponse.json({ error: "Tu ne peux défier que des étudiants de ton niveau." }, { status: 400 });
+    // 4. Toutes les promotions (réforme du 16 nov. 2026) : il faut seulement que chacun ait renseigné son année.
+    //    Chaque joueur joue les cas de SON année, de même difficulté ; départage : bonnes réponses puis temps.
+    if (!user.anneeEtude || !opponent.anneeEtude) {
+      return NextResponse.json({ error: "L'année d'études doit être renseignée pour jouer un duel." }, { status: 400 });
     }
+    const myYear = user.anneeEtude, oppYear = opponent.anneeEtude;
+    const crossYear = myYear !== oppYear;
 
     // 5. Quota du demandeur (duels ACCEPTÉS aujourd'hui uniquement)
     const todayStart = new Date();
@@ -67,11 +70,17 @@ export async function POST(request: Request) {
 
     // 7. Banque de cas du niveau commun (cas déjà publiés = toute la banque)
     const eligibleCases = await prisma.clinicalCase.findMany({
-      where: { anneeEtude: user.anneeEtude },
-      select: { id: true }
+      where: { anneeEtude: myYear },
+      select: { id: true, difficulty: true }
     });
     if (eligibleCases.length < CASES_PER_DUEL) {
       return NextResponse.json({ error: `Pas encore assez de cas publiés pour ton niveau (${eligibleCases.length}/${CASES_PER_DUEL}). Reviens bientôt !` }, { status: 400 });
+    }
+    const oppCases = crossYear
+      ? await prisma.clinicalCase.findMany({ where: { anneeEtude: oppYear }, select: { id: true, difficulty: true } })
+      : [];
+    if (crossYear && oppCases.length < CASES_PER_DUEL) {
+      return NextResponse.json({ error: `Pas encore assez de cas publiés pour le niveau de ton adversaire (${oppCases.length}/${CASES_PER_DUEL}).` }, { status: 400 });
     }
 
     // 8. Tirage de 5 cas identiques pour les deux joueurs : d'abord des cas que NI L'UN NI L'AUTRE n'a jamais vus
@@ -87,12 +96,29 @@ export async function POST(request: Request) {
     const now = Date.now();
     for (const s of [...todayDaily, ...todayElite]) for (const c of s.caseIds) if (!seen.has(c)) seen.set(c, now);
     const notReserved = eligibleCases.filter(c => !reserved.includes(c.id));
-    const caseIds = pickUnseenFirst(notReserved.length >= CASES_PER_DUEL ? notReserved : eligibleCases, seen, CASES_PER_DUEL);
+    const myIds = pickUnseenFirst(notReserved.length >= CASES_PER_DUEL ? notReserved : eligibleCases, seen, CASES_PER_DUEL);
+    let caseIds = myIds;
+    if (crossYear) {
+      // Pour chaque cas du demandeur : un cas de l'année de l'adversaire de MÊME difficulté (jamais vu d'abord, sinon le plus ancien)
+      const oppPool = oppCases.filter(c => !reserved.includes(c.id));
+      const pool = oppPool.length >= CASES_PER_DUEL ? oppPool : oppCases;
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      const ordered = [...shuffled.filter(c => !seen.has(c.id)), ...shuffled.filter(c => seen.has(c.id)).sort((a, b) => (seen.get(a.id) ?? 0) - (seen.get(b.id) ?? 0))];
+      const diffOf = new Map(eligibleCases.map(c => [c.id, c.difficulty]));
+      const used = new Set<string>();
+      const oppIds = myIds.map(id => {
+        const want = diffOf.get(id);
+        const hit = ordered.find(c => !used.has(c.id) && c.difficulty === want) ?? ordered.find(c => !used.has(c.id));
+        used.add(hit!.id);
+        return hit!.id;
+      });
+      caseIds = [...myIds, ...oppIds];
+    }
 
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000);
 
     const duel = await prisma.duel.create({
-      data: { requesterId: user.id, opponentId, anneeEtude: user.anneeEtude, caseIds, status: 'EN_ATTENTE', expiresAt }
+      data: { requesterId: user.id, opponentId, anneeEtude: myYear, caseIds, status: 'EN_ATTENTE', expiresAt }
     });
 
     // Notification (cloche) — la bannière géante s'affiche via le dashboard

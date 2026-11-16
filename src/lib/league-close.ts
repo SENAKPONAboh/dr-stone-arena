@@ -3,8 +3,8 @@
 //   - environ 1 sur 5 MONTE d'une ligue (coffre d'UA selon la nouvelle ligue) ;
 //   - dans la plus haute ligue ouverte, les 3 premiers gagnent une ÉTOILE (et un coffre) ;
 //   - environ 1 sur 5 DESCEND (jamais sous Bronze) ; les autres RESTENT.
-// Ensuite, si la plus haute ligue ouverte compte au moins 24 joueurs, la ligue suivante ouvre :
-// les 12 qui ont le plus d'étoiles y entrent (ex aequo ensemble) et les étoiles de cette ligue repartent à zéro.
+// Ensuite, si la plus haute ligue ouverte compte au moins 16 joueurs, la ligue suivante ouvre :
+// les 8 qui ont le plus d’étoiles y entrent (ex aequo ensemble) et les étoiles de cette ligue repartent à zéro.
 // Appelée par la tâche planifiée (/api/cron/ligues) et, par sécurité, à la première inscription de la semaine suivante.
 // Idempotente : un réglage « closed:<semaine> » empêche de clôturer deux fois.
 import prisma from '@/lib/prisma';
@@ -12,8 +12,8 @@ import { notifyUser } from '@/lib/notify';
 import { LEAGUES, zones, GROUP_MIN } from '@/lib/league';
 import { getOpenTiers, addChest, UA_CHEST_BY_TIER, UA_STAR_CHEST } from '@/lib/league-profile';
 
-const OPEN_NEXT_AT = 24;   // joueurs dans la plus haute ligue ouverte pour ouvrir la suivante
-const OPEN_NEXT_SEATS = 12;
+const OPEN_NEXT_AT = 16;   // joueurs dans la plus haute ligue ouverte pour ouvrir la suivante (24 avant le 16 nov. 2026 : jamais atteint)
+const OPEN_NEXT_SEATS = 8;
 
 export async function closeWeek(week: string) {
   // Verrou global : une seule clôture à la fois

@@ -1,3 +1,4 @@
+import { duelCasesFor } from '@/lib/duel';
 import { NextResponse, after } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
@@ -42,7 +43,8 @@ export async function POST(request: Request) {
     // Source de vérité : les réponses enregistrées une par une (/api/duel/answer).
     // Repli (ancienne version de l'écran encore ouverte) : les réponses envoyées maintenant.
     const stored = readStoredAnswers(isRequester ? duel.requesterAnswers : duel.opponentAnswers);
-    const cases = await prisma.clinicalCase.findMany({ where: { id: { in: duel.caseIds } } });
+    const myCaseIds = duelCasesFor(duel, user.id);
+    const cases = await prisma.clinicalCase.findMany({ where: { id: { in: myCaseIds } } });
     const answerMap = new Map<string, string>();
     if (stored.length === 0) {
       for (const a of (Array.isArray(answers) ? answers : [])) {
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const detailedAnswers = duel.caseIds.map(caseId => {
+    const detailedAnswers = myCaseIds.map(caseId => {
       const saved = stored.find(s => s.caseId === caseId);
       if (saved) return { caseId, answer: saved.answer, isCorrect: saved.isCorrect, timeSpent: saved.timeSpent };
       const c = cases.find(cc => cc.id === caseId);
