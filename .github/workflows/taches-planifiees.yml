@@ -1,0 +1,47 @@
+# Tâches planifiées de Dr Stone Arena (remplacent les « crons » de vercel.json depuis le passage sur Render).
+# À régler une fois dans GitHub → Settings → Secrets and variables → Actions :
+#   - secret   CRON_SECRET : la même valeur que la variable CRON_SECRET de Render ;
+#   - variable SITE_URL    : l'adresse du site, sans « / » à la fin (ex. https://dr-stone-arena.onrender.com, puis le nom de domaine).
+# Heures en UTC (Niamey = UTC+1). GitHub peut lancer une tâche planifiée avec quelques minutes de retard.
+name: Tâches planifiées
+
+on:
+  schedule:
+    - cron: '0 19 * * *'   # chaque jour 19:00 UTC (20:00 à Niamey) : rappels de la Flamme
+    - cron: '5 23 * * 0'   # dimanche 23:05 UTC (lundi 00:05 à Niamey) : clôture des ligues
+  workflow_dispatch:       # bouton « Run workflow » pour lancer à la main
+    inputs:
+      tache:
+        description: 'flamme ou ligues'
+        required: true
+        default: 'flamme'
+
+jobs:
+  appel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Choisir la tâche
+        id: t
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "path=/api/cron/${{ inputs.tache }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "5 23 * * 0" ]; then
+            echo "path=/api/cron/ligues" >> "$GITHUB_OUTPUT"
+          else
+            echo "path=/api/cron/flamme" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Réveiller le site (Render gratuit s'endort)
+        run: curl -s -o /dev/null --max-time 120 "${{ vars.SITE_URL }}/login" || true
+      - name: Appeler la tâche (3 essais)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o reponse.txt -w "%{http_code}" --max-time 280 \
+              -H "Authorization: Bearer $CRON_SECRET" "${{ vars.SITE_URL }}${{ steps.t.outputs.path }}")
+            echo "Essai $i : HTTP $code"; head -c 400 reponse.txt; echo
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 30
+          done
+          exit 1

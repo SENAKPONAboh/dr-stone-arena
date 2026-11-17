@@ -23,7 +23,8 @@ export const LEAGUES = [
 
 /** Premier lundi des ligues. Sur le vrai site (Vercel), rien n'est visible ni compté avant cette semaine ; en local, tout est testable. */
 export const LEAGUE_START = '2026-11-09';
-const IS_LOCAL = process.env.VERCEL !== '1';
+// « Local » = serveur de développement (next dev), quel que soit l'hébergeur (Vercel, Render…).
+const IS_LOCAL = process.env.NODE_ENV !== 'production';
 export const leaguesOpen = () => IS_LOCAL || weekKey() >= LEAGUE_START;
 
 export const GROUP_SIZE = 15;      // taille visée d'un groupe

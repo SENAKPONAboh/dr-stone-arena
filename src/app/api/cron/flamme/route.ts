@@ -2,7 +2,7 @@
 // Lancée une fois par jour vers 20 h à Niamey (19 h UTC). Elle :
 // 1. éteint en base les Flammes déjà perdues (classements et profils justes, même pour qui n'ouvre plus l'appli) ;
 // 2. prévient (cloche + téléphone) ceux qui ont joué hier mais pas encore aujourd'hui. Une seule fois par jour et par personne.
-// Sécurité : Vercel envoie « Authorization: Bearer <CRON_SECRET> ». Sans CRON_SECRET configuré, la route refuse tout.
+// Sécurité : la tâche planifiée (GitHub Actions, .github/workflows/taches-planifiees.yml) envoie « Authorization: Bearer <CRON_SECRET> ». Sans CRON_SECRET configuré, la route refuse tout.
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { notifyUser } from '@/lib/notify';

@@ -138,7 +138,7 @@ export default function PwaRegistrar() {
         <ol className="list-decimal space-y-1 pl-4 text-xs leading-relaxed text-[#8fa39a]">
           <li>Touche <b className="text-[#e9f1ed]">Partager <ShareIcon /></b> (en haut à droite, près de la barre d'adresse).</li>
           <li>Choisis <b className="text-[#e9f1ed]">« Sur l'écran d'accueil »</b> puis <b className="text-[#e9f1ed]">Ajouter</b>.</li>
-          <li>Si tu ne le vois pas, ouvre <b className="text-[#e9f1ed]">dr-stone-arena.vercel.app</b> dans <b className="text-[#e9f1ed]">Safari</b>.</li>
+          <li>Si tu ne le vois pas, ouvre <b className="text-[#e9f1ed]">le site de Dr Stone Arena</b> dans <b className="text-[#e9f1ed]">Safari</b>.</li>
         </ol>
       )}
 

@@ -39,7 +39,7 @@ export default async function ProfilPage({ searchParams }: { searchParams: Promi
   });
   const titleDef = getTitleDef(equipped?.activeTitleId);
   // ?theme=THEME_COSMOS : aperçu d'un thème EN LOCAL uniquement (jamais sur le vrai site), rien n'est enregistré
-  const previewTheme = process.env.VERCEL !== '1' ? (await searchParams).theme : undefined;
+  const previewTheme = process.env.NODE_ENV !== 'production' ? (await searchParams).theme : undefined;
   const themeDef = getThemeDef(previewTheme ?? equipped?.activeThemeId);
   const cardInline: CSSProperties | undefined = themeDef
     // Thème équipé : carte TRANSPARENTE, les éléments sont posés directement sur le fond du thème (demande d'Arthur, 8 nov.)
