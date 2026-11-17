@@ -40,11 +40,14 @@ export function validSignature(rawBody: string, header: string | null): boolean 
 /** Réponse WhatsApp à l'étudiant (dans la conversation qu'il vient d'ouvrir). Jamais bloquant. */
 export async function sendWhatsappText(toDigits: string, body: string) {
   try {
-    await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+    const res = await fetch(`https://graph.facebook.com/${GRAPH_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to: toDigits, type: 'text', text: { body } }),
     });
+    // Journal Render : Meta refuse parfois la réponse (jeton expiré, mauvais ID de numéro…) sans lever d'exception.
+    if (!res.ok) console.error(`[WhatsApp] réponse refusée par Meta (HTTP ${res.status}) :`, (await res.text()).slice(0, 500));
+    else console.log(`[WhatsApp] réponse envoyée (…${toDigits.slice(-4)})`);
   } catch (e) {
     console.error('Réponse WhatsApp impossible :', e);
   }

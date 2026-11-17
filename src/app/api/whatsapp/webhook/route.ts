@@ -19,9 +19,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const raw = await request.text();
   // Sans signature valide de Meta : on ignore (sinon n'importe qui pourrait « vérifier » un numéro).
-  if (!whatsappVerifyEnabled() || !validSignature(raw, request.headers.get('x-hub-signature-256'))) {
+  if (!whatsappVerifyEnabled()) {
+    console.error('[WhatsApp] message reçu mais vérification désactivée : une des 4 variables WHATSAPP_… manque');
     return new Response('Signature invalide', { status: 401 });
   }
+  if (!validSignature(raw, request.headers.get('x-hub-signature-256'))) {
+    console.error("[WhatsApp] message reçu avec une signature invalide : vérifier WHATSAPP_APP_SECRET (clé secrète de l'app Meta)");
+    return new Response('Signature invalide', { status: 401 });
+  }
+  console.log('[WhatsApp] message reçu de Meta (signature valide)');
 
   try {
     const body = JSON.parse(raw);
