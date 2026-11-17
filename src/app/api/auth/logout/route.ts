@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { siteUrl } from '@/lib/site-origin';
 
 export async function POST(request: Request) {
-  const url = new URL('/login', request.url);
+  const url = siteUrl(request, '/login');
   
   // On crée la réponse
   const response = NextResponse.json({ success: true, redirectUrl: url.toString() });
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const url = new URL('/login', request.url);
+  const url = siteUrl(request, '/login');
   const response = NextResponse.redirect(url);
   
   response.cookies.set("session", "", {

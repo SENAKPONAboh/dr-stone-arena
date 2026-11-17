@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { siteUrl } from '@/lib/site-origin';
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.redirect(new URL('/etudiant/profil', request.url));
+    return NextResponse.redirect(siteUrl(request, '/etudiant/profil'));
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

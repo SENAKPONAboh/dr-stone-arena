@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { handleIncomingCode, sendWhatsappText, validSignature, whatsappVerifyEnabled } from '@/lib/whatsapp-verify';
 import { notifyUser } from '@/lib/notify';
 import { handleResetRequest } from '@/lib/password-reset';
+import { siteOrigin } from '@/lib/site-origin';
 
 // 🔗 Webhook WhatsApp (Meta) : adresse à coller dans Meta → WhatsApp → Configuration :
 //    https://drstonearena.com/api/whatsapp/webhook
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
         for (const msg of change?.value?.messages ?? []) {
           if (msg?.type !== 'text' || !msg?.from) continue;
           // Mot de passe oublié : réponse avec un lien de réinitialisation (voir lib/password-reset.ts)
-          const resetReply = await handleResetRequest(String(msg.from), String(msg.text?.body ?? ''), new URL(request.url).origin);
+          const resetReply = await handleResetRequest(String(msg.from), String(msg.text?.body ?? ''), siteOrigin(request));
           if (resetReply) { await sendWhatsappText(msg.from, resetReply); continue; }
           const { outcome, userId } = await handleIncomingCode(String(msg.from), String(msg.text?.body ?? ''));
           if (outcome === 'VERIFIED' && userId) {
