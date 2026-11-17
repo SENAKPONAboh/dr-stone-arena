@@ -124,7 +124,11 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
     const t = setTimeout(() => setVerifySkippable(true), 120_000);
     return () => clearTimeout(t);
   }, [index, verifySkippable]);
-  const slideOk = (s: Slide) => s.extra === 'whatsapp' ? waJoined : s.extra === 'notifs' ? pushDone : s.extra === 'verify' ? (verifyDone || verifySkippable) : true;
+  // « Je le ferai plus tard » (17 nov. 2026) : aucune étape obligatoire ne peut plus bloquer une inscription.
+  // Les notifications restent proposées par la cloche, la vérification du numéro par la carte de l'accueil.
+  const [later, setLater] = useState<string[]>([]);
+  const doLater = (extra: string) => { setLater(l => (l.includes(extra) ? l : [...l, extra])); setDir(1); setIndex(i => Math.min(SLIDES.length - 1, i + 1)); };
+  const slideOk = (s: Slide) => (s.extra && later.includes(s.extra)) ? true : s.extra === 'whatsapp' ? waJoined : s.extra === 'notifs' ? pushDone : s.extra === 'verify' ? (verifyDone || verifySkippable) : true;
   // On ne peut pas dépasser la première étape obligatoire non faite (boutons, swipe, flèches, barre).
   const firstBlocked = SLIDES.findIndex(s => !slideOk(s));
   const blocked = !slideOk(slide);
@@ -235,6 +239,7 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                     {waJoined ? '✓ Communauté rejointe' : "J'ai rejoint, continuer"}
                   </button>
                   {!waOpened && <p className="text-center text-[11px] text-mute">Touche d&apos;abord le bouton vert pour ouvrir WhatsApp.</p>}
+                  {!waJoined && <LaterButton onClick={() => doLater('whatsapp')} />}
                 </div>
               )}
               {slide.extra === 'notifs' && (
@@ -251,6 +256,7 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                   {pushStatus !== 'on' && pushDone && (
                     <p className="text-center text-[11px] text-mute">Tu pourras les activer plus tard depuis la cloche.</p>
                   )}
+                  {pushStatus !== 'on' && !pushDone && <LaterButton onClick={() => doLater('notifs')} />}
                 </div>
               )}
               {slide.extra === 'verify' && (
@@ -259,6 +265,7 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
                   {!verifyDone && verifySkippable && (
                     <p className="mt-3 text-center text-[11px] text-mute">Un souci ? Tu peux continuer : la vérification restera proposée sur ton accueil.</p>
                   )}
+                  {!verifyDone && !verifySkippable && <LaterButton onClick={() => doLater('verify')} />}
                 </div>
               )}
               {slide.extra === 'profile' && (
@@ -318,5 +325,15 @@ export default function OnboardingCarousel({ prenom }: { prenom: string }) {
         <p className="mt-3 text-center text-xs text-mute">Étape {index + 1} / {SLIDES.length} · glisse du doigt ou utilise les flèches</p>
       </div>
     </div>
+  );
+}
+
+/** Lien discret pour passer une étape obligatoire et la faire plus tard (ne bloque jamais l'inscription). */
+function LaterButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick}
+      className="mx-auto mt-1 block px-3 py-2 text-xs font-bold text-mute underline decoration-line underline-offset-4 transition-colors hover:text-ink">
+      Je le ferai plus tard
+    </button>
   );
 }
