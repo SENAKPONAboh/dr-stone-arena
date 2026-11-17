@@ -4,7 +4,7 @@ import { notifyUser } from '@/lib/notify';
 import { handleResetRequest } from '@/lib/password-reset';
 
 // 🔗 Webhook WhatsApp (Meta) : adresse à coller dans Meta → WhatsApp → Configuration :
-//    https://dr-stone-arena.onrender.com/api/whatsapp/webhook
+//    https://drstonearena.com/api/whatsapp/webhook
 
 // 1) Poignée de main : Meta vérifie que l'adresse nous appartient (mot secret WHATSAPP_VERIFY_TOKEN).
 export async function GET(request: Request) {

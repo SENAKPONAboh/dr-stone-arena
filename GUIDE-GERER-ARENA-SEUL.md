@@ -1,6 +1,6 @@
 # Gérer Dr Stone Arena seul (sans Claude)
 
-Ce guide sert pendant les mois où tu n'as pas d'abonnement. **Tout le travail courant se fait dans le panel admin**, sans toucher au code : https://dr-stone-arena.onrender.com/admin
+Ce guide sert pendant les mois où tu n'as pas d'abonnement. **Tout le travail courant se fait dans le panel admin**, sans toucher au code : https://drstonearena.com/admin
 
 ---
 

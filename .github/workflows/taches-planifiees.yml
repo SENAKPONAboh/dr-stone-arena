@@ -1,7 +1,7 @@
 # Tâches planifiées de Dr Stone Arena (remplacent les « crons » de vercel.json depuis le passage sur Render).
 # À régler une fois dans GitHub → Settings → Secrets and variables → Actions :
 #   - secret   CRON_SECRET : la même valeur que la variable CRON_SECRET de Render ;
-#   - variable SITE_URL    : l'adresse du site, sans « / » à la fin (ex. https://dr-stone-arena.onrender.com, puis le nom de domaine).
+#   - variable SITE_URL    : l'adresse du site, sans « / » à la fin (https://drstonearena.com ; l'ancienne https://dr-stone-arena.onrender.com marche aussi).
 # Heures en UTC (Niamey = UTC+1). GitHub peut lancer une tâche planifiée avec quelques minutes de retard.
 name: Tâches planifiées
 

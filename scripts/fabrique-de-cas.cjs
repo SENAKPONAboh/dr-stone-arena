@@ -130,7 +130,7 @@ a{color:var(--mala)}
 <textarea id="propre" readonly></textarea>
 <button id="copierPropre">Copier les cas propres</button>
 <span id="copieOk2" class="ok"></span>
-<p class="aide">Puis ouvre <a href="https://dr-stone-arena.onrender.com/admin/cases-structured" target="_blank" rel="noopener">Import QCM structurés</a>, colle et valide. Les cas déjà présents (même titre) sont ignorés automatiquement.</p>
+<p class="aide">Puis ouvre <a href="https://drstonearena.com/admin/cases-structured" target="_blank" rel="noopener">Import QCM structurés</a>, colle et valide. Les cas déjà présents (même titre) sont ignorés automatiquement.</p>
 </section>
 </main>
 
