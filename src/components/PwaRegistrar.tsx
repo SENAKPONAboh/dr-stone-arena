@@ -9,7 +9,7 @@ import { usePathname } from 'next/navigation';
 // - Lien ouvert dans Facebook, Instagram, TikTok, Messenger… : on explique d'ouvrir le vrai navigateur,
 //   car ces navigateurs intégrés ne savent pas installer d'application.
 
-type Hint = 'ios-safari' | 'ios-other' | 'in-app' | null;
+type Hint = 'ios-safari' | 'ios-other' | 'in-app' | 'android-manual' | 'installing' | null;
 
 const SNOOZE_KEY = 'pwa-install-snooze';
 const SNOOZE_DAYS = 3;
@@ -61,13 +61,19 @@ export default function PwaRegistrar() {
     const ua = navigator.userAgent;
     const isIOS = /iphone|ipad|ipod/i.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
     const inApp = /FBAN|FBAV|FB_IAB|Instagram|Messenger|musical_ly|BytedanceWebview|TikTok|Snapchat|Line\/|Twitter/i.test(ua);
+    // Android sans proposition du navigateur (Opera, Phoenix, Samsung…, ou installation déjà refusée une fois) :
+    // après quelques secondes, on affiche la méthode manuelle au lieu de ne rien montrer.
+    let manualTimer: ReturnType<typeof setTimeout> | undefined;
     if (inApp) setHint('in-app');
     else if (isIOS) {
       const otherBrowser = /crios|fxios|edgios|opios/i.test(ua);
       setHint(otherBrowser ? 'ios-other' : 'ios-safari');
+    } else if (/android/i.test(ua)) {
+      manualTimer = setTimeout(() => setHint(h => h ?? 'android-manual'), 5000);
     }
 
     return () => {
+      if (manualTimer) clearTimeout(manualTimer);
       window.removeEventListener('beforeinstallprompt', onPrompt);
       window.removeEventListener('appinstalled', onInstalled);
     };
@@ -75,9 +81,16 @@ export default function PwaRegistrar() {
 
   const install = async () => {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
+    const promptEvent = deferredPrompt;
+    setDeferredPrompt(null); // une proposition du navigateur ne sert qu'une fois
+    try {
+      await promptEvent.prompt();
+      const choice = await promptEvent.userChoice;
+      // Accepté : Chrome installe en arrière-plan (l'icône arrive en quelques secondes, parfois jusqu'à une minute)
+      setHint(choice?.outcome === 'accepted' ? 'installing' : 'android-manual');
+    } catch {
+      setHint('android-manual');
+    }
   };
 
   const later = () => { snooze(); setHidden(true); };
@@ -125,6 +138,22 @@ export default function PwaRegistrar() {
         </p>
       )}
 
+      {hint === 'installing' && (
+        <p className="text-xs leading-relaxed text-[#8fa39a]">
+          Installation en cours ✅ L&apos;icône <b className="text-[#e9f1ed]">Dr. Stone Arena</b> apparaît sur ton écran d&apos;accueil
+          dans quelques secondes (parfois jusqu&apos;à une minute). Si elle n&apos;arrive pas, regarde dans la liste de toutes tes applications.
+        </p>
+      )}
+
+      {hint === 'android-manual' && (
+        <ol className="list-decimal space-y-1 pl-4 text-xs leading-relaxed text-[#8fa39a]">
+          <li>Ouvre ce site dans <b className="text-[#e9f1ed]">Chrome</b> (pas Opera, Phoenix ou le navigateur de Facebook).</li>
+          <li>Touche les <b className="text-[#e9f1ed]">trois points ⋮</b> en haut à droite.</li>
+          <li>Choisis <b className="text-[#e9f1ed]">« Installer l&apos;application »</b> ou <b className="text-[#e9f1ed]">« Ajouter à l&apos;écran d&apos;accueil »</b>, puis <b className="text-[#e9f1ed]">Installer</b>.</li>
+          <li>Si tu avais l&apos;ancienne icône Arena, supprime-la : elle ne marche plus.</li>
+        </ol>
+      )}
+
       {hint === 'ios-safari' && (
         <ol className="list-decimal space-y-1 pl-4 text-xs leading-relaxed text-[#8fa39a]">
           <li>Touche <b className="text-[#e9f1ed]">Partager <ShareIcon /></b> en bas de Safari
@@ -142,10 +171,10 @@ export default function PwaRegistrar() {
         </ol>
       )}
 
-      {hint !== 'in-app' && (
+      {hint !== 'in-app' && hint !== 'installing' && (
         <p className="mt-2 text-[11px] text-[#8fa39a]">Ensuite, ouvre Arena depuis cette icône : plein écran et notifications.</p>
       )}
-      <button onClick={later} className="mt-3 w-full rounded-xl bg-[#1c2723] py-2 text-xs font-bold text-[#e9f1ed]">Plus tard</button>
+      <button onClick={later} className="mt-3 w-full rounded-xl bg-[#1c2723] py-2 text-xs font-bold text-[#e9f1ed]">{hint === 'installing' ? "C'est bon" : 'Plus tard'}</button>
     </div>
   );
 }
