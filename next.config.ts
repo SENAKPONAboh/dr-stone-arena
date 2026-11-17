@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@prisma/client'],
-  // La carte à partager lit la police Poppins sur le disque : on l'inclut dans la fonction Vercel.
+  // La carte à partager lit la police Poppins sur le disque : on l'inclut dans le paquet du serveur (utile sur Vercel, sans effet gênant sur Render).
   outputFileTracingIncludes: {
     '/api/share/card': ['./assets/fonts/**', './assets/logo/**'],
   },

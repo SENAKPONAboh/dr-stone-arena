@@ -105,7 +105,7 @@ export default function ExpenseManager({ expenses }: { expenses: Expense[] }) {
         </div>
         <div>
           <label className={labelStyle}>Fournisseur</label>
-          <input name="vendor" placeholder="Ex: Vercel, Supabase..." className={inputStyle} />
+          <input name="vendor" placeholder="Ex: Render, Supabase, nom de domaine..." className={inputStyle} />
         </div>
         <div className="md:col-span-2">
           <label className={labelStyle}>Description</label>

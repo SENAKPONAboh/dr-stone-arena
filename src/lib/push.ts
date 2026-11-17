@@ -10,7 +10,7 @@ export type PushResult = {
   detail?: string;
 };
 
-/** Nettoie une clé VAPID copiée dans Vercel : espaces, retours à la ligne, guillemets, « = » final. */
+/** Nettoie une clé VAPID copiée dans l'hébergeur (Render) : espaces, retours à la ligne, guillemets, « = » final. */
 export function cleanVapidKey(raw: string | undefined): string {
   return (raw ?? '').replace(/\s+/g, '').replace(/^["']+|["']+$/g, '').replace(/=+$/, '');
 }

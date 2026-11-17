@@ -54,7 +54,7 @@ export default function ConfidentialitePage() {
         </Section>
 
         <Section title="5. Où sont-elles stockées et qui y a accès ?">
-          <p>Les données sont hébergées chez nos prestataires techniques (Vercel pour l&apos;application, Supabase pour la base de données et les fichiers, Meta pour les messages WhatsApp). Seule l&apos;administration de Dr Stone Arena y a accès. Ton nom ou ton pseudo, ta photo, ton grade et tes résultats de jeu sont visibles par les autres joueurs dans les classements et les profils publics ; ton e-mail et ton numéro ne le sont jamais.</p>
+          <p>Les données sont hébergées chez nos prestataires techniques (Render pour l&apos;application, Supabase pour la base de données et les fichiers, Meta pour les messages WhatsApp). Seule l&apos;administration de Dr Stone Arena y a accès. Ton nom ou ton pseudo, ta photo, ton grade et tes résultats de jeu sont visibles par les autres joueurs dans les classements et les profils publics ; ton e-mail et ton numéro ne le sont jamais.</p>
         </Section>
 
         <Section title="6. Durée de conservation">

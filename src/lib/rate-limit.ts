@@ -1,6 +1,6 @@
 // ===== LIMITATION DES ESSAIS (anti « devinette » de mots de passe) =====
 // Mémoire de l'instance serveur : suffisant pour freiner les essais en rafale, mais pas une protection absolue
-// (sur Vercel plusieurs instances coexistent). Une vraie limite globale demanderait une table ou un service dédié.
+// (si l'hébergeur lance plusieurs instances, chacune a son compteur). Une vraie limite globale demanderait une table ou un service dédié.
 
 type Entry = { count: number; first: number };
 const store = new Map<string, Entry>();
@@ -30,7 +30,7 @@ export function clearFailures(key: string) {
   store.delete(key);
 }
 
-/** Adresse IP du visiteur (derrière le proxy de Vercel). */
+/** Adresse IP du visiteur (derrière le proxy de Render). */
 export function clientIp(request: Request): string {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'inconnue';
 }

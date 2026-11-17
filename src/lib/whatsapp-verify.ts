@@ -3,7 +3,7 @@
 // Meta transmet le message au site (webhook) avec le numéro de l'expéditeur : ce numéro est donc prouvé.
 // Le code (calculé, jamais stocké) relie le message au bon compte.
 //
-// Variables à mettre dans Vercel (Settings → Environment Variables) — jamais dans le code :
+// Variables à mettre dans Render (service dr-stone-arena → Environment) — jamais dans le code :
 //   WHATSAPP_TOKEN           jeton d'accès permanent (utilisateur système Meta)
 //   WHATSAPP_PHONE_NUMBER_ID identifiant du numéro +227 95 31 34 71 dans Meta
 //   WHATSAPP_VERIFY_TOKEN    mot secret choisi par Arthur, recopié dans Meta (configuration du webhook)

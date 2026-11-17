@@ -1,5 +1,5 @@
 // ===== HEURE LOCALE (Niger / Bénin : UTC+1, pas de changement d'heure) =====
-// Les serveurs Vercel tournent en UTC : sans ce décalage, « samedi » commencerait à 1 h du matin au lieu de minuit.
+// Les serveurs (Render) tournent en UTC : sans ce décalage, « samedi » commencerait à 1 h du matin au lieu de minuit.
 
 const WAT_OFFSET_MS = 60 * 60 * 1000;
 

@@ -1,6 +1,6 @@
 # Gérer Dr Stone Arena seul (sans Claude)
 
-Ce guide sert pendant les mois où tu n'as pas d'abonnement. **Tout le travail courant se fait dans le panel admin**, sans toucher au code : https://dr-stone-arena.vercel.app/admin
+Ce guide sert pendant les mois où tu n'as pas d'abonnement. **Tout le travail courant se fait dans le panel admin**, sans toucher au code : https://dr-stone-arena.onrender.com/admin
 
 ---
 
@@ -39,9 +39,10 @@ Règle d'or des paiements : **ne valide jamais un reçu sans avoir vu l'argent a
 - Regarde surtout **Database size** (limite 500 Mo) et **Storage** (limite 1 Go, ce sont les photos de reçus).
 - **Au-delà de 80 %** : il est temps de payer Supabase Pro (25 $/mois), ou de me redemander de l'aide.
 
-### Vercel (le site)
-- Va sur https://vercel.com, ouvre le projet **dr-stone-arena**, onglet **Usage**.
-- Limite principale : 100 Go de trafic par mois. Au-delà de 80 %, prévois l'abonnement Pro (20 $/mois).
+### Render (le site)
+- Va sur https://dashboard.render.com, ouvre le service **dr-stone-arena**.
+- Offre gratuite : le site **s'endort après 15 minutes sans visite** et met environ 1 minute à se réveiller (c'est normal, ce n'est pas une panne). Le robot anti-sommeil (UptimeRobot) le garde éveillé.
+- Limites : 750 heures de fonctionnement par mois (assez pour un seul site allumé tout le mois) et 100 Go de trafic. Regarde **Billing → Usage** de ton compte. Au-delà de 80 %, prévois l'offre payante « Starter » (7 $/mois).
 
 Aucune des deux ne t'envoie de facture surprise : au pire, le service se met en pause.
 
@@ -67,8 +68,8 @@ Important :
 
 | Problème | Que faire |
 |---|---|
-| **Le site ne s'ouvre plus du tout** | 1) Vérifie ta connexion. 2) Va sur supabase.com : si le projet dit **Paused**, clique **Restore project** (gratuit, quelques minutes). 3) Sinon, va sur vercel.com → projet → onglet **Deployments**. |
-| **Ça marchait hier, plus aujourd'hui après une mise à jour** | Vercel → **Deployments** → choisis la dernière version qui marchait → menu **⋯** → **Instant Rollback** (ou **Promote to Production**). Le site revient à cette version en 1 minute. |
+| **Le site ne s'ouvre plus du tout** | 1) Vérifie ta connexion. 2) Va sur supabase.com : si le projet dit **Paused**, clique **Restore project** (gratuit, quelques minutes). 3) Sinon, va sur dashboard.render.com → service **dr-stone-arena** → onglet **Events** (ou **Logs** pour voir l'erreur). |
+| **Ça marchait hier, plus aujourd'hui après une mise à jour** | Render → service **dr-stone-arena** → onglet **Events** → sur la dernière mise en ligne qui marchait (« Deploy live »), clique **Rollback**. Le site revient à cette version en quelques minutes. |
 | **Le site affiche une erreur de base de données** | Supabase → **Usage** : si la base est pleine (500 Mo), il faut payer Pro ou demander de l'aide pour faire du ménage. |
 | **La vérification WhatsApp ne répond plus** | Pas grave : après 2 minutes, l'étudiant a un bouton « continuer ». Les clés Meta sont peut-être expirées ; ce sera à refaire avec de l'aide. |
 | **Un étudiant dit qu'il a payé mais rien n'est arrivé** | Cherche son nom dans Centre financier → **Transactions**, ou son reçu dans Validation Premium / Pass Élite / Trésorerie UA. Pas de reçu = il ne l'a pas envoyé : demande-lui de recommencer. |
@@ -80,13 +81,13 @@ Important :
 - Supprimer ou modifier un **moyen de paiement** sans être sûr du nouveau numéro : les étudiants paieraient au mauvais numéro.
 - Lancer des commandes comme `prisma db push`, `migrate reset` ou du SQL trouvé sur Internet.
 - Toucher au fichier `.env`, ou donner son contenu à quelqu'un (ce sont les clés de la base).
-- Changer les **variables d'environnement** dans Vercel (Settings → Environment Variables).
+- Changer les **variables d'environnement** dans Render (service dr-stone-arena → **Environment**).
 
 ## 8. Où trouver de l'aide gratuite
 
-- **claude.ai en gratuit** : on peut écrire quelques messages par jour. Pour un message d'erreur : fais une capture, colle-la, et dis « c'est mon application Dr Stone Arena (Next.js, Vercel, Supabase) ».
+- **claude.ai en gratuit** : on peut écrire quelques messages par jour. Pour un message d'erreur : fais une capture, colle-la, et dis « c'est mon application Dr Stone Arena (Next.js, Render, Supabase) ».
 - **Un ami développeur** : le fichier `CLAUDE.md` du projet décrit toute l'application et les règles à respecter. Donne-lui ce fichier avant qu'il touche à quoi que ce soit.
-- **Sans aide**, tu peux toujours : valider les paiements, ajouter des cas, gérer les étudiants, envoyer des notifications, revenir à une version précédente sur Vercel, réveiller Supabase, faire une sauvegarde. C'est tout ce qu'il faut pour faire tourner Arena.
+- **Sans aide**, tu peux toujours : valider les paiements, ajouter des cas, gérer les étudiants, envoyer des notifications, revenir à une version précédente sur Render, réveiller Supabase, faire une sauvegarde. C'est tout ce qu'il faut pour faire tourner Arena.
 
 ## 9. Le jour du lancement : remplacer l'ancienne banque par les 1 890 cas
 
@@ -121,5 +122,5 @@ Conseils :
 ## 11. Quand l'argent rentre, dans cet ordre
 
 1. **Supabase Pro** (25 $/mois) : sauvegardes automatiques chaque jour, plus de place.
-2. **Vercel Pro** (20 $/mois) : usage commercial autorisé, plus de marge.
+2. **Render Starter** (7 $/mois) : le site ne s'endort plus jamais, plus de puissance.
 3. **Claude** : pour les nouvelles fonctionnalités et la refonte.

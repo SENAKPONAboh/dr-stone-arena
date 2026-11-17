@@ -1,5 +1,5 @@
 // ===== FLAMME (série de jours) — une seule règle pour tout le jeu =====
-// Les jours se comptent à l'heure du Niger / Bénin (UTC+1), pas à l'heure du serveur Vercel (UTC).
+// Les jours se comptent à l'heure du Niger / Bénin (UTC+1), pas à l'heure du serveur (UTC).
 // Règle : un jour sans aucun cas joué = Flamme éteinte, sauf si une protection (Gel / Assurance)
 // couvre les jours manqués. La perte est mémorisée (streakBeforeReset + flameLostAt) pour le Restaure-Flamme.
 import prisma from '@/lib/prisma';

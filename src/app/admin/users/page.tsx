@@ -70,7 +70,7 @@ export default async function AdminUsersPage({ searchParams }: { searchParams: P
   } catch { /* table pas encore créée */ }
 
   // Message de relance WhatsApp (envoyé par l'admin lui-même, un par un)
-  const site = `https://${(await headers()).get('host') ?? 'dr-stone-arena.vercel.app'}`;
+  const site = `https://${(await headers()).get('host') ?? 'dr-stone-arena.onrender.com'}`;
   const relance = (prenom: string, onboardingDone: boolean) => onboardingDone
     ? `Salut ${prenom} ! Les ligues de la semaine viennent d'ouvrir sur Dr Stone Arena 🏅 Tout le monde part de 0 cette semaine : c'est le moment de commencer ! Fais ta garde de 10 cas (5 minutes), gagne des duels et monte en Argent, puis en Or. Lance-toi ici : ${site}/login
 Un souci pour te connecter ? Réponds-moi ici.`

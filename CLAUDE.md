@@ -13,7 +13,7 @@ Application web/mobile (PWA) de révision médicale gamifiée pour étudiants en
 - **Espace Élite** (actuellement appelé « monétisé » dans le code, `/etudiant/monetise`) : Pass 2 000 FCFA/mois, UA, 10 cas/jour, Rush du week-end, boutique, coffres, personnalisation, retraits (Prime Arena), recharges.
 - **Panel admin** `/admin` : cas, import, utilisateurs, Premium, Pass, UA, retraits/recharges, moyens de paiement, ambassadeurs, finance, suspects, reset.
 
-Stack : Next.js 16.3 (App Router, Turbopack — lis `node_modules/next/dist/docs/` avant d'utiliser une API Next), React 19, TypeScript strict, Prisma 6 + PostgreSQL Supabase, Tailwind 3.4, framer-motion, canvas-confetti, next-themes, web-push, JWT (jose). Déploiement Vercel automatique sur `git push`. Aucun test automatisé : la vérification = `npm run build` vert.
+Stack : Next.js 16.3 (App Router, Turbopack — lis `node_modules/next/dist/docs/` avant d'utiliser une API Next), React 19, TypeScript strict, Prisma 6 + PostgreSQL Supabase, Tailwind 3.4, framer-motion, canvas-confetti, next-themes, web-push, JWT (jose). Déploiement Render automatique sur `git push` (https://dr-stone-arena.onrender.com, offre gratuite ; Vercel abandonné le 17 nov. 2026). Aucun test automatisé : la vérification = `npm run build` vert.
 
 Documents de référence dans le projet claude.ai « Dr Stone Arena » : `claude/rapport-reprise-technique.md` (audit complet) et `claude/direction-artistique.md`. Maquette validée : https://claude.ai/artifact/V2m2hWB5KafbA7cgSVZ8Ya
 

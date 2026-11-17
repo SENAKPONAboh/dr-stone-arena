@@ -1,4 +1,4 @@
-// ===== TÂCHE DU DIMANCHE (Vercel Cron, voir vercel.json) : clôture des ligues de la semaine =====
+// ===== TÂCHE DU DIMANCHE (GitHub Actions, voir .github/workflows/taches-planifiees.yml) : clôture des ligues de la semaine =====
 // Lancée le dimanche à 23 h 05 UTC = lundi 0 h 05 à Niamey. Clôture la semaine qui vient de finir
 // (montées, descentes, étoiles, coffres). Sécurité : « Authorization: Bearer <CRON_SECRET> ».
 import { NextResponse } from 'next/server';

@@ -21,7 +21,7 @@ export const LEAGUES = [
   { name: 'Diamant', color: '#8ef0ff' },
 ] as const;
 
-/** Premier lundi des ligues. Sur le vrai site (Vercel), rien n'est visible ni compté avant cette semaine ; en local, tout est testable. */
+/** Premier lundi des ligues. Sur le vrai site (Render), rien n'est visible ni compté avant cette semaine ; en local, tout est testable. */
 export const LEAGUE_START = '2026-11-09';
 // « Local » = serveur de développement (next dev), quel que soit l'hébergeur (Vercel, Render…).
 const IS_LOCAL = process.env.NODE_ENV !== 'production';
@@ -259,7 +259,7 @@ export async function getLeaguesOverview(): Promise<LeagueOverview> {
 }
 
 // ===== MODE DÉMONSTRATION (LOCAL UNIQUEMENT, ?demo=1) : données fictives pour les captures du tutoriel vidéo =====
-// Rien n'est lu ni écrit en base. Impossible sur le vrai site (Vercel).
+// Rien n'est lu ni écrit en base. Impossible sur le vrai site (Render).
 export const demoAllowed = (demo?: string) => IS_LOCAL && demo === '1';
 const DEMO_NAMES = ['Fatima', 'Ibrahim', 'Kofi', 'Grâce', 'Moussa', 'Aïcha', 'Kossi', 'Mariam', 'Sani', 'Hamza', 'Bénédicte', 'Yacine', 'Nadia', 'Paul'];
 const DEMO_POINTS = [612, 540, 498, 455, 430, 402, 377, 340, 295, 260, 210, 185, 120, 64];

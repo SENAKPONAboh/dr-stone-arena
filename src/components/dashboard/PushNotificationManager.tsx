@@ -77,7 +77,7 @@ export default function PushNotificationManager({ onStatus }: { onStatus?: (s: S
           setStatus('no-key');
           return;
         }
-        // Clé mal copiée dans Vercel : le téléphone la refuserait (« applicationServerKey is not valid »).
+        // Clé mal copiée dans l'hébergeur : le téléphone la refuserait (« applicationServerKey is not valid »).
         // Ce n'est pas la faute de l'étudiant → statut « indisponible », l'accueil des nouveaux le laisse continuer.
         if (!isValidVapidKey(cfg.publicKey)) {
           setKeyProblem('clé publique (NEXT_PUBLIC_VAPID_PUBLIC_KEY) invalide');

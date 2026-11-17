@@ -1,5 +1,5 @@
 // ===== Périodes du Centre financier à l'heure locale (Niger / Bénin : UTC+1) =====
-// Les serveurs Vercel tournent en UTC : sans ce décalage, « aujourd'hui » commencerait à 1 h du matin.
+// Les serveurs (Render) tournent en UTC : sans ce décalage, « aujourd'hui » commencerait à 1 h du matin.
 
 const OFFSET = 60 * 60 * 1000;
 
