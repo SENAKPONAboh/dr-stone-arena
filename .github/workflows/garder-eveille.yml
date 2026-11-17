@@ -1,0 +1,21 @@
+# Robot anti-sommeil : Render gratuit endort le site après 15 minutes sans visite (réveil ≈ 30 à 60 s).
+# On l'appelle toutes les 10 minutes pour que les joueurs ne tombent jamais sur un site endormi.
+# Gratuit et sans limite car le dépôt est public. GitHub peut décaler un passage de quelques minutes :
+# un réveil lent reste possible de temps en temps, ce n'est pas une panne.
+# Lit la variable GitHub SITE_URL (la même que pour les tâches planifiées).
+name: Garder le site éveillé
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Appeler la page de connexion
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 120 "${{ vars.SITE_URL }}/login" || echo "000")
+          echo "Réponse du site : HTTP $code"
