@@ -84,17 +84,24 @@ export async function POST(request: Request) {
     }
 
     // 8. Tirage de 5 cas identiques pour les deux joueurs : d'abord des cas que NI L'UN NI L'AUTRE n'a jamais vus
-    //    (garde, Élite, duels, Rush), en évitant aussi les cas de leur garde du jour et ceux réservés à un tournoi.
+    //    (garde, Élite, duels, Rush), en évitant aussi les cas de leur garde du jour, de leurs invitations en attente
+    //    et ceux réservés à un tournoi.
     //    Un cas déjà vu ne revient que si la banque de l'année est épuisée (les plus anciens d'abord).
     const seen = await getSeenCases([user.id, opponentId]);
     const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
-    const [todayDaily, todayElite, reserved] = await Promise.all([
+    const [todayDaily, todayElite, reserved, pendingDuels] = await Promise.all([
       prisma.dailyCaseSelection.findMany({ where: { userId: { in: [user.id, opponentId] }, date: { gte: dayStart } }, select: { caseIds: true } }),
       prisma.monetiseSelection.findMany({ where: { userId: { in: [user.id, opponentId] }, date: { gte: dayStart } }, select: { caseIds: true } }).catch(() => []),
       getReservedCaseIds(),
+      // Invitations encore en attente de l'un ou l'autre joueur : sans ça, deux défis envoyés coup sur coup
+      // pouvaient tirer les mêmes cas (constaté le 19 nov. 2026 : plus de la moitié des cas répétés).
+      prisma.duel.findMany({
+        where: { status: 'EN_ATTENTE', OR: [{ requesterId: { in: [user.id, opponentId] } }, { opponentId: { in: [user.id, opponentId] } }] },
+        select: { caseIds: true },
+      }),
     ]);
     const now = Date.now();
-    for (const s of [...todayDaily, ...todayElite]) for (const c of s.caseIds) if (!seen.has(c)) seen.set(c, now);
+    for (const s of [...todayDaily, ...todayElite, ...pendingDuels]) for (const c of s.caseIds) if (!seen.has(c)) seen.set(c, now);
     const notReserved = eligibleCases.filter(c => !reserved.includes(c.id));
     const myIds = pickUnseenFirst(notReserved.length >= CASES_PER_DUEL ? notReserved : eligibleCases, seen, CASES_PER_DUEL);
     let caseIds = myIds;
