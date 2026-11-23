@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUserCore } from '@/lib/auth';
 import { caseDuration } from '@/lib/case-duration';
 import { readStoredAnswers } from '@/lib/duel-answers';
+import { minReadSeconds } from '@/lib/duel-read-time';
 
 // ===== RÉPONSE À UN CAS DE DUEL (une par une) =====
 // La bonne réponse et l'explication ne sont révélées qu'APRÈS que la réponse est enregistrée.
@@ -26,7 +27,10 @@ export async function POST(request: Request) {
     const clinicalCase = await prisma.clinicalCase.findUnique({ where: { id: caseId } });
     if (!clinicalCase) return NextResponse.json({ error: "Cas introuvable" }, { status: 404 });
     const maxTime = caseDuration(clinicalCase.difficulty, clinicalCase.durationMax);
-    const timeSpent = Math.max(0, Math.min(maxTime, Number.isFinite(clientTime) ? Math.round(clientTime) : maxTime));
+    // Plancher de lecture : une réponse plus rapide que le temps de lecture minimum compte pour ce minimum,
+    // pour que répondre sans lire ne fasse jamais gagner le départage au temps.
+    const minTime = Math.min(maxTime, minReadSeconds(clinicalCase.statement, clinicalCase.options));
+    const timeSpent = Math.max(minTime, Math.min(maxTime, Number.isFinite(clientTime) ? Math.round(clientTime) : maxTime));
 
     const result = await prisma.$transaction(async (tx) => {
       try {

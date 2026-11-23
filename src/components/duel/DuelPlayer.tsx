@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
 import Link from 'next/link';
+import CaseGuard from '@/components/ui/CaseGuard';
+import { minReadSeconds } from '@/lib/duel-read-time';
 
 // ⚠️ La bonne réponse et l'explication ne sont plus envoyées avec les cas :
 // le serveur les révèle après l'enregistrement de chaque réponse (/api/duel/answer).
@@ -31,6 +33,10 @@ export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  // Anti-triche (comme les cas du jour) : le chrono démarre après l'accord aux règles ; quitter la page annule le cas.
+  const [guardReady, setGuardReady] = useState(false);
+  // Temps de lecture minimum : « Valider » reste bloqué tant qu'il n'est pas écoulé.
+  const [readLeft, setReadLeft] = useState(0);
 
   const current = cases[index];
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -41,7 +47,18 @@ export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0
   }, []);
 
   useEffect(() => {
-    if (answered || done || checking) return;
+    if (!current || answered) return;
+    setReadLeft(minReadSeconds(current.statement, current.options));
+  }, [index, answered]);
+
+  useEffect(() => {
+    if (!guardReady || readLeft <= 0 || answered || done) return;
+    const t = setTimeout(() => setReadLeft(r => r - 1), 1000);
+    return () => clearTimeout(t);
+  }, [readLeft, guardReady, answered, done]);
+
+  useEffect(() => {
+    if (!guardReady || answered || done || checking) return;
     if (timeLeft <= 0) {
       handleAnswer(true);
       return;
@@ -50,9 +67,10 @@ export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0
     return () => clearTimeout(timer);
   }, [timeLeft, answered, done, checking]);
 
-  const handleAnswer = async (timeout = false) => {
+  const handleAnswer = async (timeout = false, violation = false) => {
     if (answered || checking) return;
-    const answer = timeout ? "Aucune réponse (Temps écoulé)" : selected;
+    if (!timeout && !violation && readLeft > 0) return;
+    const answer = violation ? "Cas annulé — sortie de l'application" : timeout ? "Aucune réponse (Temps écoulé)" : selected;
     const spent = current.durationMax - timeLeft;
     setChecking(true);
     setError('');
@@ -132,8 +150,20 @@ export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0
   }
 
   return (
+    <CaseGuard
+      armed={guardReady && !answered && !done}
+      onAcknowledge={() => setGuardReady(true)}
+      onViolation={() => handleAnswer(false, true)}
+      resetKey={current?.id}
+      rules={
+        <>
+          <p>🔒 Si tu quittes cette page (changement d'application, d'onglet, écran d'accueil) pendant un cas → <b>le cas est immédiatement annulé</b> et compte comme une réponse fausse.</p>
+          <p>📖 Prends le temps de lire : le bouton « Valider » se débloque après quelques secondes de lecture.</p>
+        </>
+      }
+    >
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <LastSecondsAlert remaining={timeLeft} active={!answered && !done} />
+      <LastSecondsAlert remaining={timeLeft} active={guardReady && !answered && !done} />
       <div className="max-w-3xl mx-auto">
 
         {/* Progression */}
@@ -180,10 +210,10 @@ export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0
           {!answered ? (
             <button
               onClick={() => handleAnswer(false)}
-              disabled={!selected || checking}
+              disabled={!selected || checking || readLeft > 0}
               className="w-full mt-8 py-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white text-lg font-extrabold rounded-2xl shadow-md uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {checking ? 'Vérification…' : 'Valider ma réponse'}
+              {checking ? 'Vérification…' : readLeft > 0 ? `📖 Lis le cas… ${readLeft} s` : 'Valider ma réponse'}
             </button>
           ) : (
             <div className="mt-8">
@@ -206,5 +236,6 @@ export default function DuelPlayer({ duelId, opponentName, cases, startIndex = 0
         </div>
       </div>
     </div>
+    </CaseGuard>
   );
 }
