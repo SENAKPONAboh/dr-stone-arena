@@ -33,7 +33,9 @@ export async function POST() {
   } else {
     // Plafonnement serveur : le coffre ne peut jamais faire dépasser MAX_LIVES (lecture fraîche)
     const fresh = await prisma.user.findUnique({ where: { id: user.id }, select: { lives: true } });
-    const newLives = Math.min(MAX_LIVES, (fresh?.lives ?? user.lives) + reward.amount);
+    const current = fresh?.lives ?? user.lives;
+    // (jamais en dessous du solde actuel : les vies gagnées par invitation peuvent dépasser 10)
+    const newLives = Math.max(current, Math.min(MAX_LIVES, current + reward.amount));
     await prisma.user.update({
       where: { id: user.id },
       data: { lives: newLives },

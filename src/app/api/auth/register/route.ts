@@ -5,6 +5,7 @@ import { MAX_LIVES } from '@/lib/lives';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
 import { formatWhatsapp } from '@/lib/indicatifs';
 import { checkRateLimit, recordFailure, clientIp } from '@/lib/rate-limit';
+import { recordInvite } from '@/lib/invites';
 
 const clean = (v: unknown, max = 120) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
@@ -122,6 +123,9 @@ export async function POST(request: Request) {
       }
       throw e;
     }
+
+    // Invité par un ami (lien ?invite=CODE) : on retient qui l'a invité (jamais bloquant)
+    await recordInvite(user.id, body?.inviteCode);
 
     // On ne renvoie jamais le mot de passe
     const { password: _, ...userWithoutPassword } = user;

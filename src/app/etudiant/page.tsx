@@ -35,6 +35,8 @@ import LeagueHomeCard from '@/components/league/LeagueHomeCard';
 import { getLeagueView, demoAllowed, demoLeagueView, leaguesOpen, announceLeaguesOnce } from '@/lib/league';
 import { grantMonthlyPremiumUa } from '@/lib/league-profile';
 import { PremiumOfferAuto } from '@/components/premium/PremiumOfferSheet';
+import InviteForLives from '@/components/dashboard/InviteForLives';
+import { getOrCreateInviteCode, getInviteStats } from '@/lib/invites';
 
 export default async function EtudiantDashboard({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   const user = await getCurrentUserCore();
@@ -69,6 +71,11 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
 
   // Expiration des duels
   await expireStaleDuels(user.id);
+
+  // Invitations contre des vies : lien personnel affiché seulement quand il n'y a plus de vies
+  const [inviteCode, inviteStats] = user.lives <= 0
+    ? await Promise.all([getOrCreateInviteCode(user.id), getInviteStats(user.id)])
+    : [null, { joined: 0, rewarded: 0 }];
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -268,6 +275,7 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
               <p className="font-display text-sm font-bold text-heart">Plus de vies</p>
               <p className="mt-1 text-xs text-mute">Régénération en cours — {regenLabel(regenMs).replace('1/', '1 vie/')}</p>
               {nextLifeAt && <p className="mt-1 text-xs font-bold text-heart">Prochaine vie dans {formatDelay(nextLifeAt)}</p>}
+              <InviteForLives code={inviteCode} joined={inviteStats.joined} rewarded={inviteStats.rewarded} livesLeft={0} />
               <PremiumOfferAuto reason="lives" tier={user.premiumTier} />
             </div>
           )}

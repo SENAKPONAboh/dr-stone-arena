@@ -21,9 +21,9 @@ export function getRegenIntervalMs(premiumTier: number | null): number {
 
 // `intervalMs` (facultatif) : intervalle déjà calculé par getEffectiveRegenMs (Découverte, code ambassadeur).
 export function calculateRegeneratedLives(currentLives: number, lastLifeLostAt: Date | null, premiumTier: number | null, intervalMs?: number) {
-  // Si l'étudiant a déjà le max de vies, on ne change rien
+  // Si l'étudiant a déjà le max de vies (ou plus, grâce aux invitations), on ne change rien
   if (currentLives >= MAX_LIVES) {
-    return { lives: MAX_LIVES, updatedAt: null };
+    return { lives: currentLives, updatedAt: null };
   }
 
   // Si on n'a pas de date de perte, on ne régénère pas (par sécurité)

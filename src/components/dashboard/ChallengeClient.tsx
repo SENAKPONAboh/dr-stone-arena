@@ -9,6 +9,7 @@ import AnswerOption, { type AnswerState } from '@/components/ui/AnswerOption';
 import ArenaButton from '@/components/ui/ArenaButton';
 import TimerRing from '@/components/ui/TimerRing';
 import ResultSheet from '@/components/ui/ResultSheet';
+import InviteForLives from '@/components/dashboard/InviteForLives';
 import EcgLine from '@/components/ui/EcgLine';
 import Icon from '@/components/ui/Icon';
 import LastSecondsAlert from '@/components/ui/LastSecondsAlert';
@@ -52,7 +53,7 @@ type SubmitResult = {
   explanation: string;
 };
 
-export default function ChallengeClient({ clinicalCase, caseNumber, total }: ClinicalCaseProps) {
+export default function ChallengeClient({ clinicalCase, caseNumber, total, inviteCode = null }: ClinicalCaseProps & { inviteCode?: string | null }) {
   const router = useRouter();
   const [timeLeft, setTimeLeft] = useState(clinicalCase.durationMax);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -305,6 +306,9 @@ export default function ChallengeClient({ clinicalCase, caseNumber, total }: Cli
       >
         {gradeNote && (
           <p className={`mb-3 rounded-xl px-3 py-2 text-sm font-bold ${gradeNote.up ? 'bg-mala/15 text-mala' : 'bg-heart/15 text-heart'}`}>{gradeNote.text}</p>
+        )}
+        {result && !result.isCorrect && (
+          <InviteForLives compact code={inviteCode} livesLeft={result.livesLeft} />
         )}
         <p className="mb-1 font-bold">💡 Explication</p>
         {result?.explanation}

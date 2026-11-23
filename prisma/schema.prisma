@@ -82,6 +82,31 @@ model User {
   // ===== Ligues de la semaine (prisma/sql/2026-ligues.sql) =====
   leagueProfile         LeagueProfile?
   leagueMembers         LeagueMember[]
+  // ===== Invitations contre des vies (prisma/sql/2026-11-23-invitations-vies.sql) =====
+  inviteCode            InviteCode?
+  invitesSent           LifeInvite[] @relation("LifeInviter")
+  invitedBy             LifeInvite?  @relation("LifeInvitee")
+}
+
+// Code d'invitation personnel d'un étudiant (lien drstonearena.com/register?invite=CODE)
+model InviteCode {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Une invitation réussie : l'inviteur reçoit +3 vies quand l'invité joue son 1er cas (rewardedAt rempli)
+model LifeInvite {
+  id         String    @id @default(cuid())
+  inviterId  String
+  inviter    User      @relation("LifeInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  inviteeId  String    @unique
+  invitee    User      @relation("LifeInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+  rewardedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([inviterId])
 }
 
 model Friendship {

@@ -9,6 +9,7 @@ import { xpLossFor } from '@/lib/grades';
 import { notifyOvertaken } from '@/lib/overtake';
 import { addLeaguePoints } from '@/lib/league';
 import { streakAfterPlay } from '@/lib/flame';
+import { rewardInviterIfDue } from '@/lib/invites';
 
 // Marge de réseau (secondes) tolérée au-delà du chrono avant de considérer la réponse comme hors délai
 const LATE_GRACE = 12;
@@ -170,6 +171,8 @@ export async function POST(request: Request) {
     if (result.xpEarned > 0) after(() => notifyOvertaken(user, result.xpBefore, result.xpBefore + result.xpEarned));
     // Points de ligue de la semaine (compteur à part de l'XP, jamais sous 0)
     if (result.xpEarned !== 0) after(() => addLeaguePoints(user, result.xpEarned));
+    // Invité par un ami : son 1er cas joué donne +3 vies à celui qui l'a invité (une seule fois)
+    after(() => rewardInviterIfDue(user.id));
 
     return NextResponse.json({
       isCorrect,

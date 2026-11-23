@@ -10,6 +10,8 @@ import BackgroundCells from '@/components/ui/BackgroundCells';
 import Icon, { type IconName } from '@/components/ui/Icon';
 import { getEffectiveRegenMs, regenLabel } from '@/lib/decouverte';
 import { PremiumOfferAuto } from '@/components/premium/PremiumOfferSheet';
+import InviteForLives from '@/components/dashboard/InviteForLives';
+import { getOrCreateInviteCode, getInviteStats } from '@/lib/invites';
 
 const CASES_PER_DAY_TEXT = '10';
 
@@ -56,8 +58,10 @@ export default async function ChallengePage() {
 
   // 3. Plus de vies → le frein (le Premium régénère plus vite)
   if (user.lives <= 0) {
+    const [inviteCode, inviteStats] = await Promise.all([getOrCreateInviteCode(user.id), getInviteStats(user.id)]);
     return <InfoScreen icon="heart" color="text-heart" title="Plus de vies"
       text={`Tes vies se régénèrent (${regenLabel(getEffectiveRegenMs(user)).replace('1/', '1 vie/')}). Tes ${remaining.length} cas restants du jour t'attendent quand tu auras récupéré des vies !`}>
+      <InviteForLives code={inviteCode} joined={inviteStats.joined} rewarded={inviteStats.rewarded} livesLeft={0} />
       <PremiumOfferAuto reason="lives" tier={user.premiumTier} />
     </InfoScreen>;
   }
@@ -91,6 +95,7 @@ export default async function ChallengePage() {
   }
 
   const caseNumber = caseIds.length - remaining.length + 1;
+  const inviteCode = await getOrCreateInviteCode(user.id);
 
   // ⚠️ correctAnswer et explanation ne sont JAMAIS envoyés au navigateur :
   // le serveur les renvoie seulement après la réponse (/api/challenge/submit).
@@ -109,6 +114,7 @@ export default async function ChallengePage() {
       }}
       caseNumber={caseNumber}
       total={caseIds.length}
+      inviteCode={inviteCode}
     />
   );
 }

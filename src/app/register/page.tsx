@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { NIVEAU_OPTIONS } from '@/lib/niveau';
@@ -17,6 +17,16 @@ export default function RegisterPage() {
   const [hasAmbassador, setHasAmbassador] = useState(false);
   const [phoneCode, setPhoneCode] = useState(INDICATIFS[0].code); // Niger par défaut
   const [customCode, setCustomCode] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+
+  // Lien d'invitation d'un ami (?invite=CODE) : retenu même si l'étudiant quitte puis revient sur la page
+  useEffect(() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get('invite')?.trim().toUpperCase() ?? '';
+      if (fromUrl) localStorage.setItem('dsa-invite', fromUrl);
+      setInviteCode(fromUrl || localStorage.getItem('dsa-invite') || '');
+    } catch {}
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,7 +34,8 @@ export default function RegisterPage() {
     setError('');
 
     const formData = new FormData(e.currentTarget);
-    const body = Object.fromEntries(formData.entries());
+    const body: Record<string, unknown> = Object.fromEntries(formData.entries());
+    if (inviteCode) body.inviteCode = inviteCode;
 
     try {
       const res = await fetch('/api/auth/register', {
@@ -38,6 +49,7 @@ export default function RegisterPage() {
       if (!res.ok) {
         setError(data.error || 'Une erreur est survenue');
       } else {
+        try { localStorage.removeItem('dsa-invite'); } catch {}
         router.push('/login');
       }
     } catch (err) {
@@ -52,6 +64,11 @@ export default function RegisterPage() {
 
   return (
     <AuthShell wide title="Créer ton compte" subtitle="Rejoins l'arène des étudiants en médecine et des médecins.">
+      {inviteCode && (
+        <div className="mb-4 rounded-2xl border border-mala/40 bg-mala/10 px-4 py-3 text-center text-sm font-medium text-ink">
+          Un ami t&apos;a invité sur l&apos;Arena. Inscris-toi et joue ton premier cas : il recevra <b className="text-mala">+3 vies</b> grâce à toi !
+        </div>
+      )}
       {error && (
         <div className="mb-4 rounded-2xl border-2 border-heart/40 bg-heart/10 px-4 py-3 text-center text-sm font-medium text-heart">
           {error}
