@@ -7,6 +7,16 @@ import ChestOpener from '@/components/league/ChestOpener';
 import { getNiveauLabel } from '@/lib/niveau';
 import BackLink from '@/components/ui/BackLink';
 
+// Étoiles gagnées (top 3 de la plus haute ligue ouverte), à côté du nom : « ★ ×1 »
+function StarBadge({ n }: { n?: number }) {
+  if (!n) return null;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-gold/15 px-1.5 py-0.5 font-display text-[10px] font-extrabold text-gold" aria-label={`${n} étoile${n > 1 ? 's' : ''}`}>
+      ★ <span className="tabular-nums">×{n}</span>
+    </span>
+  );
+}
+
 // ===== MA LIGUE DE LA SEMAINE =====
 export default async function LeaguePage({ searchParams }: { searchParams: Promise<{ demo?: string }> }) {
   const user = await getCurrentUser();
@@ -109,7 +119,7 @@ export default async function LeaguePage({ searchParams }: { searchParams: Promi
                           ? <img src={r.imageUrl} alt="" className="h-9 w-9 rounded-full object-cover" />
                           : <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slab font-display text-sm font-bold">{r.name.charAt(0).toUpperCase()}</span>}
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate font-bold">{r.me ? `${r.name} (toi)` : r.name}</span>
+                          <span className="flex min-w-0 items-center gap-1.5 font-bold"><span className="truncate">{r.me ? `${r.name} (toi)` : r.name}</span><StarBadge n={r.stars} /></span>
                           <span className="block text-[10px] text-mute">{getNiveauLabel(r.anneeEtude)}</span>
                         </span>
                         <span className="font-display text-sm font-extrabold tabular-nums">{r.points}</span>
@@ -150,7 +160,7 @@ export default async function LeaguePage({ searchParams }: { searchParams: Promi
                               <li key={t.userId}>
                                 <Link href={t.userId === user.id ? '/etudiant/profil' : `/etudiant/profil/${t.userId}`} className="flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm hover:bg-slab-2">
                                   <span className="w-5 text-center font-display text-xs font-bold text-mute">{i + 1}</span>
-                                  <span className="min-w-0 flex-1 truncate font-bold">{t.userId === user.id ? `${t.name} (toi)` : t.name}</span>
+                                  <span className="flex min-w-0 flex-1 items-center gap-1.5 font-bold"><span className="truncate">{t.userId === user.id ? `${t.name} (toi)` : t.name}</span><StarBadge n={t.stars} /></span>
                                   <span className="text-[10px] text-mute">{getNiveauLabel(t.anneeEtude)}</span>
                                   <span className="w-12 text-right font-display text-xs font-extrabold tabular-nums">{t.points}</span>
                                 </Link>

@@ -12,6 +12,8 @@ import Link from 'next/link';
 import DuelInvitationBanner from '@/components/dashboard/DuelInvitationBanner';
 import TrophyPopup from '@/components/dashboard/TrophyPopup';
 import { getTrophyPopup } from '@/lib/trophy-popup';
+import SaphirAnnouncePopup from '@/components/dashboard/SaphirAnnouncePopup';
+import { grantSaphirBonusOnce, getSaphirAnnouncement, SAPHIR_BONUS } from '@/lib/saphir-bonus';
 import { expireStaleDuels } from '@/lib/duel-server';
 import { getTodaySelection } from '@/lib/daily-cases';
 import { getNiveauLabel } from '@/lib/niveau';
@@ -175,13 +177,18 @@ export default async function EtudiantDashboard({ searchParams }: { searchParams
   if (leaguesOpen()) await grantMonthlyPremiumUa(user);
   // Première visite après l'ouverture : « Les ligues sont ouvertes » à tout le monde (une seule fois, après la réponse)
   if (leaguesOpen()) after(() => announceLeaguesOnce());
+  // Top 3 Saphir de la semaine du 16/11 : +100 points de ligue (une seule fois, avant d'afficher la ligue)
+  if (leaguesOpen()) await grantSaphirBonusOnce();
   const leagueView = demoAllowed((await searchParams).demo) ? demoLeagueView() : await getLeagueView(user.id); // ?demo=1 : local uniquement
 
   const trophy = await getTrophyPopup(user.id);
+  // Annonce « Top 3 Saphir » à chaque joueur, une seule fois (après la fenêtre de trophée s'il en a une)
+  const saphirWinners = !trophy && leaguesOpen() ? await getSaphirAnnouncement(user.id) : null;
 
   return (
     <div className="space-y-5">
       {trophy && <TrophyPopup popupKey={trophy.key} title={trophy.title} subtitle={trophy.subtitle} xp={trophy.xp} rank={trophy.rank} />}
+      {saphirWinners && <SaphirAnnouncePopup winners={saphirWinners} bonus={SAPHIR_BONUS} meId={user.id} />}
 
       {/* Invitations de duel (bannière géante — uniquement si présentes) */}
       {duelInvites.length > 0 && (

@@ -187,7 +187,7 @@ export async function creditLeagueDuel(duel: { id: string; requesterId: string; 
   }
 }
 
-export type LeagueRow = { userId: string; name: string; imageUrl: string | null; anneeEtude: number | null; points: number; tier: number; rank: number; me: boolean };
+export type LeagueRow = { userId: string; name: string; imageUrl: string | null; anneeEtude: number | null; points: number; tier: number; rank: number; me: boolean; stars?: number };
 export type LeagueView =
   | { status: 'unavailable' }
   | { status: 'soon'; startsOn: string }
@@ -219,11 +219,11 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
     const members = await prisma.leagueMember.findMany({
       where: { week, tier: member.tier, groupNo: member.groupNo },
       orderBy: [{ points: 'desc' }, { updatedAt: 'asc' }],
-      select: { userId: true, points: true, tier: true, user: { select: { prenom: true, pseudo: true, imageUrl: true, anneeEtude: true } } },
+      select: { userId: true, points: true, tier: true, user: { select: { prenom: true, pseudo: true, imageUrl: true, anneeEtude: true, leagueProfile: { select: { stars: true } } } } },
     });
     const rows: LeagueRow[] = members.map((m, i) => ({
       userId: m.userId, name: m.user.pseudo || m.user.prenom, imageUrl: m.user.imageUrl, anneeEtude: m.user.anneeEtude,
-      points: m.points, tier: m.tier, rank: i + 1, me: m.userId === userId,
+      points: m.points, tier: m.tier, rank: i + 1, me: m.userId === userId, stars: m.user.leagueProfile?.stars ?? 0,
     }));
     const z = zones(rows.length, member.tier, openTiers);
     return {
@@ -235,7 +235,7 @@ export async function getLeagueView(userId: string): Promise<LeagueView> {
   }
 }
 
-export type LeagueOverview = { tier: number; players: number; top: { userId: string; name: string; imageUrl: string | null; anneeEtude: number | null; points: number }[] }[];
+export type LeagueOverview = { tier: number; players: number; top: { userId: string; name: string; imageUrl: string | null; anneeEtude: number | null; points: number; stars?: number }[] }[];
 
 /** Toutes les ligues ouvertes cette semaine : nombre de joueurs et les 5 meilleurs (tous groupes confondus). */
 export async function getLeaguesOverview(): Promise<LeagueOverview> {
@@ -248,10 +248,10 @@ export async function getLeaguesOverview(): Promise<LeagueOverview> {
         prisma.leagueMember.count({ where: { week, tier } }),
         prisma.leagueMember.findMany({
           where: { week, tier }, orderBy: [{ points: 'desc' }, { updatedAt: 'asc' }], take: 5,
-          select: { userId: true, points: true, user: { select: { prenom: true, pseudo: true, imageUrl: true, anneeEtude: true } } },
+          select: { userId: true, points: true, user: { select: { prenom: true, pseudo: true, imageUrl: true, anneeEtude: true, leagueProfile: { select: { stars: true } } } } },
         }),
       ]);
-      return { tier, players, top: top.map((m) => ({ userId: m.userId, name: m.user.pseudo || m.user.prenom, imageUrl: m.user.imageUrl, anneeEtude: m.user.anneeEtude, points: m.points })) };
+      return { tier, players, top: top.map((m) => ({ userId: m.userId, name: m.user.pseudo || m.user.prenom, imageUrl: m.user.imageUrl, anneeEtude: m.user.anneeEtude, points: m.points, stars: m.user.leagueProfile?.stars ?? 0 })) };
     }));
   } catch {
     return [];
